@@ -13,7 +13,8 @@
   #fixed_values - x1 and x2, input two values for apportionment proportion for Bering Sea (value 1) and Aleutian Islands (value 2)
   #penalty - a value indicating the max allowed increase or decrease between ABC in terminal year and next projected year (e.g. input as 0.05 for 5% allowed change)
   #lastYr_ABCs - vector of the most recent ABC (lenght=n.areas), for calculation of percent difference between current and next projected ABC
-
+  #LLlencomp <-longline survey length comps in numbers for n.Lbins and n.areas
+  #L50_mat <- row # in LLlencomp which contains the length cutoff for length based apportionment.
 
 #some temporary things to make sure coded functions work...
 ABC <-  as.vector(c(40,40,20)) #vector with number of dimensions equal to the number of areas in the EM
@@ -478,34 +479,52 @@ penalized_apportionment <- function(ABC.total,n.areas,fish.data,biom.data,penalt
 penalized_apportionment(ABC.total.test,n.areas.test,fish.test.data, biomass.test.data,test.penalty,lastYr_ABCs.test)
 
 
+#8 - length based apportionment
+#calculate the mean (or median?) length at 50% female maturity - then calculate the proportion of females of that 
+#length in each of the n.areas based on the LL survey data most recent year data
+L50_mat <- 13 #input row number for length at 50% maturation or greater (data as aggregate across all Alaska areas; 
+#made up value for now 65 and over)
+
+n.Lbins <- 30
+test.data <- matrix(data=NA,nrow=n.Lbins,ncol=n.areas.test) #fake n at age data
+test.data[,1] <- c(1000*abs(rnorm(n.Lbins,0.5,0.5)))
+test.data[,2] <- c(1000*abs(rnorm(n.Lbins,1.0,1.0))) 
+test.data[,3] <- c(1000*abs(rnorm(n.Lbins,1.0,2.0))) 
+test.data[,4] <- c(1000*abs(rnorm(n.Lbins,1.0,2.0))) 
+test.data[,5] <- c(1000*abs(rnorm(n.Lbins,2.0,4.0))) 
+test.data[,6] <- c(1000*abs(rnorm(n.Lbins,3.0,6.0))) 
+
+test.data[1:10,1] <- sort(test.data[1:10,1],decreasing=FALSE)
+test.data[11:30,1] <- sort(test.data[11:30,1],decreasing=TRUE)
+test.data[1:13,2] <- sort(test.data[1:13,2],decreasing=FALSE)
+test.data[14:30,2] <- sort(test.data[14:30,2],decreasing=TRUE)
+test.data[1:15,3] <- sort(test.data[1:15,3],decreasing=FALSE)
+test.data[16:30,3] <- sort(test.data[16:30,3],decreasing=TRUE)
+test.data[1:15,4] <- sort(test.data[1:15,4],decreasing=FALSE)
+test.data[16:30,4] <- sort(test.data[16:30,4],decreasing=TRUE)
+test.data[1:15,5] <- sort(test.data[1:15,5],decreasing=FALSE)
+test.data[16:30,5] <- sort(test.data[16:30,5],decreasing=TRUE)
+test.data[1:15,6] <- sort(test.data[1:15,6],decreasing=FALSE)
+test.data[16:30,6] <- sort(test.data[16:30,6],decreasing=TRUE)
+
+agebased_apportionment <- function(ABC.total,n.areas,LLlencomp,L50_mat) { 
+  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  natage.prop1 <- vector(length=n.areas) #creating output vector for prop at L50 (or larger)
+  natage.prop2 <- vector(length=n.areas) #creating output vector apportionment based on natage.prop1
+  for (a in 1:n.areas.test){
+    natage.prop1[a] <- sum(LLlencomp[L50_mat:length(LLlencomp[,a]),a])/sum(LLlencomp[,a])
+  }
+  for (a in 1:n.areas) {
+    natage.prop2[a] <- natage.prop1[a]/sum(natage.prop1)
+  }
+  return(natage.prop2)
+}
+
+agebased_apportionment(ABC.total.test,n.areas.test,test.data,L50_mat)
 
 
 
 
 ###STILL NEED TO BE CODED:
-
-#8 - length based apportionment
-#calculate the mean (or median?) length at 50% maturity - then calculate the proportion of females of that length in each of the
-#n.areas (using the N at age and an age-length key) for the terminal year 
-#could also be age based??
-
-
-n.ages <- 30
-test.data <- matrix(data=NA,nrow=n.ages,ncol=n.areas.test) #fake n at age data
-test.data[,1] <- c(1000*abs(rnorm(n.ages,0.06,2.0)))
-test.data[,2] <- c(1000*abs(rnorm(n.ages,1.0,2.0))) 
-test.data[,3] <- c(1000*abs(rnorm(n.ages,1.4,1.5))) 
-test.data[,4] <- c(1000*abs(rnorm(n.ages,2.5,0.2))) 
-test.data[,5] <- c(1000*abs(rnorm(n.ages,1.1,0.8))) 
-test.data[,6] <- c(1000*abs(rnorm(n.ages,2.0,0.4))) 
-
-agebased_apportionment <- function(ABC.total,n.areas,NatAge) { 
-  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
-  natage.prop <- 
-  
-}
-
-
 #6 - Random effects model apportionment
-
-
+curry work on this?
