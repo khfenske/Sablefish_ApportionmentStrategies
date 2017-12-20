@@ -1,5 +1,8 @@
 #KHF 11-24-17
 #Apportionment functions
+#NOTE!! all of these options will need some tweaking for various reasons, but
+#first and foremost, any option relying on LL survey index will need to be changed
+#to accomodate the alternating year for the survey for BS and AI. 
 
 #master list of things called in all the following functions (in case we do one big switch)
   #ABC.total - total ABC summed across n regions
