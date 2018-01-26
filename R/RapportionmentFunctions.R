@@ -530,4 +530,55 @@ agebased_apportionment(ABC.total.test,n.areas.test,test.data,L50_mat)
 
 ###STILL NEED TO BE CODED:
 #6 - Random effects model apportionment
-curry work on this?
+#make up survey biomass data for each of n areas for now
+biomass.n.years <- 10
+biomass.years<-seq(1,11) # so you can have prediction with error for next year
+biomass.test.data <- matrix(data=NA,nrow=biomass.n.years,ncol=n.areas.test)
+biomass.test.data[,1] <- c(1000*abs(rnorm(biomass.n.years,0.06,2.0)))  
+biomass.test.data[,2] <- c(1000*abs(rnorm(biomass.n.years,1.0,2.0))) 
+biomass.test.data[,3] <- c(1000*abs(rnorm(biomass.n.years,1.4,1.5))) 
+biomass.test.data[,4] <- c(1000*abs(rnorm(biomass.n.years,2.5,0.2))) 
+biomass.test.data[,5] <- c(1000*abs(rnorm(biomass.n.years,1.1,0.8))) 
+biomass.test.data[,6] <- c(1000*abs(rnorm(biomass.n.years,2.0,0.4))) 
+biomass.cv.test.data <- matrix(data=NA,nrow=biomass.n.years,ncol=n.areas.test)
+biomass.cv.test.data[,1] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,2] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,3] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,4] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,5] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
+
+
+srv_re<-data.frame(matrix(nrow=n.areas,ncol=6))
+srv_recv<-data.frame(matrix(nrow=na.areas,ncol=6))
+biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) { 
+
+  for(i in 1:6) {
+    try(
+      {styr <-min(biomass.years)
+      endyr <-max(biomass.years)
+      nobs<-biomass.n.years
+      yrs_srv<-seq(1,biomass.n.years)
+      srv_est<-biomass.test.data[,i]
+      srv_cv<-biomass.cv.test.data[,i]
+      cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat")
+      system("re.exe")
+      all_yrs<-seq(styr,endyr)
+      srv_re[i,]<-scan(file="rwout.rep",nlines=1,skip=11)
+      srv_recv[i,]<-scan(file="rwout.rep",nlines=1,skip=21)
+      }
+      ,TRUE) }
+  
+   ABC.EM <- vector(length=n.areas)
+  biom <- vector(length=n.areas)
+  biom.prop <- vector(length=n.areas)
+  biom.yrs <- length(biom.data[,1])
+  for (a in 1:n.areas) {
+    biom[a] <- srv_re[a,biomass.n.years] 
+  }
+  for (a in 1:n.areas) {
+    biom.prop[a] <- biom[a]/sum(biom)
+    ABC.EM[a]<-ABC.total*biom.prop[a]
+  }
+  return(ABC.EM)
+  }
