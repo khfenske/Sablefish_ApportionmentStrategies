@@ -528,8 +528,12 @@ agebased_apportionment(ABC.total.test,n.areas.test,test.data,L50_mat)
 
 
 
-###STILL NEED TO BE CODED:
+###
 #6 - Random effects model apportionment
+## move into RE directory
+path<-getwd()
+setwd(paste0(path,"/r/re/"))
+####
 #make up survey biomass data for each of n areas for now
 biomass.n.years <- 10
 biomass.years<-seq(1,11) # so you can have prediction with error for next year
@@ -549,9 +553,9 @@ biomass.cv.test.data[,5] <- rep(0.05,biomass.n.years)
 biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
 
 
-srv_re<-data.frame(matrix(nrow=n.areas,ncol=6))
-srv_recv<-data.frame(matrix(nrow=na.areas,ncol=6))
-biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) { 
+srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))
+srv_recv<-data.frame(matrix(nrow=na.areas,ncol=max(biomass.years)-min(biomass.years)+1))
+re_apportionment <- function(ABC.total,n.areas,biom.data,biom.cv.data) { 
 
   for(i in 1:6) {
     try(
@@ -559,8 +563,8 @@ biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) {
       endyr <-max(biomass.years)
       nobs<-biomass.n.years
       yrs_srv<-seq(1,biomass.n.years)
-      srv_est<-biomass.test.data[,i]
-      srv_cv<-biomass.cv.test.data[,i]
+      srv_est<-biom.data[,i]
+      srv_cv<-biom.cv.data[,i]
       cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat")
       system("re.exe")
       all_yrs<-seq(styr,endyr)
@@ -582,3 +586,9 @@ biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) {
   }
   return(ABC.EM)
   }
+### clean up ADMB mess
+flist=list.files(pattern="*.*")
+flist<-flist[-grep(".exe",flist)]
+file.remove(flist)
+### go back to project path
+setwd(path)
