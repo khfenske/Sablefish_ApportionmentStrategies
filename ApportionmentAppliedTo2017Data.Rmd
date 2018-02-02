@@ -30,7 +30,7 @@ First, set up the fishery independent and fishery dependent indices as used in m
 #Configure data exactly like Dana does:  
 getwd()
 #Survey
-webareas<-read.csv("Web Areas.csv",header=T) #this is downloaded from AKFIN as csv and read in here
+webareas<-read.csv("data/Web Areas.csv",header=T) #this is downloaded from AKFIN as csv and read in here
 str(webareas)
 names(webareas)[1]<-"Year"
 uswebareas<-webareas[!webareas$Survey.Country%in%"Japan",]
@@ -61,14 +61,14 @@ uswebareas
 #all areas - bsaiwgcgeg
 usrpn<-tapply(uswebareas$RPN,uswebareas$Year,sum)/1000
 srpw<-tapply(uswebareas$RPW,uswebareas[,c(1,4)],sum)/1000
-write.csv(srpw, "surveyRPW.csv")
+write.csv(srpw, "output/ApportionmentAppliedTo2017/surveyRPW.csv")
 
 #Fishery
 library(tidyr)
 library(ggplot2)
 library(reshape2)
 #this is Dana's new fishery CPUE RPW code:
-fishcpue<-read.csv("fisheryCPUE17.csv",header=T) 
+fishcpue<-read.csv("data/fisheryCPUE17.csv",header=T) 
 fishcpue[fishcpue$Area=="BS"&fishcpue$Year==2012&fishcpue$Type=="Obs",]$CV<-mean(fishcpue[fishcpue$Area=="BS"&fishcpue$Year%in%c(2009,2010,2011)&fishcpue$Type=="Obs",]$CV)
 fishcpue[fishcpue$Area=="BS"&fishcpue$Year==2016&fishcpue$Type=="Obs",]$CV<-1000000000
 fishcpue[fishcpue$Area=="BS"&fishcpue$Year==2016&fishcpue$Type=="Obs",]$CPUE<-0.1
@@ -85,13 +85,13 @@ fishas<-cbind(fishas,g)
 colnames(fishas)<-c("Area","Size")
 fishas[,2]<-as.numeric(fishas[,2])
 d<-a/b*as.numeric(fishas[,2])*45*0.45359 # convert to per skate and kilograms
-write.csv(d, "areafishrpw.csv")
-write.csv(colSums(d),"fishrpw.csv")
+write.csv(d, "output/ApportionmentAppliedTo2017/areafishrpw.csv")
+write.csv(colSums(d),"output/ApportionmentAppliedTo2017/fishrpw.csv")
 average<-melt(a/b)
 names(average)<-c("Area","Year","CPUE")
 ggplot(data=average, aes(x=Year, y=CPUE, colour=Area)) + geom_line(size=1.5) + geom_point() +
   facet_wrap(~Area, scales="free")+theme_bw(base_size=14)+expand_limits(y=0)
-ggsave("fishcpue.png",height=5,width=7,dpi=300)
+ggsave("output/ApportionmentAppliedTo2017/fishcpue.png",height=5,width=7,dpi=300)
 
 ```
 
@@ -395,7 +395,7 @@ biombased_apportionment(ABC.total[14],n.areas,biom.dataT[11:28,])
 
 
 c) Penalized - ABC can't go up or down by more than x% between subsequent years (need to choose an x value.)
-Note that this version disregards ABC rules (as in, ABC calculated here may be higher or lower than ABC that is coming from the assessment model, this ignores the control rule...sort of)
+Note that this version disregards ABC rules (as in, ABC calculated here may be higher or lower than ABC that is coming from the assessment model, this ignores the control rule...sort of), 
 ``` {r}
 penalized_apportionment <- function(ABC.total,n.areas,fish.data,biom.data,penalty,lastYr_ABCs) { 
   ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
@@ -440,8 +440,10 @@ penalized_apportionment <- function(ABC.total,n.areas,fish.data,biom.data,penalt
   return(pen_ABC)
   #return(pctdiff)
 }
-
+#apply the function to the 2017 data, 2018 ABC only:
 penalized_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[14,])
+#applying for 2005 and rolling forward:
+penalized_apportionment(ABC.total[1],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[14,])
 
 ```
 
@@ -498,13 +500,14 @@ biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) {
     }
     return(ABC.EM)
   }
-  ### clean up ADMB mess
+} 
+    ### clean up ADMB mess
     flist=list.files(pattern="*.*")
     flist<-flist[-grep(".exe",flist)]
     file.remove(flist)
-    
+
     #run the function:
-    
+    #add code here
     
 ```
 
@@ -646,12 +649,13 @@ for (i in 1:14) {
 rownames(biombased) <- c(seq(from=2005,to=2018,by=1))
 colnames(biombased) <- c("BS","AI","WG","CG","WY","EY")
 
-for (i in 1:14) {  
-  penalized[i,] <- penalized_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[i,])
-  #penalized_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[14,])
-  }
-rownames(penalized) <- c(seq(from=2005,to=2018,by=1))
-colnames(penalized) <- c("BS","AI","WG","CG","WY","EY")
+#this code doesn't really lead to a meaningful way of looking at this option, so it's turned off
+#for (i in 1:14) {  
+#  penalized[i,] <- penalized_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[i,])
+#  #penalized_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[14,])
+#  }
+#rownames(penalized) <- c(seq(from=2005,to=2018,by=1))
+#colnames(penalized) <- c("BS","AI","WG","CG","WY","EY")
 
 for (i in 1:14) {  
   expfishwt[i,] <- expfishwt_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,])
