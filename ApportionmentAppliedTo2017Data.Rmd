@@ -1,0 +1,699 @@
+---
+title: "Apportionment Application to 2017 Data"
+author: "Kari Fenske, Dana Hanselman, and Curry Cunningham"
+date: "January 29, 2018"
+output: html_document
+---
+
+This document takes the recent sablefish survey and fishery data and applies the Apportionment Options proposed (in four Phases) for the Sablefish Apportionment Project.
+
+The goal of this exercise is to examine the functionality of current and proposed apportionment options and, if necessary, revise, eliminate, or add options.
+
+The apportionment functions require several data streams to be read in or input manually.
+#master list of things called in all the following functions 
+  #ABC.total - total ABC summed across n regions
+  #n.areas - number of OM or management areas
+  #fixed_prop - vector of the fixed apportionment values (since 2012/2013) as proportions (1 -to  n.areas)
+  #equilib_prop - vector of the equilibrium of movement matrix (stationary distribution of movement matrix), from 1 to n.areas 
+    (NOTE THAT WE NEED TO HAVE A SIX AREA MOVEMENT MODEL RERUN TO CALCULATE THIS)
+  #biom.data - a matrix of biomass data (such as RPW from a survey) with nrows=length of your survey data, ncol=n.areas
+  #fish.data - a matris of fishery CPUE (logbook?) data with nrows=years of data, and ncol=n.areas
+  #fixed_values - x1 and x2, input two values for apportionment proportion for Bering Sea (value 1) and Aleutian Islands (value 2)
+  #penalty - a value indicating the max allowed increase or decrease between ABC in terminal year and next projected year (e.g. input as 0.05 for 5% allowed change)
+  #lastYr_ABCs - vector of the most recent ABC (lenght=n.areas), for calculation of percent difference between current and next projected ABC
+  #LLlencomp <-longline survey length comps in numbers for n.Lbins and n.areas
+  #L50_mat <- row # in LLlencomp which contains the length cutoff for length based apportionment.
+  #biom.cv.data <- survey biomass CV data for RE model calcs
+
+First, set up the fishery independent and fishery dependent indices as used in management/ABC setting and apportionment:
+``` {r}
+#Configure data exactly like Dana does:  
+getwd()
+#Survey
+webareas<-read.csv("Web Areas.csv",header=T) #this is downloaded from AKFIN as csv and read in here
+str(webareas)
+names(webareas)[1]<-"Year"
+uswebareas<-webareas[!webareas$Survey.Country%in%"Japan",]
+uswebareas<-webareas[webareas$Year>1989,]
+str(uswebareas)
+############### Make Bering Sea corrections for killer whales incident of 2009 #####
+#these were done in DHH but are no longer being done for my model 3-12-15
+#uswebareas[uswebareas[,3]==2&uswebareas$Year==2009,]$RPN<-101599  
+uswebareas[uswebareas[,3]==2&uswebareas$Year==2009,]$RPW<-302999
+#uswebareas[uswebareas[,3]==2&uswebareas$Year==2010,]$RPN<-121220
+uswebareas[uswebareas[,3]==2&uswebareas$Year==2010,]$RPW<-355490
+######################################################################################
+########### Fix the early BSAI data to the ratio of Japanese survey to domestic survey for overlapping years
+########### Done in Sigler assessment. The BSAI domestic surveys didn't start until 1996 in AI and 1997 in BS
+###########################
+#unique(uswebareas$Year)
+#head(uswebareas)
+#BS.RPNextrap<-c(110.0873277,47.90465085,41.6713919,17.68038473,52.76962504,54.02416591,56.3580108)
+#AI.RPNextrap<-c(77.130598,74.44250363,50.95221729,78.03987539,56.1388677,57.47350869)
+BS.RPWextrap<-c(314.7021092,150.2015433,124.7684837,50.20935415,176.9098441,169.458082,194.1811634)
+AI.RPWextrap<-c(234.6133212,256.2934671,177.3181757,218.8936198,214.4408328,205.4081978)
+#for (i in 1990:1996) uswebareas[uswebareas[,3]==2&uswebareas$Year==i,]$RPN<-BS.RPNextrap[i-1989]*1000
+for (i in 1990:1996) uswebareas[uswebareas[,3]==2&uswebareas$Year==i,]$RPW<-BS.RPWextrap[i-1989]*1000
+for (i in 1990:1995) uswebareas[uswebareas[,3]==1&uswebareas$Year==i,]$RPW<-AI.RPWextrap[i-1989]*1000
+#for (i in 1990:1995) uswebareas[uswebareas[,3]==1&uswebareas$Year==i,]$RPN<-AI.RPNextrap[i-1989]*1000
+uswebareas
+################################################################################################
+#all areas - bsaiwgcgeg
+usrpn<-tapply(uswebareas$RPN,uswebareas$Year,sum)/1000
+srpw<-tapply(uswebareas$RPW,uswebareas[,c(1,4)],sum)/1000
+write.csv(srpw, "surveyRPW.csv")
+
+#Fishery
+library(tidyr)
+library(ggplot2)
+library(reshape2)
+#this is Dana's new fishery CPUE RPW code:
+fishcpue<-read.csv("fisheryCPUE17.csv",header=T) 
+fishcpue[fishcpue$Area=="BS"&fishcpue$Year==2012&fishcpue$Type=="Obs",]$CV<-mean(fishcpue[fishcpue$Area=="BS"&fishcpue$Year%in%c(2009,2010,2011)&fishcpue$Type=="Obs",]$CV)
+fishcpue[fishcpue$Area=="BS"&fishcpue$Year==2016&fishcpue$Type=="Obs",]$CV<-1000000000
+fishcpue[fishcpue$Area=="BS"&fishcpue$Year==2016&fishcpue$Type=="Obs",]$CPUE<-0.1
+jointcpue<-fishcpue[fishcpue$Year>1998,]
+jointcpue$weighted<-jointcpue$CPUE/jointcpue$CV
+a<-tapply(jointcpue$weighted,list(jointcpue$Area,jointcpue$Year),sum)
+b<-tapply(1/jointcpue$CV,list(jointcpue$Area,jointcpue$Year),sum)
+a/b
+fishas<-rownames(a/b)
+#g<-c(45.3,26.3,17.7,10.6,9.1,5.8)
+g<-c(44.966,28.728,16.687,11.851,8.975,5.576)  # Use new KE area sizes New_area_sizes.xlsx in Data_Files_For_Assessment folder
+
+fishas<-cbind(fishas,g)
+colnames(fishas)<-c("Area","Size")
+fishas[,2]<-as.numeric(fishas[,2])
+d<-a/b*as.numeric(fishas[,2])*45*0.45359 # convert to per skate and kilograms
+write.csv(d, "areafishrpw.csv")
+write.csv(colSums(d),"fishrpw.csv")
+average<-melt(a/b)
+names(average)<-c("Area","Year","CPUE")
+ggplot(data=average, aes(x=Year, y=CPUE, colour=Area)) + geom_line(size=1.5) + geom_point() +
+  facet_wrap(~Area, scales="free")+theme_bw(base_size=14)+expand_limits(y=0)
+ggsave("fishcpue.png",height=5,width=7,dpi=300)
+
+```
+
+Second, run Dana's apportionment R code to get the 'Status quo' apportionment (the ones not currently used for management). Use the output file 'appto verify the results from the 'status quo' function we are using here.
+```{r}
+current <- 2017
+apptmat<-data.frame(matrix(NA,nrow=10,ncol=6))
+s_mat<-data.frame(matrix(NA,nrow=6,ncol=6))
+srpw
+for(i in 1:10) {
+  EAprop<-24632/(21820+24632)
+  frpw<-d[,(length(d[1,])-(3+i)):((length(d[1,]))-i+1)]  #when i=1, you get most recent years
+  frpw[1,]<-frpw[1,]*EAprop
+  frpwp<-sapply(1:ncol(frpw),function(x) frpw[,x]/sum(frpw[,x]))
+  fweights<-rev(c(0.5,0.25,0.125,0.0625,0.0625))
+  sweights<-rev(c(0.5,0.25,0.125,0.0625,0.0625))
+  fappt<-rowSums(sapply(1:ncol(frpwp),function(x) frpwp[,x]*fweights[x])) #current order is ai bs cg ey wg wy
+  srpw2<-t(srpw[(length(srpw[,1])-(3+i)):((length(srpw[,1]))-i+1),])  #current order is ai, bs, cg, ey, wy, wg
+  srpw3<-srpw2[c(1,2,3,4,6,5),]  #match survey to fish order - ai bs cg ey wg wy
+  srpwp<-sapply(1:ncol(srpw3),function(x) srpw3[,x]/sum(srpw3[,x]))
+  
+  sappt<-rowSums(sapply(1:ncol(srpwp),function(x) srpwp[,x]*sweights[x]))
+  
+  appt<-(2*sappt+fappt)/3
+  apptmat[i,]<-as.numeric(appt)
+  s_mat[i]<-sappt
+}
+rownames(s_mat)<-rownames(srpw3) #was srpw2
+#temp_surv<-t(s_mat[c(2,1,5,3,6,4),]) #I think the column order is wrong on these!
+#rite.csv(temp_surv,"survey_appt_10_yearsDHH.csv") #what is this file used for?
+colnames(apptmat)<-rownames(frpw)
+rownames(apptmat)<-seq(current+1,current-8)
+write.csv(apptmat,"apptmat17.csv")  #compare this one to my SQ functions
+```
+
+Read in or enter data for the apportionment functions coded below:
+```{r}
+ABC.total <- c(21000,21000,20100,18030,16080,15230,16040,17250,16230,13722, 13657, 11795 ,13509 ,15380)   # total ABC for years 2005 - 2018, chronologically (from 2004-2017 SAFES)
+n.areas <- 6
+
+fixed_prop <- c(0.09760681,0.13196385,0.10787662,0.34109467,0.11472889,0.20672915) #bs,ai,wg,cg,wy,ey, from Dana's apportionment code on shared drive
+equilib_prop <- c(0.092315344,0.136703284,0.13052393,0.268275823,0.137707199,0.234474419)  #STAND IN VALUES for WY and EY ONLY! 0.372181618 is EGOA proportion (EY+WY), split 37% to 63% for WY and EY/SEO for now
+
+#reorder the survey RPW data created above
+biom.data1 <- data.frame(srpw) #order is ai bs cg ey wy wg
+#reorder and truncate the file so it's BS-AI-WG-CG-WY-EY and years 2008-2017
+#biom.data2 <- biom.data1[19:28,] #rows 19:28 are years 2008:2017
+biom.data3 <- biom.data1[,c(2,1,6,3,5,4)] #reordered to BS-AI-WG-CG-WY-EY
+biom.dataT <- biom.data3 #rename back so it fits the functions below
+
+fish.data1 <- data.frame(d)
+fish.data2 <- t(fish.data1) #transpose so years are rows and cols are areas
+#fish.data3 <- fish.data2[9:18,] #only years 2007-2016
+fish.data4 <- fish.data2[,c(2,1,5,3,6,4)] #reordered to BS-AI-WG-CG-WY-EY
+fish.dataT <- fish.data4 #bs ai wg cg wy ey
+
+fixed_values <- c(0.10, 0.10)
+penalty <- 0.05
+
+lastYr_ABC <- data.frame(matrix(data=NA, ncol=6, nrow=14))
+lastYr_ABC[1,] <- c(3006,3449,2927,7300,2348,3970) #2004
+lastYr_ABC[2,] <- c(2440,2620,2540,7250,2390,3760) #2005
+lastYr_ABC[3,] <- c(3060,3100,2670,6370,2090,3710) #2006
+lastYr_ABC[4,] <- c(2980,2810,2470,6190,2100,3550) #2007
+lastYr_ABC[5,] <- c(2860,2440,1890,5500,1950,3390) #2008 bs ai wg cg wy ey
+lastYr_ABC[6,] <- c(2720,2200,1640,4990,1640,2890) #2009
+lastYr_ABC[7,] <- c(2790,2070,1660,4510,1480,2720) #2010
+lastYr_ABC[8,] <- c(2850,1900,1620,4740,1830,3100) #2011
+lastYr_ABC[9,] <- c(2230,2050,1780,5760,2080,3350) #2012
+lastYr_ABC[10,] <- c(1580,2140,1750,5540,1860,3360) #2013
+lastYr_ABC[11,] <- c(1900,1801,1350,4391,1474,2806) #2014
+lastYr_ABC[12,] <- c(2210,1840,1445,3975,1428,2759) #2015
+lastYr_ABC[13,] <- c(1816,1627,1136,3451,1374,2391) #2016 These are the SQ ABC by area from 2015 SAFE for 2016
+lastYr_ABC[14,] <- c(1856,2263,1437,3676,1617,2660) #2017
+#lastYr_ABC[15,] <- c(2225,2686,1533,4201,1765,2970) #2018
+colnames(lastYr_ABC) <- c("BS", "AI", "WG", "CG", "WY", "EY")
+rownames(lastYr_ABC) <- c(seq(from=2004,to=2017,by=1))
+
+LLlencomp <- 
+L50_mat <-
+```
+
+###Phase 1 Apportionment Options:
+a) Status quo (SQ) / traditional - 5 year exponentially weighted moving average of survey and fishery indices, where survey:fisher data are weighted 2:1
+
+``` {r}
+NPFMC_apportionment <- function(ABC.total,n.areas,fish.data,biom.data) { 
+  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  fish.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.prop.sum <- vector(length=n.areas)
+  biom.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.prop.sum <- vector(length=n.areas)
+  wts <- c(0.0625, 0.0625, 0.125, 0.25, 0.5) #the weighting values
+  EAprop<-24632/(21820+24632) #proportion of western aleutians to easter aleutians, applied to fishery RPW because
+  #the fishery fishes farther along the aleutians than the survey 
+  for (i in 1:length(fish.data[,2])) {
+    fish.data[i,2] <- fish.data[i,2]*EAprop # multiply the fishery data by the E-W aleutians proportion
+  }
+  
+  for (i in (length(fish.dataT[,1])-4):length(fish.dataT[,1])) {
+  for (a in 1:n.areas) {
+    m <- i-(length(fish.data[,1])-5)
+    fish.data.prop[m,a] <- fish.data[i,a]/sum(fish.data[i,]) #calc proportion by year across areas for fishery data
+    biom.data.prop[m,a] <- biom.data[i,a]/sum(biom.data[i,]) #calc proportion by year across areas for survey data
+  }
+  }
+  for (i in 1:length(fish.data.prop[,1])) {
+  for (a in 1:n.areas) {    
+    fish.data.prop.wt[i,a] <- fish.data.prop[i,a]*wts[i]
+    biom.data.prop.wt[i,a] <- biom.data.prop[i,a]*wts[i]    
+  }
+  }  
+    fish.prop.sum <- colSums(fish.data.prop.wt)
+    biom.prop.sum <- colSums(biom.data.prop.wt)  
+  for (a in 1:n.areas) {
+    ABC.EM[a] <- ABC.total * ((fish.prop.sum[a]+(2*biom.prop.sum[a]))/3)  #weighting 2x suvery:1x fishery happens here
+  }
+  return(ABC.EM)
+}
+
+NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,]) #bs ai wg cg wy ey
+
+ 
+```
+
+
+
+b) Static - the fixed proportions from the 2013 SQ method
+``` {r}
+fixed_apportionment <- function(ABC.total,n.areas,fixed_prop) {
+  ABC.EM <- vector(length=n.areas)
+  for (a in 1:n.areas) {
+    ABC.EM[a]<-ABC.total*fixed_prop[a]
+  }
+  return(ABC.EM)
+}
+
+fixed_apportionment(ABC.total[14],n.areas,fixed_prop) 
+fixed_apportionment(ABC.total[13],n.areas,fixed_prop) 
+fixed_apportionment(ABC.total[12],n.areas,fixed_prop) 
+```
+
+c) Length based - something based on proportion of females that are larger than the length at 50% maturity (~65 cm)
+
+
+d) Measurement error SQ - including measurement error in SQ/traditional apportionment such that the rate of change in apportionment is tied to the CV of the survey 
+
+
+###Phase 2 Apportionment Options:
+a) Equal apportionment between areas
+```{r}
+equal_apportionment <- function(ABC.total,n.areas) {
+  ABC.EM <- vector(length=n.areas)
+  for (a in 1:n.areas) {
+    ABC.EM[a]<-ABC.total/n.areas
+  }
+  return(ABC.EM)
+}
+
+equal_apportionment(ABC.total[14],n.areas) 
+equal_apportionment(ABC.total[13],n.areas) 
+equal_apportionment(ABC.total[12],n.areas) 
+```
+
+b) All ABC removed from Area 1 (counting these separately for the permutation purposes; also not coded into R yet)
+   All ABC removed from Area 2
+   All ABC removed from Area 3
+   All ABC removed from Area 4
+   All ABC removed from Area 5
+   All ABC removed from Area 6
+``` {r}
+#these need to be coded in and applied to real retrospective data
+```
+   
+c) Equilibrium - apportion based on the proportion of biomass in each area under equilibrium conditions (which may be the same as the proportions of the stationary distribution of the movement matrix)
+``` {r}
+equilib_apportionment <- function(ABC.total,n.areas,equilib_prop) {
+  ABC.EM <- vector(length=n.areas)
+  for (a in 1:n.areas) {
+    ABC.EM[a]<-ABC.total*equilib_prop[a]
+  }
+  return(ABC.EM)
+}
+
+equilib_apportionment(ABC.total[14],n.areas,equilib_prop)
+
+```
+
+
+d) Partially fixed - BS and AI are fixed at some proportion, the other areas are based on status quo method
+``` {r}
+partfixed_apportionment <- function(ABC.total,n.areas,fish.data,biom.data, fixed_values) { 
+  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  fish.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.prop.sum <- vector(length=n.areas)
+  biom.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.prop.sum <- vector(length=n.areas)
+  wts <- c(0.0625, 0.0625, 0.125, 0.25, 0.5) #the exponential weighting values to weight over past five years
+  fixedmult <- 1-(sum(fixed_values))
+  #EAprop<-45632/(21820+24632) #proportion of western aleutians to easter aleutians, applied to fishery RPW because
+  #the fishery fishes farther along the aleutians than the survey or than the AI management area??
+  #fish.data[,2] <- fish.data[,2]*(c(rep(EAprop,times=length(fish.data[,2])))) # multiply the fishery data by the E-W aleutians proportion
+
+  for (i in (length(fish.data[,1])-4):length(fish.data[,1])) {
+  for (a in 3:n.areas) {
+    m <- i-(length(fish.data[,1])-5)
+    fish.data.prop[m,a] <- fixedmult*fish.data[i,a]/sum(fish.data[i,3:n.areas]) #calc proportion by year across areas for fishery data for areas 3:n.areas
+    biom.data.prop[m,a] <- fixedmult*biom.data[i,a]/sum(biom.data[i,3:n.areas]) #calc proportion by year across areas for survey data for areas 3:n.areas
+  }  }
+  for (i in (length(fish.data[,1])-4):length(fish.data[,1])) {  #fill in the fixed values for BS and AI
+  for (a in 1:2) {
+    m <- i-(length(fish.data[,1])-5)
+    fish.data.prop[m,a] <- fixed_values[a]
+    biom.data.prop[m,a] <- fixed_values[a]
+  }  }
+  
+  for (i in 1:length(fish.data.prop[,1])) {
+  for (a in 1:n.areas) {    
+    fish.data.prop.wt[i,a] <- fish.data.prop[i,a]*wts[i]
+    biom.data.prop.wt[i,a] <- biom.data.prop[i,a]*wts[i]    
+  }  }  
+    fish.prop.sum <- colSums(fish.data.prop.wt)
+    biom.prop.sum <- colSums(biom.data.prop.wt)  
+  for (a in 1:n.areas) {
+    ABC.EM[a] <- ABC.total * ((fish.prop.sum[a]+(2*biom.prop.sum[a]))/3)  #weighting 2x suvery:1x fishery happens here
+  }
+  return(ABC.EM)
+}
+
+partfixed_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,], fixed_values)
+
+```
+
+
+###Phase 3 Apportionment Options:
+a) SQ but unweighted (so just a five year running average, still maintain 2:1 survey:fishery weights)
+``` {r}
+nonexp_apportionment <- function(ABC.total,n.areas,fish.data,biom.data) { 
+  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  fish.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.prop.sum <- vector(length=n.areas)
+  biom.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.prop.sum <- vector(length=n.areas)
+  wts <- c(0.2, 0.2, 0.2, 0.2, 0.2) #the weighting values
+  EAprop<-24632/(21820+24632) #proportion of western aleutians to easter aleutians, applied to fishery RPW because
+  #the fishery fishes farther along the aleutians than the survey or than the AI management area??
+  fish.data[,2] <- fish.data[,2]*(c(rep(EAprop,times=length(fish.data[,2])))) # multiply the fishery data by the E-W aleutians proportion
+
+  for (i in (length(fish.data[,1])-4):length(fish.data[,1])) {
+  for (a in 1:n.areas) {
+    m <- i-(length(fish.data[,1])-5)
+    fish.data.prop[m,a] <- fish.data[i,a]/sum(fish.data[i,]) #calc proportion by year across areas for fishery data
+    biom.data.prop[m,a] <- biom.data[i,a]/sum(biom.data[i,]) #calc proportion by year across areas for survey data
+  }
+  }
+  for (i in 1:length(fish.data.prop[,1])) {
+  for (a in 1:n.areas) {    
+    fish.data.prop.wt[i,a] <- fish.data.prop[i,a]*wts[i]
+    biom.data.prop.wt[i,a] <- biom.data.prop[i,a]*wts[i]    
+  }
+  }  
+    fish.prop.sum <- colSums(fish.data.prop.wt)
+    biom.prop.sum <- colSums(biom.data.prop.wt)  
+  for (a in 1:n.areas) {
+    ABC.EM[a] <- ABC.total * ((fish.prop.sum[a]+(2*biom.prop.sum[a]))/3)  #weighting 2x suvery:1x fishery happens here
+  }
+  return(ABC.EM)
+}
+
+nonexp_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,])
+
+```
+
+
+b) Based on terminal year of survey biomass only 
+``` {r}
+biombased_apportionment <- function(ABC.total,n.areas,biom.data) { 
+  ABC.EM <- vector(length=n.areas)
+  biom <- vector(length=n.areas)
+  biom.prop <- vector(length=n.areas)
+  biom.yrs <- length(biom.data[,1])
+  for (a in 1:n.areas) {
+    biom[a] <- biom.data[biom.yrs,a] 
+  }
+  for (a in 1:n.areas) {
+    biom.prop[a] <- biom[a]/sum(biom)
+    ABC.EM[a]<-ABC.total*biom.prop[a]
+  }
+  return(ABC.EM)
+}
+
+biombased_apportionment(ABC.total[14],n.areas,biom.dataT[11:28,])
+
+```
+
+
+c) Penalized - ABC can't go up or down by more than x% between subsequent years (need to choose an x value.)
+Note that this version disregards ABC rules (as in, ABC calculated here may be higher or lower than ABC that is coming from the assessment model, this ignores the control rule...sort of)
+``` {r}
+penalized_apportionment <- function(ABC.total,n.areas,fish.data,biom.data,penalty,lastYr_ABCs) { 
+  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  fish.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.prop.sum <- vector(length=n.areas)
+  biom.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.prop.sum <- vector(length=n.areas)
+  pctdiff <- vector(length=n.areas)
+  pen_ABC <- vector(length=n.areas) #holds the penalized ABC values
+  wts <- c(0.0625, 0.0625, 0.125, 0.25, 0.5) #the weighting values
+  EAprop<-24632/(21820+24632) #proportion of western aleutians to easter aleutians, applied to fishery RPW because
+  #the fishery fishes farther along the aleutians than the survey or than the AI management area??
+  fish.data[,2] <- fish.data[,2]*(c(rep(EAprop,times=length(fish.data[,2])))) # multiply the fishery data by the E-W aleutians proportion
+
+  for (i in (length(fish.data[,1])-4):length(fish.data[,1])) {
+  for (a in 1:n.areas) {
+    m <- i-(length(fish.data[,1])-5)
+    fish.data.prop[m,a] <- fish.data[i,a]/sum(fish.data[i,]) #calc proportion by year across areas for fishery data
+    biom.data.prop[m,a] <- biom.data[i,a]/sum(biom.data[i,]) #calc proportion by year across areas for survey data
+  }
+  }
+  for (i in 1:length(fish.data.prop[,1])) {
+  for (a in 1:n.areas) {    
+    fish.data.prop.wt[i,a] <- fish.data.prop[i,a]*wts[i] #add the exponential weighting
+    biom.data.prop.wt[i,a] <- biom.data.prop[i,a]*wts[i]    
+  }
+  }  
+    fish.prop.sum <- colSums(fish.data.prop.wt)
+    biom.prop.sum <- colSums(biom.data.prop.wt)  
+  for (a in 1:n.areas) {
+    ABC.EM[a] <- ABC.total * ((fish.prop.sum[a]+(2*biom.prop.sum[a]))/3)  #weighting 2x suvery:1x fishery happens here
+  }
+  #figure out change in ABC since previous year
+  pctdiff<- (ABC.EM - lastYr_ABCs)/ABC.EM
+  #then apply penalty, if needed  
+  for (a in 1:n.areas){
+    ifelse(abs(pctdiff[a])>penalty,ifelse(pctdiff[a]<=0,pen_ABC[a] <- (1-penalty)*lastYr_ABCs[a],pen_ABC[a] <- (1+penalty)*lastYr_ABCs[a]), pen_ABC[a] <- ABC.EM[a])  
+    }
+  #return(ABC.EM)
+  return(pen_ABC)
+  #return(pctdiff)
+}
+
+penalized_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[14,])
+
+```
+
+
+d) Random effects model 
+```{r}
+biomass.cv.test.data <- matrix(data=NA,nrow=10,ncol=n.areas.test)
+biomass.cv.test.data[,1] <- rep(0.05,biom.dataT[])
+biomass.cv.test.data[,2] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,3] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,4] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,5] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
+biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
+
+srv_re<-data.frame(matrix(nrow=n.areas,ncol=6))
+srv_recv<-data.frame(matrix(nrow=na.areas,ncol=6))
+biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) { 
+  srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))
+  srv_recv<-data.frame(matrix(nrow=na.areas,ncol=max(biomass.years)-min(biomass.years)+1))
+  re_apportionment <- function(ABC.total,n.areas,biom.data,biom.cv.data) { 
+    
+    for(i in 1:6) {
+      try(
+        {styr <-min(biomass.years)
+        endyr <-max(biomass.years)
+        nobs<-biomass.n.years
+        yrs_srv<-seq(1,biomass.n.years)
+              srv_est<-biomass.test.data[,i]
+              srv_cv<-biomass.cv.test.data[,i]
+              srv_est<-biom.data[,i]
+              srv_cv<-biom.cv.data[,i]
+        cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat")
+        system("re.exe")
+        all_yrs<-seq(styr,endyr)
+        srv_re[i,]<-scan(file="rwout.rep",nlines=1,skip=11)
+        srv_recv[i,]<-scan(file="rwout.rep",nlines=1,skip=21)
+        }
+        ,TRUE) }
+    
+    ABC.EM <- vector(length=n.areas)
+    biom <- vector(length=n.areas)
+    biom.prop <- vector(length=n.areas)
+    biom.yrs <- length(biom.data[,1])
+    for (a in 1:n.areas) {
+      biom[a] <- srv_re[a,biomass.n.years] 
+    }
+    for (a in 1:n.areas) {
+      biom.prop[a] <- biom[a]/sum(biom)
+      ABC.EM[a]<-ABC.total*biom.prop[a]
+    }
+    return(ABC.EM)
+  }
+  ### clean up ADMB mess
+    flist=list.files(pattern="*.*")
+    flist<-flist[-grep(".exe",flist)]
+    file.remove(flist)
+    
+    #run the function:
+    
+    
+```
+
+
+###Phase 4
+a) SQ but using fishery CPUE only
+``` {r}
+expfishwt_apportionment <- function(ABC.total,n.areas,fish.data) { 
+  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  fish.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  fish.prop.sum <- vector(length=n.areas)
+  wts <- c(0.0625, 0.0625, 0.125, 0.25, 0.5) #the weighting values
+  EAprop<-24632/(21820+24632) #proportion of western aleutians to easter aleutians, applied to fishery RPW because
+  #the fishery fishes farther along the aleutians than the survey or than the AI management area??
+  fish.data[,2] <- fish.data[,2]*(c(rep(EAprop,times=length(fish.data[,2])))) # multiply the fishery data by the E-W aleutians proportion
+
+  for (i in (length(fish.data[,1])-4):length(fish.data[,1])) {
+  for (a in 1:n.areas) {
+    m <- i-(length(fish.data[,1])-5)
+    fish.data.prop[m,a] <- fish.data[i,a]/sum(fish.data[i,]) #calc proportion by year across areas for fishery data
+  }
+  }
+  for (i in 1:length(fish.data.prop[,1])) {
+  for (a in 1:n.areas) {    
+    fish.data.prop.wt[i,a] <- fish.data.prop[i,a]*wts[i]
+  }
+  }  
+    fish.prop.sum <- colSums(fish.data.prop.wt)
+  for (a in 1:n.areas) {
+    ABC.EM[a] <- ABC.total * fish.prop.sum[a]  
+  }
+  return(ABC.EM)
+}
+
+expfishwt_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,])
+
+
+```
+
+b) SQ but using survey index only
+```{r}
+expsurvwt_apportionment <- function(ABC.total,n.areas,biom.data) { 
+  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  biom.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.prop.sum <- vector(length=n.areas)
+  wts <- c(0.0625, 0.0625, 0.125, 0.25, 0.5) #the weighting values
+
+  for (i in (length(biom.data[,1])-4):length(biom.data[,1])) {
+  for (a in 1:n.areas) {
+    m <- i-(length(biom.data[,1])-5)
+    biom.data.prop[m,a] <- biom.data[i,a]/sum(biom.data[i,]) #calc proportion by year across areas for survey data
+  }
+  }
+  for (i in 1:length(biom.data.prop[,1])) {
+  for (a in 1:n.areas) {    
+    biom.data.prop.wt[i,a] <- biom.data.prop[i,a]*wts[i]    
+  }
+  }  
+    biom.prop.sum <- colSums(biom.data.prop.wt)  
+  for (a in 1:n.areas) {
+    ABC.EM[a] <- ABC.total * biom.prop.sum[a]  
+  }
+  return(ABC.EM)
+}
+
+expsurvwt_apportionment(ABC.total[14],n.areas,biom.dataT[1:28,])
+
+```
+
+
+Set up a list to hold the apportionment option output and loop through all the apportionment options and save them to a single list for later calculations
+``` {r}
+apportionment_list <- list() #the master list
+statusquo <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for NPFMC_apportionment
+static <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for fixed_apportionment
+equal <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for equal_apport
+equilib <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for equilib
+partfixed <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for partfixed
+nonexp <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for nonexp
+biombased <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for biomassbased
+penalized <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for penalized
+expfishwt <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for expfishwt
+expsurvwt <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for expsurvwt
+df11 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for RE
+df12 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for allone
+df13 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for measerror
+df14 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for lengthbased
+
+
+#each apportionment option data frame within list
+for (i in 1:14) {  
+  statusquo[i,] <- NPFMC_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,])
+  #NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,]) #bs ai wg cg wy ey
+}
+rownames(statusquo) <- c(seq(from=2005,to=2018,by=1))
+colnames(statusquo) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  static[i,] <- fixed_apportionment(ABC.total[i], n.areas, fixed_prop)
+  #fixed_apportionment(ABC.total[14],n.areas,fixed_prop) 
+  }
+rownames(static) <- c(seq(from=2005,to=2018,by=1))
+colnames(static) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  equal[i,] <- equal_apportionment(ABC.total[i], n.areas)
+  #equal_apportionment(ABC.total[14],n.areas) 
+  }
+rownames(equal) <- c(seq(from=2005,to=2018,by=1))
+colnames(equal) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  equilib[i,] <- equilib_apportionment(ABC.total[i], n.areas, equilib_prop)
+  #equilib_apportionment(ABC.total[14],n.areas,equilib_prop)
+  }
+rownames(equilib) <- c(seq(from=2005,to=2018,by=1))
+colnames(equilib) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  partfixed[i,] <- partfixed_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28], fixed_values)
+  #partfixed_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28], fixed_values)
+  }
+rownames(partfixed) <- c(seq(from=2005,to=2018,by=1))
+colnames(partfixed) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  nonexp[i,] <- nonexp_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,])
+  #nonexp_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,])
+  }
+rownames(nonexp) <- c(seq(from=2005,to=2018,by=1))
+colnames(nonexp) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  biombased[i,] <- biombased_apportionment(ABC.total[i], n.areas, biom.dataT[11:28,])
+  #biombased_apportionment(ABC.total[14],n.areas,biom.dataT[11:28,])
+  }
+rownames(biombased) <- c(seq(from=2005,to=2018,by=1))
+colnames(biombased) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  penalized[i,] <- penalized_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[i,])
+  #penalized_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[14,])
+  }
+rownames(penalized) <- c(seq(from=2005,to=2018,by=1))
+colnames(penalized) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  expfishwt[i,] <- expfishwt_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,])
+  #expfishwt_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,])
+  }
+rownames(expfishwt) <- c(seq(from=2005,to=2018,by=1))
+colnames(expfishwt) <- c("BS","AI","WG","CG","WY","EY")
+
+for (i in 1:14) {  
+  expsurvwt[i,] <- expsurvwt_apportionment(ABC.total[i], n.areas, biom.dataT[1:28,])
+  #expsurvwt_apportionment(ABC.total[14],n.areas,biom.dataT[1:28,])
+
+  }
+rownames(expsurvwt) <- c(seq(from=2005,to=2018,by=1))
+colnames(expsurvwt) <- c("BS","AI","WG","CG","WY","EY")
+
+RE model 
+allone
+measerror
+lengthbased
+
+
+write.csv(listt, "listt")
+```
+
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
