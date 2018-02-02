@@ -527,7 +527,7 @@ agebased_apportionment(ABC.total.test,n.areas.test,test.data,L50_mat)
 
 
 
-
+###n Need to add area stuff before this run
 ###
 #6 - Random effects model apportionment
 ## move into RE directory
