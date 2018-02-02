@@ -124,7 +124,7 @@ rownames(s_mat)<-rownames(srpw3) #was srpw2
 #rite.csv(temp_surv,"survey_appt_10_yearsDHH.csv") #what is this file used for?
 colnames(apptmat)<-rownames(frpw)
 rownames(apptmat)<-seq(current+1,current-8)
-write.csv(apptmat,"apptmat17.csv")  #compare this one to my SQ functions
+write.csv(apptmat,"output/ApportionmentAppliedTo2017/apptmat17.csv")  #compare this one to my SQ functions
 ```
 
 Read in or enter data for the apportionment functions coded below:
@@ -443,8 +443,26 @@ penalized_apportionment <- function(ABC.total,n.areas,fish.data,biom.data,penalt
 #apply the function to the 2017 data, 2018 ABC only:
 penalized_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[14,])
 #applying for 2005 and rolling forward:
-penalized_apportionment(ABC.total[1],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[14,])
+#penabc <- matrix(data=NA,ncol=6,nrow=20)
+penabc <- matrix(data=NA, nrow=14, ncol=6)
+penabc[1,] <- unlist(t(penalized_apportionment(ABC.total[1],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[1,])))
 
+colnames(penabc) <- c("BS","AI","WG","CG","WY","EY")
+penabc[2,] <- penalized_apportionment(ABC.total[2],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[1,])
+penabc[3,] <- penalized_apportionment(ABC.total[3],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[2,])
+penabc[4,] <- penalized_apportionment(ABC.total[4],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[3,])
+penabc[5,] <- penalized_apportionment(ABC.total[5],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[4,])
+penabc[6,] <- penalized_apportionment(ABC.total[6],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[5,])
+penabc[7,] <- penalized_apportionment(ABC.total[7],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[6,])
+penabc[8,] <- penalized_apportionment(ABC.total[8],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[7,])
+penabc[9,] <- penalized_apportionment(ABC.total[9],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[8,])
+penabc[10,] <- penalized_apportionment(ABC.total[10],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[9,])
+penabc[11,] <- penalized_apportionment(ABC.total[11],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[10,])
+penabc[12,] <- penalized_apportionment(ABC.total[12],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[11,])
+penabc[13,] <- penalized_apportionment(ABC.total[13],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[12,])
+penabc[14,] <- penalized_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,],penalty,penabc[13,])
+rownames(penabc) <- c(seq(from=2005,to=2018,by=1))
+(penabc)
 ```
 
 
