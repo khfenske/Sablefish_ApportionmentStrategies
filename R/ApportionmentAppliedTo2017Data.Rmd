@@ -5,7 +5,7 @@ date: "January 29, 2018"
 output: html_document
 ---
 
-This document takes the recent sablefish survey and fishery data and applies the Apportionment Options proposed (in four Phases) for the Sablefish Apportionment Project.
+This document takes the recent sablefish survey and fishery data and applies the Apportionment Options proposed (in four Phases) for the Sablefish Apportionment Project.  The code chuncks below were adapted from the code in Rapportionment_functions.r.
 
 The goal of this exercise is to examine the functionality of current and proposed apportionment options and, if necessary, revise, eliminate, or add options.
 
@@ -171,13 +171,21 @@ lastYr_ABC[14,] <- c(1856,2263,1437,3676,1617,2660) #2017
 colnames(lastYr_ABC) <- c("BS", "AI", "WG", "CG", "WY", "EY")
 rownames(lastYr_ABC) <- c(seq(from=2004,to=2017,by=1))
 
+biomass.cv.test.data <- matrix(data=NA,nrow=14,ncol=n.areas.test)
+biomass.cv.test.data[,1] <- rep(0.05,14)
+biomass.cv.test.data[,2] <- rep(0.05,14)
+biomass.cv.test.data[,3] <- rep(0.05,14)
+biomass.cv.test.data[,4] <- rep(0.05,14)
+biomass.cv.test.data[,5] <- rep(0.05,14)
+biomass.cv.test.data[,6] <- rep(0.05,14)
+
 LLlencomp <- 
 L50_mat <-
 ```
 
+
 ###Phase 1 Apportionment Options:
 a) Status quo (SQ) / traditional - 5 year exponentially weighted moving average of survey and fishery indices, where survey:fisher data are weighted 2:1
-
 ``` {r}
 NPFMC_apportionment <- function(ABC.total,n.areas,fish.data,biom.data) { 
   ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
@@ -221,7 +229,6 @@ NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,
 ```
 
 
-
 b) Static - the fixed proportions from the 2013 SQ method
 ``` {r}
 fixed_apportionment <- function(ABC.total,n.areas,fixed_prop) {
@@ -237,10 +244,18 @@ fixed_apportionment(ABC.total[13],n.areas,fixed_prop)
 fixed_apportionment(ABC.total[12],n.areas,fixed_prop) 
 ```
 
+
 c) Length based - something based on proportion of females that are larger than the length at 50% maturity (~65 cm)
+``` {r}
+
+```
 
 
 d) Measurement error SQ - including measurement error in SQ/traditional apportionment such that the rate of change in apportionment is tied to the CV of the survey 
+``` {r}
+
+
+```
 
 
 ###Phase 2 Apportionment Options:
@@ -258,6 +273,7 @@ equal_apportionment(ABC.total[14],n.areas)
 equal_apportionment(ABC.total[13],n.areas) 
 equal_apportionment(ABC.total[12],n.areas) 
 ```
+
 
 b) All ABC removed from Area 1 (counting these separately for the permutation purposes; also not coded into R yet)
    All ABC removed from Area 2
@@ -283,6 +299,7 @@ allone_WY <- allone_apportionment(ABC.total[14],n.areas,5)
 allone_EY <- allone_apportionment(ABC.total[14],n.areas,6)
 
 ```
+  
    
 c) Equilibrium - apportion based on the proportion of biomass in each area under equilibrium conditions (which may be the same as the proportions of the stationary distribution of the movement matrix)
 ``` {r}
@@ -484,36 +501,24 @@ rownames(penabc) <- c(seq(from=2005,to=2018,by=1))
 
 d) Random effects model 
 ```{r}
-biomass.cv.test.data <- matrix(data=NA,nrow=10,ncol=n.areas.test)
-biomass.cv.test.data[,1] <- rep(0.05,biom.dataT[])
-biomass.cv.test.data[,2] <- rep(0.05,biomass.n.years)
-biomass.cv.test.data[,3] <- rep(0.05,biomass.n.years)
-biomass.cv.test.data[,4] <- rep(0.05,biomass.n.years)
-biomass.cv.test.data[,5] <- rep(0.05,biomass.n.years)
-biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
-biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
-biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
-biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
-biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
-
 srv_re<-data.frame(matrix(nrow=n.areas,ncol=6))
-srv_recv<-data.frame(matrix(nrow=na.areas,ncol=6))
+srv_recv<-data.frame(matrix(nrow=n.areas,ncol=6))
 biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) { 
-  srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))
-  srv_recv<-data.frame(matrix(nrow=na.areas,ncol=max(biomass.years)-min(biomass.years)+1))
-  re_apportionment <- function(ABC.total,n.areas,biom.data,biom.cv.data) { 
+  srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))  #need to identify 'biomass.years'
+  srv_recv<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))
+  re_apportionment <- function(ABC.total,n.areas,biom.data,biom.cv.data) { #creating a function within a function? But where do you call this re_apport function?
     
-    for(i in 1:6) {
+    for(i in 1:6) { 
       try(
         {styr <-min(biomass.years)
         endyr <-max(biomass.years)
-        nobs<-biomass.n.years
+        nobs<-biomass.n.years #need to define or identify 'this'biomass.n.years' somewhere?
         yrs_srv<-seq(1,biomass.n.years)
-              srv_est<-biomass.test.data[,i]
+              srv_est<-biomass.data[,i]
               srv_cv<-biomass.cv.test.data[,i]
               srv_est<-biom.data[,i]
               srv_cv<-biom.cv.data[,i]
-        cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat")
+        cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat") #need to define 'styr', 'endyr', 'nobs', 'yrs_srv',srv_est, srv_cv
         system("re.exe")
         all_yrs<-seq(styr,endyr)
         srv_re[i,]<-scan(file="rwout.rep",nlines=1,skip=11)
@@ -536,13 +541,13 @@ biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) {
   }
 } 
     ### clean up ADMB mess
-    flist=list.files(pattern="*.*")
+    flist=list.files(pattern="*.*")  #should this code (all three lines) be inside or outside the closing bracket of the function?
     flist<-flist[-grep(".exe",flist)]
     file.remove(flist)
 
     #run the function:
-    #add code here
-    
+biomassbased_apportionment(ABC.total[14],n.areas,biom.dataT[11:28,],biomass.cv.test.data[1:14,]) 
+
 ```
 
 
@@ -581,6 +586,7 @@ expfishwt_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,])
 
 
 ```
+
 
 b) SQ but using survey index only
 ```{r}
@@ -750,22 +756,4 @@ write.csv(listt, "listt")
 ```
 
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

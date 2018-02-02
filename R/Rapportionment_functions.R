@@ -555,7 +555,7 @@ biomass.cv.test.data[,6] <- rep(0.05,biomass.n.years)
 
 
 srv_re<-data.frame(matrix(nrow=n.areas,ncol=6))
-srv_recv<-data.frame(matrix(nrow=na.areas,ncol=6))
+srv_recv<-data.frame(matrix(nrow=n.areas,ncol=6))
 biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) { 
   srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))
   srv_recv<-data.frame(matrix(nrow=na.areas,ncol=max(biomass.years)-min(biomass.years)+1))
@@ -593,6 +593,8 @@ biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) {
     return(ABC.EM)
   }
 }
+  
+
   ### clean up ADMB mess
   flist=list.files(pattern="*.*")
   flist<-flist[-grep(".exe",flist)]
