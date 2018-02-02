@@ -24,6 +24,7 @@ The apportionment functions require several data streams to be read in or input 
   #LLlencomp <-longline survey length comps in numbers for n.Lbins and n.areas
   #L50_mat <- row # in LLlencomp which contains the length cutoff for length based apportionment.
   #biom.cv.data <- survey biomass CV data for RE model calcs
+  #areaID <- identifies which area (1-6, corresponding to 1-BS, 2-AI, 3-WG, 4-CG, 5-WY, 6-EY) will receive 100% of the ABC for the allone function
 
 First, set up the fishery independent and fishery dependent indices as used in management/ABC setting and apportionment:
 ``` {r}
@@ -95,7 +96,7 @@ ggsave("output/ApportionmentAppliedTo2017/fishcpue.png",height=5,width=7,dpi=300
 
 ```
 
-Second, run Dana's apportionment R code to get the 'Status quo' apportionment (the ones not currently used for management). Use the output file 'apptmat' verify the results from the 'status quo' function we are using here.
+Second, run Dana's apportionment R code to get the 'Status quo' apportionment (the ones not currently used for management). Use the output file 'apptmat' verify the results from the 'status quo' function we are using here.  If you don't have the Web Areas and FisheryCPUE17 data files on your computer, you will need to get them from Kari or Dana and put them in the 'data' folder in your project workspace.
 ```{r}
 current <- 2017
 apptmat<-data.frame(matrix(NA,nrow=10,ncol=6))
@@ -266,6 +267,21 @@ b) All ABC removed from Area 1 (counting these separately for the permutation pu
    All ABC removed from Area 6
 ``` {r}
 #these need to be coded in and applied to real retrospective data
+allone_apportionment <- function(ABC.total,n.areas, areaID) {
+  ABC.EM <- vector(length=n.areas)
+  for (i in 1:n.areas) {
+    ABC.EM[i] <- 0  #fill them all with 0 abc
+    }
+    ABC.EM[areaID] <- ABC.total #then fill in only areaID with the full ABC
+    return(ABC.EM)
+}
+allone_BS <- allone_apportionment(ABC.total[14],n.areas,1)
+allone_AI <- allone_apportionment(ABC.total[14],n.areas,2)
+allone_WG <- allone_apportionment(ABC.total[14],n.areas,3)
+allone_CG <- allone_apportionment(ABC.total[14],n.areas,4)
+allone_WY <- allone_apportionment(ABC.total[14],n.areas,5)
+allone_EY <- allone_apportionment(ABC.total[14],n.areas,6)
+
 ```
    
 c) Equilibrium - apportion based on the proportion of biomass in each area under equilibrium conditions (which may be the same as the proportions of the stationary distribution of the movement matrix)
@@ -611,11 +627,16 @@ biombased <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for biomas
 penalized <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for penalized
 expfishwt <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for expfishwt
 expsurvwt <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for expsurvwt
-df11 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for RE
-df12 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for allone
+allone_BS <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for allone (will need 6...allone_BA, allone_AI, etc)
+allone_AI <- data.frame(matrix(data=NA, ncol=6, nrow=14))
+allone_WG <- data.frame(matrix(data=NA, ncol=6, nrow=14))
+allone_CG <- data.frame(matrix(data=NA, ncol=6, nrow=14))
+allone_WY <- data.frame(matrix(data=NA, ncol=6, nrow=14))
+allone_EY <- data.frame(matrix(data=NA, ncol=6, nrow=14))
+#holding place for ones that need to be added
 df13 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for measerror
 df14 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for lengthbased
-
+df12 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for RE model
 
 #each apportionment option data frame within list
 for (i in 1:14) {  
@@ -667,6 +688,7 @@ for (i in 1:14) {
 rownames(biombased) <- c(seq(from=2005,to=2018,by=1))
 colnames(biombased) <- c("BS","AI","WG","CG","WY","EY")
 
+penabc # this is the fully formed matrix for penalized apportionment that doesn't stay within the model-estimated ABC (Kari's first penalized apportionment attempt).  It can be wrapped into the list, if desired, for comparsions.
 #this code doesn't really lead to a meaningful way of looking at this option, so it's turned off
 #for (i in 1:14) {  
 #  penalized[i,] <- penalized_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,],penalty,lastYr_ABC[i,])
@@ -690,8 +712,36 @@ for (i in 1:14) {
 rownames(expsurvwt) <- c(seq(from=2005,to=2018,by=1))
 colnames(expsurvwt) <- c("BS","AI","WG","CG","WY","EY")
 
+#not working yet:
+for (i in 1:14) {
+   allone_BS[i,] <- allone_apportionment(ABC.total[i],n.areas,1)
+  }
+
+for (i in 1:14) {
+   allone_AI[i,] <- allone_apportionment(ABC.total[i],n.areas,2)
+}
+
+for (i in 1:14) {
+   allone_WG[i,] <- allone_apportionment(ABC.total[i],n.areas,3)
+}
+
+for (i in 1:14) {
+   allone_CG[i,] <- allone_apportionment(ABC.total[i],n.areas,4)
+}
+
+for (i in 1:14) {
+   allone_WY[i,] <- allone_apportionment(ABC.total[i],n.areas,5)
+}
+
+for (i in 1:14) {
+   allone_EY[i,] <- allone_apportionment(ABC.total[i],n.areas,6)
+}
+
+
+
+
+#Need to be added:
 RE model 
-allone
 measerror
 lengthbased
 
