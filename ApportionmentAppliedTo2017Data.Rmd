@@ -95,7 +95,7 @@ ggsave("fishcpue.png",height=5,width=7,dpi=300)
 
 ```
 
-Second, run Dana's apportionment R code to get the 'Status quo' apportionment (the ones not currently used for management). Use the output file 'appto verify the results from the 'status quo' function we are using here.
+Second, run Dana's apportionment R code to get the 'Status quo' apportionment (the ones not currently used for management). Use the output file 'apptmat' verify the results from the 'status quo' function we are using here.
 ```{r}
 current <- 2017
 apptmat<-data.frame(matrix(NA,nrow=10,ncol=6))
