@@ -171,13 +171,13 @@ lastYr_ABC[14,] <- c(1856,2263,1437,3676,1617,2660) #2017
 colnames(lastYr_ABC) <- c("BS", "AI", "WG", "CG", "WY", "EY")
 rownames(lastYr_ABC) <- c(seq(from=2004,to=2017,by=1))
 
-biomass.cv.test.data <- matrix(data=NA,nrow=14,ncol=n.areas.test)
-biomass.cv.test.data[,1] <- rep(0.05,14)
-biomass.cv.test.data[,2] <- rep(0.05,14)
-biomass.cv.test.data[,3] <- rep(0.05,14)
-biomass.cv.test.data[,4] <- rep(0.05,14)
-biomass.cv.test.data[,5] <- rep(0.05,14)
-biomass.cv.test.data[,6] <- rep(0.05,14)
+biomass.cv.test.data <- matrix(data=NA,nrow=28,ncol=n.areas.test)
+biomass.cv.test.data[,1] <- rep(0.05,28)
+biomass.cv.test.data[,2] <- rep(0.05,28)
+biomass.cv.test.data[,3] <- rep(0.05,28)
+biomass.cv.test.data[,4] <- rep(0.05,28)
+biomass.cv.test.data[,5] <- rep(0.05,28)
+biomass.cv.test.data[,6] <- rep(0.05,28)
 
 LLlencomp <- 
 L50_mat <-
@@ -500,25 +500,31 @@ rownames(penabc) <- c(seq(from=2005,to=2018,by=1))
 
 
 d) Random effects model 
-```{r}
-srv_re<-data.frame(matrix(nrow=n.areas,ncol=6))
-srv_recv<-data.frame(matrix(nrow=n.areas,ncol=6))
-biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) { 
-  srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))  #need to identify 'biomass.years'
+``` {r}
+
+i <- 1
+ABC.total <- 10000
+n.areas <- 6
+biom.data <- t(biom.dataT) #does this need to be transposed??
+biomass.cv.data <- t(biomass.cv.test.data) #does this need to be transposed?
+
+
+re_apportionment <- function(ABC.total,n.areas,biom.data,biomass.cv.data) { #make up the cv stuff for now
+  path<-getwd()
+  #setwd(paste0(path,"/r/re/"))
+  biomass.years <- as.numeric(rownames(biom.data))
+  biomass.n.years <- nrow(biom.data)
+  srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))  
   srv_recv<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))
-  re_apportionment <- function(ABC.total,n.areas,biom.data,biom.cv.data) { #creating a function within a function? But where do you call this re_apport function?
-    
-    for(i in 1:6) { 
+    for(i in 1:n.areas) { 
       try(
         {styr <-min(biomass.years)
         endyr <-max(biomass.years)
-        nobs<-biomass.n.years #need to define or identify 'this'biomass.n.years' somewhere?
+        nobs<-biomass.n.years 
         yrs_srv<-seq(1,biomass.n.years)
-              srv_est<-biomass.data[,i]
-              srv_cv<-biomass.cv.test.data[,i]
-              srv_est<-biom.data[,i]
-              srv_cv<-biom.cv.data[,i]
-        cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat") #need to define 'styr', 'endyr', 'nobs', 'yrs_srv',srv_est, srv_cv
+              srv_est<-biom.data[i,] #was [,i]
+              srv_cv<-biomass.cv.data[i,] #was [,i]
+        cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat") 
         system("re.exe")
         all_yrs<-seq(styr,endyr)
         srv_re[i,]<-scan(file="rwout.rep",nlines=1,skip=11)
@@ -538,15 +544,17 @@ biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) {
       ABC.EM[a]<-ABC.total*biom.prop[a]
     }
     return(ABC.EM)
+      ### go back to project path
+  setwd(path)
   }
-} 
+
     ### clean up ADMB mess
     flist=list.files(pattern="*.*")  #should this code (all three lines) be inside or outside the closing bracket of the function?
     flist<-flist[-grep(".exe",flist)]
     file.remove(flist)
 
     #run the function:
-biomassbased_apportionment(ABC.total[14],n.areas,biom.dataT[11:28,],biomass.cv.test.data[1:14,]) 
+re_apportionment(ABC.total[14],n.areas,biom.dataT[1:28,],rep(0.1,28)) 
 
 ```
 
