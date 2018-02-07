@@ -139,15 +139,19 @@ equilib_prop <- c(0.092315344,0.136703284,0.13052393,0.268275823,0.137707199,0.2
 
 #reorder the survey RPW data created above
 srpw <- read.csv("data/surveyRPW.csv")
+
 biom.data1 <- data.frame(srpw) #order is ai bs cg ey wy wg
+rownames(biom.data1)<-biom.data1[,1]
+biom.data1<-biom.data1[,-1]
 #reorder and truncate the file so it's BS-AI-WG-CG-WY-EY and years 2008-2017
 #biom.data2 <- biom.data1[19:28,] #rows 19:28 are years 2008:2017
 biom.data3 <- biom.data1[,c(2,1,6,3,5,4)] #reordered to BS-AI-WG-CG-WY-EY
 biom.dataT <- biom.data3 #rename back so it fits the functions below
 
-d <- read.csv("data/areafishrpw.csv")
+d <- read.csv("data/areafishrpw.csv",row.names=1)
 fish.data1 <- data.frame(d)
-fish.data2 <- t(fish.data1) #transpose so years are rows and cols are areas
+fish.data2 <- (t(fish.data1)) #transpose so years are rows and cols are areas
+#fish.data2<-fish.data2[-1,]
 #fish.data3 <- fish.data2[9:18,] #only years 2007-2016
 fish.data4 <- fish.data2[,c(2,1,5,3,6,4)] #reordered to BS-AI-WG-CG-WY-EY
 fish.dataT <- fish.data4 #bs ai wg cg wy ey
@@ -513,9 +517,9 @@ d) Random effects model
 #first - just try to get the RE model function to run...
 re_apportionment <- function(ABC.total,n.areas,biom.data,biomass.cv.data) { #make up the cv stuff for now
   path<-getwd()
-  #setwd(paste0(path,"/r/re/"))
-  biomass.years <- as.numeric(colnames(biom.data))#(rownames(biom.data))
-  biomass.n.years <- ncol(biom.data)#nrow(biom.data)
+  setwd(paste0(path,"/re/"))
+  biomass.years <- as.numeric(rownames(biom.data))#(rownames(biom.data))
+  biomass.n.years <- nrow(biom.data)#nrow(biom.data)
   srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))  
   srv_recv<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))
     for(i in 1:n.areas) { 
@@ -523,46 +527,43 @@ re_apportionment <- function(ABC.total,n.areas,biom.data,biomass.cv.data) { #mak
         {styr <-min(biomass.years)
         endyr <-max(biomass.years)
         nobs<-biomass.n.years 
-        yrs_srv<-seq(1,biomass.n.years)
+        yrs_srv<-biomass.years
               srv_est<-biom.data[,i] #was [,i]
               srv_cv<-biomass.cv.data[,i] #was [,i]
         cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat") 
         system("re.exe")
         all_yrs<-seq(styr,endyr)
-        srv_re[,i]<-scan(file="rwout.rep",nlines=1,skip=11)
-        srv_recv[,i]<-scan(file="rwout.rep",nlines=1,skip=21)
+        srv_re[i,]<-scan(file="rwout.rep",nlines=1,skip=11)
+        srv_recv[i,]<-scan(file="rwout.rep",nlines=1,skip=21)
         }
         ,TRUE) }
-    return(srv_re)
-}
-re_apportionment(ABC.total[14],n.areas,t(biom.dataT[1:28,]),t(biomass.cv.test.data)) #needed to transpose the data?
-    
 
-!!!!STOP - dont run below here until RE model works!
+#!!!STOP - dont run below here until RE model works!
 #only want to apply RW model for 2005-2018 abcs, not the whole time series of survey biomass
     ABC.EM <- vector(length=n.areas)
     biom <- vector(length=n.areas)
     biom.prop <- vector(length=n.areas)
-    biom.yrs <- length(biom.data[,1])
+    biom.yrs <- nrow(biom.data)
     for (a in 1:n.areas) {
-      biom[a] <- srv_re[a,biomass.n.years-13] 
+      biom[a] <- srv_re[a,biom.yrs] 
     }
     for (a in 1:n.areas) {
       biom.prop[a] <- biom[a]/sum(biom)
-      ABC.EM[a]<-ABC.total*biom.prop[a]
+      ABC.EM[a]<-tail(ABC.total,n=1)*biom.prop[a]
     }
     return(ABC.EM)
       ### go back to project path
-  setwd(path)
+
   }
+re_apportionment(ABC.total,n.areas,biom.dataT,biomass.cv.test.data) #needed to transpose the data?
+    
 
     ### clean up ADMB mess
     flist=list.files(pattern="*.*")  #should this code (all three lines) be inside or outside the closing bracket of the function?
     flist<-flist[-grep(".exe",flist)]
     file.remove(flist)
-
+  setwd(path)
     #run the function:
-re_apportionment(ABC.total[14],n.areas,t(biom.dataT[1:28,]),t(biomass.cv.test.data)) 
 
 ```
 
