@@ -27,7 +27,7 @@ The apportionment functions require several data streams to be read in or input 
   #areaID <- identifies which area (1-6, corresponding to 1-BS, 2-AI, 3-WG, 4-CG, 5-WY, 6-EY) will receive 100% of the ABC for the allone function
 
 First, set up the fishery independent and fishery dependent indices as used in management/ABC setting and apportionment:
-``` {r}
+#``` {r}
 #Configure data exactly like Dana does:  
 getwd()
 #Survey
@@ -62,7 +62,7 @@ uswebareas
 #all areas - bsaiwgcgeg
 usrpn<-tapply(uswebareas$RPN,uswebareas$Year,sum)/1000
 srpw<-tapply(uswebareas$RPW,uswebareas[,c(1,4)],sum)/1000
-write.csv(srpw, "output/ApportionmentAppliedTo2017/surveyRPW.csv")
+write.csv(srpw, "data/surveyRPW.csv")
 
 #Fishery
 library(tidyr)
@@ -86,18 +86,18 @@ fishas<-cbind(fishas,g)
 colnames(fishas)<-c("Area","Size")
 fishas[,2]<-as.numeric(fishas[,2])
 d<-a/b*as.numeric(fishas[,2])*45*0.45359 # convert to per skate and kilograms
-write.csv(d, "output/ApportionmentAppliedTo2017/areafishrpw.csv")
-write.csv(colSums(d),"output/ApportionmentAppliedTo2017/fishrpw.csv")
+write.csv(d, "data/areafishrpw.csv")
+write.csv(colSums(d),"data/fishrpw.csv")
 average<-melt(a/b)
 names(average)<-c("Area","Year","CPUE")
 ggplot(data=average, aes(x=Year, y=CPUE, colour=Area)) + geom_line(size=1.5) + geom_point() +
   facet_wrap(~Area, scales="free")+theme_bw(base_size=14)+expand_limits(y=0)
 ggsave("output/ApportionmentAppliedTo2017/fishcpue.png",height=5,width=7,dpi=300)
 
-```
+#```
 
 Second, run Dana's apportionment R code to get the 'Status quo' apportionment (the ones not currently used for management). Use the output file 'apptmat' verify the results from the 'status quo' function we are using here.  If you don't have the Web Areas and FisheryCPUE17 data files on your computer, you will need to get them from Kari or Dana and put them in the 'data' folder in your project workspace.
-```{r}
+#```{r}
 current <- 2017
 apptmat<-data.frame(matrix(NA,nrow=10,ncol=6))
 s_mat<-data.frame(matrix(NA,nrow=6,ncol=6))
@@ -125,9 +125,10 @@ rownames(s_mat)<-rownames(srpw3) #was srpw2
 #rite.csv(temp_surv,"survey_appt_10_yearsDHH.csv") #what is this file used for?
 colnames(apptmat)<-rownames(frpw)
 rownames(apptmat)<-seq(current+1,current-8)
-write.csv(apptmat,"output/ApportionmentAppliedTo2017/apptmat17.csv")  #compare this one to my SQ functions
-```
+write.csv(apptmat,"data/apptmat17.csv")  #compare this one to my SQ functions
+#```
 
+Start here with running the 2005-2017 apportionment options using the survey and fishery RPWs from GitHub.
 Read in or enter data for the apportionment functions coded below:
 ```{r}
 ABC.total <- c(21000,21000,20100,18030,16080,15230,16040,17250,16230,13722, 13657, 11795 ,13509 ,15380)   # total ABC for years 2005 - 2018, chronologically (from 2004-2017 SAFES)
@@ -137,12 +138,14 @@ fixed_prop <- c(0.09760681,0.13196385,0.10787662,0.34109467,0.11472889,0.2067291
 equilib_prop <- c(0.092315344,0.136703284,0.13052393,0.268275823,0.137707199,0.234474419)  #STAND IN VALUES for WY and EY ONLY! 0.372181618 is EGOA proportion (EY+WY), split 37% to 63% for WY and EY/SEO for now
 
 #reorder the survey RPW data created above
+srpw <- read.csv("data/surveyRPW.csv")
 biom.data1 <- data.frame(srpw) #order is ai bs cg ey wy wg
 #reorder and truncate the file so it's BS-AI-WG-CG-WY-EY and years 2008-2017
 #biom.data2 <- biom.data1[19:28,] #rows 19:28 are years 2008:2017
 biom.data3 <- biom.data1[,c(2,1,6,3,5,4)] #reordered to BS-AI-WG-CG-WY-EY
 biom.dataT <- biom.data3 #rename back so it fits the functions below
 
+d <- read.csv("data/areafishrpw.csv")
 fish.data1 <- data.frame(d)
 fish.data2 <- t(fish.data1) #transpose so years are rows and cols are areas
 #fish.data3 <- fish.data2[9:18,] #only years 2007-2016
