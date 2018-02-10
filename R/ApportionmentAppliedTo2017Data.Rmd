@@ -282,7 +282,7 @@ equal_apportionment(ABC.total[12],n.areas)
 ```
 
 
-b) All ABC removed from Area 1 (counting these separately for the permutation purposes; also not coded into R yet)
+b) All ABC removed from Area 1 (counting these separately for the permutation purposes)
    All ABC removed from Area 2
    All ABC removed from Area 3
    All ABC removed from Area 4
@@ -506,20 +506,20 @@ rownames(penabc) <- c(seq(from=2005,to=2018,by=1))
 ```
 
 
+c_2) Penalized version 2, where the penalty is applied/related to the potential change in proportion by area, and maybe there's a bit of solving/optimizing that needs to happen.
+```{r}
+
+```
+
+
 d) Random effects model 
 ``` {r}
-#i <- 1
-#ABC.total <- 10000
-#n.areas <- 6
-#biom.data <- t(biom.dataT) #does this need to be transposed??
-#biomass.cv.data <- t(biomass.cv.test.data) #does this need to be transposed?
 
-#first - just try to get the RE model function to run...
 re_apportionment <- function(ABC.total,n.areas,biom.data,biomass.cv.data) { #make up the cv stuff for now
   path<-getwd()
-  setwd(paste0(path,"/re/"))
-  biomass.years <- as.numeric(rownames(biom.data))#(rownames(biom.data))
-  biomass.n.years <- nrow(biom.data)#nrow(biom.data)
+  setwd(paste0(path,"/R/re/"))
+  biomass.years <- as.numeric(rownames(biom.data))
+  biomass.n.years <- nrow(biom.data)
   srv_re<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))  
   srv_recv<-data.frame(matrix(nrow=n.areas,ncol=max(biomass.years)-min(biomass.years)+1))
     for(i in 1:n.areas) { 
@@ -528,8 +528,8 @@ re_apportionment <- function(ABC.total,n.areas,biom.data,biomass.cv.data) { #mak
         endyr <-max(biomass.years)
         nobs<-biomass.n.years 
         yrs_srv<-biomass.years
-              srv_est<-biom.data[,i] #was [,i]
-              srv_cv<-biomass.cv.data[,i] #was [,i]
+              srv_est<-biom.data[,i] 
+              srv_cv<-biomass.cv.data[,i] 
         cat(styr,"\n",endyr,"\n",nobs,"\n",yrs_srv,"\n",as.numeric(srv_est),"\n",as.numeric(srv_cv),"\n",sep=" ",file="re.dat") 
         system("re.exe")
         all_yrs<-seq(styr,endyr)
@@ -538,8 +538,6 @@ re_apportionment <- function(ABC.total,n.areas,biom.data,biomass.cv.data) { #mak
         }
         ,TRUE) }
 
-#!!!STOP - dont run below here until RE model works!
-#only want to apply RW model for 2005-2018 abcs, not the whole time series of survey biomass
     ABC.EM <- vector(length=n.areas)
     biom <- vector(length=n.areas)
     biom.prop <- vector(length=n.areas)
@@ -553,17 +551,15 @@ re_apportionment <- function(ABC.total,n.areas,biom.data,biomass.cv.data) { #mak
     }
     return(ABC.EM)
       ### go back to project path
-
   }
-re_apportionment(ABC.total,n.areas,biom.dataT,biomass.cv.test.data) #needed to transpose the data?
-    
+
+re_apportionment(ABC.total,n.areas,biom.dataT,biomass.cv.test.data)     
 
     ### clean up ADMB mess
-    flist=list.files(pattern="*.*")  #should this code (all three lines) be inside or outside the closing bracket of the function?
+    flist=list.files(pattern="*.*")  
     flist<-flist[-grep(".exe",flist)]
     file.remove(flist)
-  setwd(path)
-    #run the function:
+    setwd(path)
 
 ```
 
@@ -656,60 +652,68 @@ allone_WG <- data.frame(matrix(data=NA, ncol=6, nrow=14))
 allone_CG <- data.frame(matrix(data=NA, ncol=6, nrow=14))
 allone_WY <- data.frame(matrix(data=NA, ncol=6, nrow=14))
 allone_EY <- data.frame(matrix(data=NA, ncol=6, nrow=14))
+RE <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for random effects method
+
 #holding place for ones that need to be added
-df13 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for measerror
-df14 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for lengthbased
-df12 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for RE model
+df14 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
+df12 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
 
 #each apportionment option data frame within list
-for (i in 1:14) {  
-  statusquo[i,] <- NPFMC_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,])
+for (i in 1:14) { 
+ statusquo[i,] <- NPFMC_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,])
   #NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,]) #bs ai wg cg wy ey
-}
-rownames(statusquo) <- c(seq(from=2005,to=2018,by=1))
-colnames(statusquo) <- c("BS","AI","WG","CG","WY","EY")
+ }
+ rownames(statusquo) <- c(seq(from=2005,to=2018,by=1))
+ colnames(statusquo) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$statusquo <- statusquo
 
 for (i in 1:14) {  
   static[i,] <- fixed_apportionment(ABC.total[i], n.areas, fixed_prop)
   #fixed_apportionment(ABC.total[14],n.areas,fixed_prop) 
   }
-rownames(static) <- c(seq(from=2005,to=2018,by=1))
-colnames(static) <- c("BS","AI","WG","CG","WY","EY")
+ rownames(static) <- c(seq(from=2005,to=2018,by=1))
+ colnames(static) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$static <- static
 
 for (i in 1:14) {  
   equal[i,] <- equal_apportionment(ABC.total[i], n.areas)
   #equal_apportionment(ABC.total[14],n.areas) 
   }
-rownames(equal) <- c(seq(from=2005,to=2018,by=1))
-colnames(equal) <- c("BS","AI","WG","CG","WY","EY")
+ rownames(equal) <- c(seq(from=2005,to=2018,by=1))
+ colnames(equal) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$equal <- equal
 
 for (i in 1:14) {  
   equilib[i,] <- equilib_apportionment(ABC.total[i], n.areas, equilib_prop)
   #equilib_apportionment(ABC.total[14],n.areas,equilib_prop)
   }
-rownames(equilib) <- c(seq(from=2005,to=2018,by=1))
-colnames(equilib) <- c("BS","AI","WG","CG","WY","EY")
+ rownames(equilib) <- c(seq(from=2005,to=2018,by=1))
+ colnames(equilib) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$equilib <- equilib
 
 for (i in 1:14) {  
-  partfixed[i,] <- partfixed_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28], fixed_values)
+  partfixed[i,] <- partfixed_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,], fixed_values)
   #partfixed_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28], fixed_values)
   }
-rownames(partfixed) <- c(seq(from=2005,to=2018,by=1))
-colnames(partfixed) <- c("BS","AI","WG","CG","WY","EY")
-
+ rownames(partfixed) <- c(seq(from=2005,to=2018,by=1))
+ colnames(partfixed) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$partfixed <- partfixed
+ 
 for (i in 1:14) {  
   nonexp[i,] <- nonexp_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,])
   #nonexp_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,])
   }
-rownames(nonexp) <- c(seq(from=2005,to=2018,by=1))
-colnames(nonexp) <- c("BS","AI","WG","CG","WY","EY")
+ rownames(nonexp) <- c(seq(from=2005,to=2018,by=1))
+ colnames(nonexp) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$nonexp <- nonexp
 
 for (i in 1:14) {  
   biombased[i,] <- biombased_apportionment(ABC.total[i], n.areas, biom.dataT[11:28,])
   #biombased_apportionment(ABC.total[14],n.areas,biom.dataT[11:28,])
   }
-rownames(biombased) <- c(seq(from=2005,to=2018,by=1))
-colnames(biombased) <- c("BS","AI","WG","CG","WY","EY")
+ rownames(biombased) <- c(seq(from=2005,to=2018,by=1))
+ colnames(biombased) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$biombased <- biombased
 
 penabc # this is the fully formed matrix for penalized apportionment that doesn't stay within the model-estimated ABC (Kari's first penalized apportionment attempt).  It can be wrapped into the list, if desired, for comparsions.
 #this code doesn't really lead to a meaningful way of looking at this option, so it's turned off
@@ -719,46 +723,70 @@ penabc # this is the fully formed matrix for penalized apportionment that doesn'
 #  }
 #rownames(penalized) <- c(seq(from=2005,to=2018,by=1))
 #colnames(penalized) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$penabc <- penabc
 
 for (i in 1:14) {  
   expfishwt[i,] <- expfishwt_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,])
   #expfishwt_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,])
   }
-rownames(expfishwt) <- c(seq(from=2005,to=2018,by=1))
-colnames(expfishwt) <- c("BS","AI","WG","CG","WY","EY")
+ rownames(expfishwt) <- c(seq(from=2005,to=2018,by=1))
+ colnames(expfishwt) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$expfishwt <- expfishwt
 
 for (i in 1:14) {  
   expsurvwt[i,] <- expsurvwt_apportionment(ABC.total[i], n.areas, biom.dataT[1:28,])
   #expsurvwt_apportionment(ABC.total[14],n.areas,biom.dataT[1:28,])
 
   }
-rownames(expsurvwt) <- c(seq(from=2005,to=2018,by=1))
-colnames(expsurvwt) <- c("BS","AI","WG","CG","WY","EY")
+ rownames(expsurvwt) <- c(seq(from=2005,to=2018,by=1))
+ colnames(expsurvwt) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$expsurvwt <- expsurvwt
 
-#not working yet:
+
 for (i in 1:14) {
    allone_BS[i,] <- allone_apportionment(ABC.total[i],n.areas,1)
-  }
+ }
+ rownames(allone_BS) <- c(seq(from=2005,to=2018,by=1))
+ colnames(allone_BS) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$allone_BS <- allone_BS
 
 for (i in 1:14) {
    allone_AI[i,] <- allone_apportionment(ABC.total[i],n.areas,2)
-}
+ }
+ rownames(allone_AI) <- c(seq(from=2005,to=2018,by=1))
+ colnames(allone_AI) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$allone_AI <- allone_AI
 
-for (i in 1:14) {
+ for (i in 1:14) {
    allone_WG[i,] <- allone_apportionment(ABC.total[i],n.areas,3)
-}
-
+ }
+ rownames(allone_WG) <- c(seq(from=2005,to=2018,by=1))
+ colnames(allone_WG) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$allone_WG <- allone_WG
+ 
 for (i in 1:14) {
    allone_CG[i,] <- allone_apportionment(ABC.total[i],n.areas,4)
-}
-
+ }
+ rownames(allone_CG) <- c(seq(from=2005,to=2018,by=1))
+ colnames(allone_CG) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$allone_CG <- allone_CG
+ 
 for (i in 1:14) {
    allone_WY[i,] <- allone_apportionment(ABC.total[i],n.areas,5)
-}
+ }
+ rownames(allone_WY) <- c(seq(from=2005,to=2018,by=1))
+ colnames(allone_WY) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$allone_WY <- allone_WY
 
 for (i in 1:14) {
    allone_EY[i,] <- allone_apportionment(ABC.total[i],n.areas,6)
-}
+ }
+ rownames(allone_EY) <- c(seq(from=2005,to=2018,by=1))
+ colnames(allone_EY) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$allone_EY <- allone_EY
+
+RE <- re_apportionment  #is there a file spit out with the RE survey estimates by area? Do we need to 
+#run this code retrospectively to get the correcti values for RE survey estimates to apply to TOT.ABC?
 
 
 

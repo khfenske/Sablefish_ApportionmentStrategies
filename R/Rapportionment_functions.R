@@ -492,7 +492,7 @@ L50_mat <- 13 #input row number for length at 50% maturation or greater (data as
 #made up value for now 65 and over)
 
 n.Lbins <- 30
-test.data <- matrix(data=NA,nrow=n.Lbins,ncol=n.areas.test) #fake n at age data
+test.data <- matrix(data=NA,nrow=n.Lbins,ncol=6) #fake n at age data
 test.data[,1] <- c(1000*abs(rnorm(n.Lbins,0.5,0.5)))
 test.data[,2] <- c(1000*abs(rnorm(n.Lbins,1.0,1.0))) 
 test.data[,3] <- c(1000*abs(rnorm(n.Lbins,1.0,2.0))) 
@@ -517,7 +517,7 @@ agebased_apportionment <- function(ABC.total,n.areas,LLlencomp,L50_mat) {
   ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
   natage.prop1 <- vector(length=n.areas) #creating output vector for prop at L50 (or larger)
   natage.prop2 <- vector(length=n.areas) #creating output vector apportionment based on natage.prop1
-  for (a in 1:n.areas.test){
+  for (a in 1:n.areas){
     natage.prop1[a] <- sum(LLlencomp[L50_mat:length(LLlencomp[,a]),a])/sum(LLlencomp[,a])
   }
   for (a in 1:n.areas) {
@@ -526,7 +526,7 @@ agebased_apportionment <- function(ABC.total,n.areas,LLlencomp,L50_mat) {
   return(natage.prop2)
 }
 
-agebased_apportionment(ABC.total.test,n.areas.test,test.data,L50_mat)
+agebased_apportionment(ABC.total,n.areas,test.data,L50_mat)
 
 
 
