@@ -146,7 +146,8 @@ biom.data1<-biom.data1[,-1]
 #reorder and truncate the file so it's BS-AI-WG-CG-WY-EY and years 2008-2017
 #biom.data2 <- biom.data1[19:28,] #rows 19:28 are years 2008:2017
 biom.data3 <- biom.data1[,c(2,1,6,3,5,4)] #reordered to BS-AI-WG-CG-WY-EY
-biom.dataT <- biom.data3 #rename back so it fits the functions below
+biom.dataT <- biom.data3 #rename back so it fits the functions below 
+#NOTE! THE BIOMASS DATA (RPW) DO NO APPEAR TO BE CORRECT FOR YEARS 1990-1994 AND I DON'T KNOW WHY (THEY DON'T MATCH THE SAFE REPORT VALUES)
 
 d <- read.csv("data/areafishrpw.csv",row.names=1)
 fish.data1 <- data.frame(d)
@@ -736,7 +737,6 @@ for (i in 1:14) {
 for (i in 1:14) {  
   expsurvwt[i,] <- expsurvwt_apportionment(ABC.total[i], n.areas, biom.dataT[1:28,])
   #expsurvwt_apportionment(ABC.total[14],n.areas,biom.dataT[1:28,])
-
   }
  rownames(expsurvwt) <- c(seq(from=2005,to=2018,by=1))
  colnames(expsurvwt) <- c("BS","AI","WG","CG","WY","EY")
@@ -785,7 +785,7 @@ for (i in 1:14) {
  colnames(allone_EY) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$allone_EY <- allone_EY
 
-RE <- re_apportionment  #is there a file spit out with the RE survey estimates by area? Do we need to 
+#RE <- re_apportionment  #is there a file spit out with the RE survey estimates by area? Do we need to 
 #run this code retrospectively to get the correcti values for RE survey estimates to apply to TOT.ABC?
 
 
@@ -797,7 +797,7 @@ measerror
 lengthbased
 
 
-write.csv(listt, "listt")
+write.csv(apportionment_list, "apportionment_list.csv")
 ```
 
 
