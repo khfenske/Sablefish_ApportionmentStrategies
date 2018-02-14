@@ -210,7 +210,7 @@ NPFMC_apportionment <- function(ABC.total,n.areas,fish.data,biom.data) {
     fish.data[i,2] <- fish.data[i,2]*EAprop # multiply the fishery data by the E-W aleutians proportion
   }
   
-  for (i in (length(fish.dataT[,1])-4):length(fish.dataT[,1])) {
+  for (i in (length(fish.data[,1])-4):length(fish.data[,1])) {
   for (a in 1:n.areas) {
     m <- i-(length(fish.data[,1])-5)
     fish.data.prop[m,a] <- fish.data[i,a]/sum(fish.data[i,]) #calc proportion by year across areas for fishery data
@@ -232,6 +232,7 @@ NPFMC_apportionment <- function(ABC.total,n.areas,fish.data,biom.data) {
 }
 
 NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,]) #bs ai wg cg wy ey
+NPFMC_apportionment(ABC.total[13], n.areas, fish.dataT[1:17,], biom.dataT[11:27,]) #bs ai wg cg wy ey
 
  
 ```
@@ -660,56 +661,56 @@ df14 <- data.frame(matrix(data=NA, ncol=6, nrow=14))
 df12 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
 
 #each apportionment option data frame within list
-for (i in 1:14) { 
- statusquo[i,] <- NPFMC_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,])
+for (i in 15:28) { 
+ statusquo[i-14,] <- NPFMC_apportionment(ABC.total[i-14], n.areas, fish.dataT[1:(i-10),], biom.dataT[11:i,])
   #NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,]) #bs ai wg cg wy ey
  }
  rownames(statusquo) <- c(seq(from=2005,to=2018,by=1))
  colnames(statusquo) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$statusquo <- statusquo
 
-for (i in 1:14) {  
-  static[i,] <- fixed_apportionment(ABC.total[i], n.areas, fixed_prop)
+for (i in 15:28) {   
+  static[i-14,] <- fixed_apportionment(ABC.total[i-14], n.areas, fixed_prop)
   #fixed_apportionment(ABC.total[14],n.areas,fixed_prop) 
   }
  rownames(static) <- c(seq(from=2005,to=2018,by=1))
  colnames(static) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$static <- static
 
-for (i in 1:14) {  
-  equal[i,] <- equal_apportionment(ABC.total[i], n.areas)
+for (i in 15:28) { 
+  equal[i-14,] <- equal_apportionment(ABC.total[i-14], n.areas)
   #equal_apportionment(ABC.total[14],n.areas) 
   }
  rownames(equal) <- c(seq(from=2005,to=2018,by=1))
  colnames(equal) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$equal <- equal
 
-for (i in 1:14) {  
-  equilib[i,] <- equilib_apportionment(ABC.total[i], n.areas, equilib_prop)
+for (i in 15:28) {  
+  equilib[i-14,] <- equilib_apportionment(ABC.total[i-14], n.areas, equilib_prop)
   #equilib_apportionment(ABC.total[14],n.areas,equilib_prop)
   }
  rownames(equilib) <- c(seq(from=2005,to=2018,by=1))
  colnames(equilib) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$equilib <- equilib
 
-for (i in 1:14) {  
-  partfixed[i,] <- partfixed_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,], fixed_values)
+for (i in 15:28) {   
+  partfixed[i-14,] <- partfixed_apportionment(ABC.total[i-14], n.areas, fish.dataT[1:(i-10),], biom.dataT[11:i,], fixed_values)
   #partfixed_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28], fixed_values)
   }
  rownames(partfixed) <- c(seq(from=2005,to=2018,by=1))
  colnames(partfixed) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$partfixed <- partfixed
  
-for (i in 1:14) {  
-  nonexp[i,] <- nonexp_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,], biom.dataT[11:28,])
+for (i in 15:28) {  
+  nonexp[i-14,] <- nonexp_apportionment(ABC.total[i-14], n.areas, fish.dataT[1:(i-10),], biom.dataT[11:i,])
   #nonexp_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,], biom.dataT[11:28,])
   }
  rownames(nonexp) <- c(seq(from=2005,to=2018,by=1))
  colnames(nonexp) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$nonexp <- nonexp
 
-for (i in 1:14) {  
-  biombased[i,] <- biombased_apportionment(ABC.total[i], n.areas, biom.dataT[11:28,])
+for (i in 15:28) {  
+  biombased[i-14,] <- biombased_apportionment(ABC.total[i-14], n.areas, biom.dataT[11:i,])
   #biombased_apportionment(ABC.total[14],n.areas,biom.dataT[11:28,])
   }
  rownames(biombased) <- c(seq(from=2005,to=2018,by=1))
@@ -726,16 +727,16 @@ penabc # this is the fully formed matrix for penalized apportionment that doesn'
 #colnames(penalized) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$penabc <- penabc
 
-for (i in 1:14) {  
-  expfishwt[i,] <- expfishwt_apportionment(ABC.total[i], n.areas, fish.dataT[1:18,])
+for (i in 15:28) { 
+  expfishwt[i-14,] <- expfishwt_apportionment(ABC.total[i-14], n.areas, fish.dataT[1:(i-10),])
   #expfishwt_apportionment(ABC.total[14],n.areas,fish.dataT[1:18,])
   }
  rownames(expfishwt) <- c(seq(from=2005,to=2018,by=1))
  colnames(expfishwt) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$expfishwt <- expfishwt
 
-for (i in 1:14) {  
-  expsurvwt[i,] <- expsurvwt_apportionment(ABC.total[i], n.areas, biom.dataT[1:28,])
+for (i in 15:28) { 
+  expsurvwt[i-14,] <- expsurvwt_apportionment(ABC.total[i-14], n.areas, biom.dataT[1:i,])
   #expsurvwt_apportionment(ABC.total[14],n.areas,biom.dataT[1:28,])
   }
  rownames(expsurvwt) <- c(seq(from=2005,to=2018,by=1))
@@ -743,43 +744,43 @@ for (i in 1:14) {
  apportionment_list$expsurvwt <- expsurvwt
 
 
-for (i in 1:14) {
-   allone_BS[i,] <- allone_apportionment(ABC.total[i],n.areas,1)
+for (i in 15:28) { 
+   allone_BS[i-14,] <- allone_apportionment(ABC.total[i-14],n.areas,1)
  }
  rownames(allone_BS) <- c(seq(from=2005,to=2018,by=1))
  colnames(allone_BS) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$allone_BS <- allone_BS
 
-for (i in 1:14) {
-   allone_AI[i,] <- allone_apportionment(ABC.total[i],n.areas,2)
+for (i in 15:28) { 
+   allone_AI[i-14,] <- allone_apportionment(ABC.total[i-14],n.areas,2)
  }
  rownames(allone_AI) <- c(seq(from=2005,to=2018,by=1))
  colnames(allone_AI) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$allone_AI <- allone_AI
 
- for (i in 1:14) {
-   allone_WG[i,] <- allone_apportionment(ABC.total[i],n.areas,3)
+for (i in 15:28) { 
+   allone_WG[i-14,] <- allone_apportionment(ABC.total[i-14],n.areas,3)
  }
  rownames(allone_WG) <- c(seq(from=2005,to=2018,by=1))
  colnames(allone_WG) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$allone_WG <- allone_WG
  
-for (i in 1:14) {
-   allone_CG[i,] <- allone_apportionment(ABC.total[i],n.areas,4)
+for (i in 15:28) { 
+   allone_CG[i-14,] <- allone_apportionment(ABC.total[i-14],n.areas,4)
  }
  rownames(allone_CG) <- c(seq(from=2005,to=2018,by=1))
  colnames(allone_CG) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$allone_CG <- allone_CG
  
-for (i in 1:14) {
-   allone_WY[i,] <- allone_apportionment(ABC.total[i],n.areas,5)
+for (i in 15:28) { 
+   allone_WY[i-14,] <- allone_apportionment(ABC.total[i-14],n.areas,5)
  }
  rownames(allone_WY) <- c(seq(from=2005,to=2018,by=1))
  colnames(allone_WY) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$allone_WY <- allone_WY
 
-for (i in 1:14) {
-   allone_EY[i,] <- allone_apportionment(ABC.total[i],n.areas,6)
+for (i in 15:28) { 
+   allone_EY[i-14,] <- allone_apportionment(ABC.total[i-14],n.areas,6)
  }
  rownames(allone_EY) <- c(seq(from=2005,to=2018,by=1))
  colnames(allone_EY) <- c("BS","AI","WG","CG","WY","EY")
