@@ -602,4 +602,32 @@ biomassbased_apportionment <- function(ABC.total,n.areas,biom.data) {
   ### go back to project path
   setwd(path)
   
+  ## Lentgh-based apportionment options
+  
+  expmaturerpn_apportionment <- function(ABC.total,n.areas,biom.data) { 
+    ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+    biom.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+    biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+    biom.prop.sum <- vector(length=n.areas)
+    wts <- c(0.0625, 0.0625, 0.125, 0.25, 0.5) #the weighting values
+    
+    for (i in (length(biom.data[,1])-4):length(biom.data[,1])) {
+      for (a in 1:n.areas) {
+        m <- i-(length(biom.data[,1])-5)
+        biom.data.prop[m,a] <- biom.data[i,a]/sum(biom.data[i,]) #calc proportion by year across areas for survey data
+      }
+    }
+    for (i in 1:length(biom.data.prop[,1])) {
+      for (a in 1:n.areas) {    
+        biom.data.prop.wt[i,a] <- biom.data.prop[i,a]*wts[i]    
+      }
+    }  
+    biom.prop.sum <- colSums(biom.data.prop.wt)  
+    for (a in 1:n.areas) {
+      ABC.EM[a] <- ABC.total * biom.prop.sum[a]  
+    }
+    return(ABC.EM)
+  }
+  
+  expmaturerpn_apportionment(ABC.total.test,n.areas.test,biomass.test.data)
   

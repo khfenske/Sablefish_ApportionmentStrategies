@@ -93,7 +93,7 @@ names(average)<-c("Area","Year","CPUE")
 ggplot(data=average, aes(x=Year, y=CPUE, colour=Area)) + geom_line(size=1.5) + geom_point() +
   facet_wrap(~Area, scales="free")+theme_bw(base_size=14)+expand_limits(y=0)
 ggsave("output/ApportionmentAppliedTo2017/fishcpue.png",height=5,width=7,dpi=300)
-
+d<-read.csv("data/areafishrpw.csv",row.names=1,header=T)
 #```
 
 Second, run Dana's apportionment R code to get the 'Status quo' apportionment (the ones not currently used for management). Use the output file 'apptmat' verify the results from the 'status quo' function we are using here.  If you don't have the Web Areas and FisheryCPUE17 data files on your computer, you will need to get them from Kari or Dana and put them in the 'data' folder in your project workspace.
@@ -187,8 +187,35 @@ biomass.cv.test.data[,4] <- rep(0.05,28)
 biomass.cv.test.data[,5] <- rep(0.05,28)
 biomass.cv.test.data[,6] <- rep(0.05,28)
 
-LLlencomp <- 
-L50_mat <-
+LLlencomp <- read.csv("data/lf_17.csv",header=T)
+L50_mat <-65.1
+### calculate proportion by area below L50
+LF<-LLlencomp[LLlencomp$Sex==2,]
+mature_ratio<-data.frame(matrix(NA,ncol=6,nrow=(current-2000+1)))
+names(mature_ratio)<-c("AI","BS","CG","EY","WY","WG")
+mature_rpn<-mature_ratio
+for(i in 2000:current){
+lfy<-LF[LF$Year==i,]
+ltemp<-tapply(lfy$Frequency,list(lfy$Length..cm.,lfy$NPFMC.Sablefish.Mgmt.Area),sum)
+which(as.numeric(rownames(ltemp))<L50_mat)
+l_below<-ltemp[which(as.numeric(rownames(ltemp))<L50_mat),]
+l_above<-ltemp[which(as.numeric(rownames(ltemp))>L50_mat),]
+mature_ratio[i-1999,]<-colSums(l_above,na.rm=T)/colSums(l_below,na.rm=T)
+mature_rpn[i-1999,]<-colSums(l_above,na.rm=T)
+
+}
+### Use prior year in BS and AI (no smoothing or extrapolating)
+mature_ratio[which(is.nan(mature_ratio[,1])),1]<-mature_ratio[which(is.nan(mature_ratio[,1]))-1,1]
+mature_ratio[which(is.nan(mature_ratio[,2])),2]<-mature_ratio[which(is.nan(mature_ratio[,2]))+1,2]
+mature_rpn[which(mature_rpn[,1]==0),1]<-mature_rpn[which(mature_rpn[,1]==0)-1,1]
+mature_rpn[which(mature_rpn[,2]==0),2]<-mature_rpn[which(mature_rpn[,2]==0)+1,2]
+# Convert to proportion by area
+mature_ratio_p<-mature_ratio/rowSums(mature_ratio)
+mature_rpn_p<-mature_rpn/rowSums(mature_rpn)
+row.names(mature_ratio_p)<-seq(2000,2017)
+row.names(mature_rpn_p)<-seq(2000,2017)
+source("R/apportionment_bars.R")
+app_plot(mature_ratio_p,mature_rpn_p)
 ```
 
 
@@ -657,9 +684,10 @@ allone_EY <- data.frame(matrix(data=NA, ncol=6, nrow=14))
 RE <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for random effects method
 
 #holding place for ones that need to be added
-df14 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
+mature_appt <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
 df12 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
 
+source("R/Rapportionment_functions.r")
 #each apportionment option data frame within list
 for (i in 15:28) { 
  statusquo[i-14,] <- NPFMC_apportionment(ABC.total[i-14], n.areas, fish.dataT[1:(i-10),], biom.dataT[11:i,])
@@ -668,7 +696,14 @@ for (i in 15:28) {
  rownames(statusquo) <- c(seq(from=2005,to=2018,by=1))
  colnames(statusquo) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$statusquo <- statusquo
-
+ for (i in 5:18) { 
+   mature_appt[i-4,] <- expmaturerpn_apportionment(ABC.total[i-4], n.areas,mature_rpn_p[1:i,])
+   #NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,]) #bs ai wg cg wy ey
+ }
+ rownames(statusquo) <- c(seq(from=2005,to=2018,by=1))
+ colnames(statusquo) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$statusquo <- statusquo
+ 
 for (i in 15:28) {   
   static[i-14,] <- fixed_apportionment(ABC.total[i-14], n.areas, fixed_prop)
   #fixed_apportionment(ABC.total[14],n.areas,fixed_prop) 
