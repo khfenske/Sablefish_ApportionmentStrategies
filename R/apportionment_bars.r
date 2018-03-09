@@ -10,7 +10,7 @@ library(reshape2)
 mratio_l<-melt(mratio)
 mratio_l$Year<-rep(as.numeric(row.names(mratio)),6)
 names(mratio_l)<-c("Area","Proportion","Year")
-mratio_l$Proportion<-round(mratio_l$Proportion*100,0)
+mratio_l$Proportion<-round(mratio_l$Proportion*100,3)
 
 fill <- topo.colors(6)
 p4 <- ggplot() +
@@ -39,7 +39,7 @@ ggsave("ratio_allocation.png",width=7,height=5,dpi=300)
 mratio_l<-melt(mrpn)
 mratio_l$Year<-rep(as.numeric(row.names(mratio)),6)
 names(mratio_l)<-c("Area","Proportion","Year")
-mratio_l$Proportion<-round(mratio_l$Proportion*100,0)
+mratio_l$Proportion<-round(mratio_l$Proportion*100,3)
 
 fill <- topo.colors(6)
 p4 <- ggplot() +

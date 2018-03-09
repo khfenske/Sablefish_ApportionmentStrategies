@@ -212,6 +212,10 @@ mature_rpn[which(mature_rpn[,2]==0),2]<-mature_rpn[which(mature_rpn[,2]==0)+1,2]
 # Convert to proportion by area
 mature_ratio_p<-mature_ratio/rowSums(mature_ratio)
 mature_rpn_p<-mature_rpn/rowSums(mature_rpn)
+mature_ratio_p<-mature_ratio_p[,c(2,1,6,3,5,4)]
+mature_rpn_p<-mature_rpn_p[,c(2,1,6,3,5,4)]
+#colnames(mature_appt) <- c("BS","AI","WG","CG","WY","EY")
+
 row.names(mature_ratio_p)<-seq(2000,2017)
 row.names(mature_rpn_p)<-seq(2000,2017)
 source("R/apportionment_bars.R")
@@ -685,6 +689,7 @@ RE <- data.frame(matrix(data=NA, ncol=6, nrow=14)) #data frame for random effect
 
 #holding place for ones that need to be added
 mature_appt <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
+expmature_appt <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
 df12 <- data.frame(matrix(data=NA, ncol=6, nrow=14)) 
 
 source("R/Rapportionment_functions.r")
@@ -697,12 +702,19 @@ for (i in 15:28) {
  colnames(statusquo) <- c("BS","AI","WG","CG","WY","EY")
  apportionment_list$statusquo <- statusquo
  for (i in 5:18) { 
-   mature_appt[i-4,] <- expmaturerpn_apportionment(ABC.total[i-4], n.areas,mature_rpn_p[1:i,])
+   expmature_appt[i-4,] <- expmaturerpn_apportionment(ABC.total[i-4], n.areas,mature_rpn_p[1:i,])
    #NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,]) #bs ai wg cg wy ey
  }
- rownames(statusquo) <- c(seq(from=2005,to=2018,by=1))
- colnames(statusquo) <- c("BS","AI","WG","CG","WY","EY")
- apportionment_list$statusquo <- statusquo
+ rownames(expmature_appt) <- c(seq(from=2005,to=2018,by=1))
+ colnames(expmature_appt) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$expmature_appt <- expmature_appt
+ for (i in 5:18) { 
+   mature_appt[i-4,] <- maturerpn_apportionment(ABC.total[i-4], n.areas,mature_rpn_p[1:i,])
+   #NPFMC_apportionment(ABC.total[14], n.areas, fish.dataT[1:18,], biom.dataT[11:28,]) #bs ai wg cg wy ey
+ }
+ rownames(mature_appt) <- c(seq(from=2005,to=2018,by=1))
+ colnames(mature_appt) <- c("BS","AI","WG","CG","WY","EY")
+ apportionment_list$mature_appt <- mature_appt
  
 for (i in 15:28) {   
   static[i-14,] <- fixed_apportionment(ABC.total[i-14], n.areas, fixed_prop)
