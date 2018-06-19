@@ -106,6 +106,8 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
     ml[,a] <<- 1/(1+exp(-ml_par1*(la[,a]-ml_par2)))
   }
   
+  # Calculate Fecundity @ Age
+  
   # Extract: Natural Mortality Parameters ==============================================================
   in.mort <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Mortality')
   m <- as.numeric(in.mort[in.mort$Par=='m',(2:3)])
