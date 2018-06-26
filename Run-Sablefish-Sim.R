@@ -71,6 +71,9 @@ for(i in 1:n.sims) {
 
 # Forward Simulation =============================================================
 #Temporarily Assuming Single Area
+
+#Loop order: sim, year, area, age, sex.
+
 area <- 1
 
 i <- 1
