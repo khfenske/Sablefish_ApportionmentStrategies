@@ -33,9 +33,9 @@ calc_selectivity <- function(type=NULL, fleet=NULL) {
     stop(paste("type: '",type,"', must be of: 'surv' or 'fish'"))
   }
   if(type=='surv') {
-    if(! fleet %in% surv) { stop(paste("name: '", fleet, "' is not a recognized survey"))}
+    if(! fleet %in% surv) { stop(paste("name: '", fleet, "' is not a recognized survey")) }
   }else {
-    if(! fleet %in% fish) { stop(paste("name: '", fleet, "' is not a recognized fishery"))}
+    if(! fleet %in% fish) { stop(paste("name: '", fleet, "' is not a recognized fishery")) }
   }
   
   # Calculate Selectivity ==================================
