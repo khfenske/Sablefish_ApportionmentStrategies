@@ -7,7 +7,8 @@
 #
 #==================================================================================================
 #NOTES:
-#  a) 
+#  a) survey selectivity is not spatial
+#  b) fishery selectivity is spatial
 #
 #==================================================================================================
 
@@ -43,7 +44,7 @@ calc_selectivity <- function(type=NULL, fleet=NULL) {
     #Get select type
     temp.selex.type <- selex.surv.type$Type[selex.surv.type$Fleet==fleet]
     #Create output object
-    output <- array(dim=c(n.sex,n.age), dimnames=list(sexes,ages))
+    output <- array(dim=c(n.sex,n.age), dimnames=list(sexes,ages)) 
     #Calculate Selex
     if(temp.selex.type=='logistic') {
       #Female

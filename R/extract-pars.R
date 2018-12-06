@@ -34,12 +34,12 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   # Extract: General Demographic Parameters ==============================================================
   in.general <- read.xlsx(file=file.path(dir.data, input.file), sheetName='General')
   n.age <<- as.numeric(in.general$Value[in.general$Par=='n.age'])
-  ages <<- 1:n.age 
-  n.sex <<- as.numeric(in.general$Value[in.general$Par=='n.sex'])
+  ages <<- 1:n.age #ages
+  n.sex <<- as.numeric(in.general$Value[in.general$Par=='n.sex']) 
   age.rec <<- as.numeric(in.general$Value[in.general$Par=='age.rec'])
   A <<- as.numeric(in.general$Value[in.general$Par=='A']) #Plus Age
   n.area <<- as.numeric(in.general$Value[in.general$Par=='n.area']) #Number of Areas
-  
+  areas <<- 1:n.area #areas
 
   
   # Extract: Simulation Parameters ==============================================================
