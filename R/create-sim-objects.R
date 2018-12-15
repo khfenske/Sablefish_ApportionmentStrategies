@@ -20,6 +20,8 @@ create_sim_objects <- function() {
   
   B <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Biomass (pounds)
   N <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Numbers
+  B_temp <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Biomass (pounds) - temp holding for movement
+  N_temp<<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Numbers   - temp holding place for movement
   C.b <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Catch (lbs)
   C.n <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Catch (number)
   harvest.b <<- array(dim=c(n.sex, n.year, n.age, n.fish, n.area, n.sims), dimnames=list(sexes, years, ages, fish, areas, sims))  #Harvest (lbs) by fish type
@@ -40,9 +42,9 @@ create_sim_objects <- function() {
 
   #Assessment data inputs
   # longline survey RPN, 'current' year, for 6 areas then combine to 3
-  Surv.RPN <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #longline survey RPN
+  Surv.RPN <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) 
   # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 3
-  Fish.RPW <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #fixed gear fishery RPW
+  Fish.RPW <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) 
   # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 3, single sex
   Fish.AC <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims))
   # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex

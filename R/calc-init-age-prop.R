@@ -17,14 +17,14 @@ calc_init_age_prop <- function(bo) {
     if(a==1) {
       init.prop[,a,m] <- bo#*mx[,a]
     }else {
-      init.prop[,a,m] <- bo*exp(-(a-1)*mx[,a]) 
+      init.prop[,a,m] <- bo*exp(-(a-1)*mx[,a]) #mx is mortality at age
     }
     if(a==A) {
       init.prop[,a,m] <- init.prop[,a,m]/(1-exp(-mx[,a]))
     }
   } #close age
-  init.prop[,,m] <- init.prop[,,m] * wa
-  init.prop[,,m] <- init.prop[,,m]/sum(init.prop[,,m])
+  #init.prop[,,m] <- init.prop[,,m] * wa  
+  init.prop[,,m] <- init.prop[,,m]/sum(init.prop[,,m]) #proportion of numbers at age for each area
   } #close area  
 
   #Multiply by spawning sbpr @ age

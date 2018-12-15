@@ -14,7 +14,6 @@ sample_age_comps <- function(true.props, Nsamp, cpar=NULL) {
   
   #Initial Checking
   
-  
   # cpar - A value of 1 indicates the same standard deviation as a multinomial of the given Nsamp, 2 indicates twice, etc. Values greater than one indicate overdispersion, and less underdispersion.
   
   cpar <- 2

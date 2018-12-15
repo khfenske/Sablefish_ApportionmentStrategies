@@ -35,19 +35,37 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   in.general <- read.xlsx(file=file.path(dir.data, input.file), sheetName='General')
   n.age <<- as.numeric(in.general$Value[in.general$Par=='n.age'])
   ages <<- 1:n.age #ages
-  n.sex <<- as.numeric(in.general$Value[in.general$Par=='n.sex']) 
   age.rec <<- as.numeric(in.general$Value[in.general$Par=='age.rec'])
+  n.sex <<- as.numeric(in.general$Value[in.general$Par=='n.sex']) 
   A <<- as.numeric(in.general$Value[in.general$Par=='A']) #Plus Age
   n.area <<- as.numeric(in.general$Value[in.general$Par=='n.area']) #Number of Areas
   areas <<- 1:n.area #areas
-
-  
+  n.length <<- as.numeric(in.general$Value[in.general$Par=="n.length"]) #number of length bins
+  first.len <<- as.numeric(in.general$Value[in.general$Par=="first.len"]) #smalled length bin size
+  len.incr <<- as.numeric(in.general$Value[in.general$Par=="len.incr"]) #increment for length bins (e.g. '2' for odd or even size bins)
+  len <<- as.numeric(c(seq(from=first.len,length.out=n.length,by=len.incr)))
+  move.type <<-as.numeric(in.general$Value[in.general$Par=="move.type"]) # indicator for dimensions of movement data (currently only 1 is operational or defined)
+   
   # Extract: Simulation Parameters ==============================================================
   in.sim <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Sim')
   n.year <<- as.numeric(in.sim$Value[in.sim$Par=='n.year'])
   years <<- 1:n.year
   Bstart <<- as.numeric(in.sim$Value[in.sim$Par=='Bstart'])
   n.sims <<- as.numeric(in.sim$Value[in.sim$Par=='n.sims'])
+  
+  # Extract: Init_pop values
+  #these are the 1979 numbers at age for each area, sex
+  #for sablefish, ages 2-31 are modeled (and entered), but the model indexes these as ages 1-30
+  in.init_pop <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_pop')
+  init_year_N <<- as.data.frame(in.init_pop)
+  #this reads in the recruitment values to seed our initial population (1979-2018), values from 2018 SAFE
+  in.init_pop_Rec <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_pop_Rec')
+  init_pop_rec <<- as.data.frame(in.init_pop_Rec)
+  #this reads in the catch history for 1979-2018, will be used to estimate F rates to set up initial pop
+  #note that currently the 2018 catch is probably estimated and not the complete catch total
+  in.init_pop_catch <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_pop_Catch')
+  init_pop_catch <<- as.data.frame(in.init_pop_catch)
+  
   
   # Extract: Growth Parameters ==============================================================
   in.growth <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Growth')
@@ -59,8 +77,7 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   sexes <<- names(in.growth)[2:3] # Error here
   
   la <<- array(dim=c(n.sex, n.age), dimnames=list(sexes,c(1:n.age))) #Length @ Age
-  
-  # alpha <- as.numeric(in.growth[in.growth$Par=='a',(2:3)])
+    # alpha <- as.numeric(in.growth[in.growth$Par=='a',(2:3)])
   # beta <- as.numeric(in.growth[in.growth$Par=='b',(2:3)])
   ln_wa_par1 <- as.numeric(in.growth[in.growth$Par=='ln_wa_par1',(2:3)])
   ln_wa_par2 <- as.numeric(in.growth[in.growth$Par=='ln_wa_par2',(2:3)])
@@ -78,7 +95,6 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
     wa[,a] <<- exp(ln.wa[,a])
   }
   
-
   
   # Extract: Maturity Parameters ==============================================================
   #Note: This should be updated to take maturity parameters
@@ -92,7 +108,7 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   ml_par1 <- as.numeric(in.mature[in.mature$Par=='ml_par1',(2:3)]) #Location parameter
   ml_par2 <- as.numeric(in.mature[in.mature$Par=='ml_par2',(2:3)]) #Scale parameter
   
-  #Calculate Maturity @ Length
+  #Calculate Maturity @ Length  THIS SHOULD BE AGE NOT LENGTH??
   ml <<- array(dim=c(n.sex, n.age), dimnames=list(sexes, c(1:n.age)))  
   
   s <- 1
@@ -101,7 +117,7 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
     ma[s,] <<- 1/(1+exp(-ghat[s]*(ages - ahat[s]))) #Sablefish 2017 Assessment
   }#next s
   
-  a <- 1
+  a <- 1  #is this converting from age to length?
   for(a in 1:n.age) {
     ml[,a] <<- 1/(1+exp(-ml_par1*(la[,a]-ml_par2)))
   }
@@ -201,6 +217,11 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   catchability <<- list() 
   catchability$survey <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='qSurvey')
   catchability$fishery <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='qFishery')
-}
+  
+  #Movement
+  in.movement <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='Movement')
+    phi <<- as.matrix(in.movement) #should I have better labels on these columns and rows?
+} #closes function
+
 
 # extract_pars(input.file="Sablefish_Input.xlsx")
