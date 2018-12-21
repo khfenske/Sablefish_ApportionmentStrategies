@@ -85,10 +85,11 @@ if(move.type!=1) {stop("#### You screwed up move.type must equal 1")}
 #2018 will be 'fished' (and sampled?) using Dana's adjusted F max
 #Once the initial pop and .dat files look good, we run the 
 #Kari working on this function...
+# currently, it is NOT WORKING
 
-init_population <- init_pop(init_year_N, init_pop_rec, init_pop_catch, selex$fish$USfixed_postIFQ, selex$fish$USTrawl)
+#init_population <- calc_init_pop(init_year_N, init_pop_rec, init_rec_proportion, selex$fish$USfixed_postIFQ, selex$fish$USTrawl, wa)
 
-sample the init population and create the .dat file history for 1979-2018 using the functions for sampling...
+#sample the init population and create the .dat file history for 1979-2018 using the functions for sampling...
 
 
 # this code/function (below) will change, but leaving it in for now because it runs
@@ -251,8 +252,8 @@ for(i in 1:n.sims) {
       ##### 'sample' the N and B for survey and fishery abundance indices, comps
       #do we want to read in a vector of seeds that will be applied to all years and sims for consistency?
       #do these functions need to be in the same folder as the rest of the functions?
-      Srv.RPN <- sample_num(N, sigma=0.2, type='lognorm', seed=134) # longline survey RPN
-      Fish.RPW <- sample_biom(B, sigma=0.2, type='lognorm', seed=134)  #fixed gear fishery RPW
+      #Srv.RPN <- sample_num(N, sigma=0.2, type='lognorm', seed=134) # longline survey RPN
+      #Fish.RPW <- sample_biom(B, sigma=0.2, type='lognorm', seed=134)  #fixed gear fishery RPW
       #Fish.AC <- sample_LLfish_AC()  #longline/fixed gear fishery age comps
       #Surv.AC <-  sample_LLsurv_AC() #longline survey age comps
       #nope, not gonna use for now #Fxfish.LC <-  #longline/fixed gear fishery length comps

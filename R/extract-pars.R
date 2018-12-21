@@ -59,12 +59,20 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   in.init_pop <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_pop')
   init_year_N <<- as.data.frame(in.init_pop)
   #this reads in the recruitment values to seed our initial population (1979-2018), values from 2018 SAFE
-  in.init_pop_Rec <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_pop_Rec')
+  in.init_pop_Rec <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_pop_Rec', rowIndex=c(1:41),colIndex=c(1:2))
   init_pop_rec <<- as.data.frame(in.init_pop_Rec)
+  #this reads in the proportion of recruits by area, using the proportion of 2 years olds by area from the survey
+  in.init_rec_prop <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_rec_prop',rowIndex=c(1:2),colIndex = c(1:6))
+  init_rec_proportion <<- as.data.frame(in.init_rec_prop)
   #this reads in the catch history for 1979-2018, will be used to estimate F rates to set up initial pop
   #note that currently the 2018 catch is probably estimated and not the complete catch total
+  #catch by area for 1991 onward is from AKFIN and MAY BE CONFIDENTIAL!!!!*********
+  #catch by area for 1979-1990 is based on 1991 onward catch by area proportions, applied to total catch for those early years
   in.init_pop_catch <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_pop_Catch')
   init_pop_catch <<- as.data.frame(in.init_pop_catch)
+  #mean age comps from fishery over years 1991-2014 for 3 areas BSAIWG, CG, EG. 
+  #in.init_fishAC <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='Init_fishAC')
+  #init_fishAC <<- as.data.frame(in.init_fishAC)
   
   
   # Extract: Growth Parameters ==============================================================
