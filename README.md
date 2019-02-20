@@ -27,7 +27,9 @@ sigma_rec         | Log recruitment standard deviation ($/sigma$) | 1.2
 
 Name              | Description                       | Dimensions
 ------------------|-----------------------------------|----------------------------------
-ages              | Vector - Age classes              | 1:30
+ages              | Vector - Age classes              | `r [1:n.age] [1:30]`
+years             | Vector - Year identifiers         | `r [1:n.years] [1:50]`
+
 
 ### Lists
 
