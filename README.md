@@ -35,10 +35,11 @@ Values are **fixed**.
 Name              | Description                       | Dimensions
 ------------------|-----------------------------------|----------------------------------
 ages              | Vector - Age classes              | `[1:n.age]`
+len               | Vector - Length bins              | `[1:n.length]`
 years             | Vector - Year identifiers         | `[1:n.years]`
 surv              | Vector of factors - Survey Names  | `[1:n.surv]`
 fish              | Vector of factors - Fishery Names | `[1:n.fish]`
-la *error!*                | Matrix - Length @ Age             | `[1:n.sex, 1:n.age]` - Should be length bins
+la                | Matrix - Length @ Age             | `[1:n.sex, 1:n.age]`
 ln.wa             | Matrix - ln(Weight @ Age)         | `[1:n.sex, 1:n.age]`
 wa                | Matrix - Weight @ Age             | `[1:n.sex, 1:n.age]`
 ma                | Matrix - Maturity @ Age           | `[1:n.sex, 1:n.age]`
