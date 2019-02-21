@@ -7,7 +7,8 @@ sablefish apportionment strategy evaluation and general Alaska MSE framework.
 
 ## Values
 
-Input data to OM, values are **fixed**.
+### Input data to OM
+Values are **fixed**.
 
 Name              | Description                       | Value
 ------------------|-----------------------------------|-------------------
