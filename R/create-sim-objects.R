@@ -34,8 +34,10 @@ create_sim_objects <- function() {
   surv <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims))
   mort <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims))
   
+  
+  #Female spawning-stock biomass
+  ssb <<- array(dim=c(n.sex, n.age, n.year, n.area, n.sims), dimnames=list(sexes, ages, years, areas, sims)) 
   #Recruitment
-  ssb <<- array(dim=c(n.sex, n.age, n.year, n.area, n.sims), dimnames=list(sexes, ages, years, areas, sims)) #Female spawning-stock biomass
   rec <<- array(dim=c(n.sex, n.year, n.area, n.sims), dimnames=list(sexes, years, areas, sims))
 
   #Assessment data inputs
