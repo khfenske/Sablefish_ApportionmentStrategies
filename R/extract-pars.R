@@ -40,7 +40,7 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   A <<- as.numeric(in.general$Value[in.general$Par=='A']) #Plus Age
   n.area <<- as.numeric(in.general$Value[in.general$Par=='n.area']) #Number of Areas
   areas <<- 1:n.area #areas
-
+  n.length <<- as.numeric(in.general$Value[in.general$Par=='n.length'])
   
   # Extract: Simulation Parameters ==============================================================
   in.sim <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Sim')
@@ -88,23 +88,29 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   
   #Calculate Maturity @ Age
   ma <<- array(dim=c(n.sex, n.age), dimnames=list(sexes, c(1:n.age)))  
-  
-  ml_par1 <- as.numeric(in.mature[in.mature$Par=='ml_par1',(2:3)]) #Location parameter
-  ml_par2 <- as.numeric(in.mature[in.mature$Par=='ml_par2',(2:3)]) #Scale parameter
-  
-  #Calculate Maturity @ Length
-  ml <<- array(dim=c(n.sex, n.age), dimnames=list(sexes, c(1:n.age)))  
-  
   s <- 1
   for(s in 1:n.sex) {
     # Ma[,s] <- 1/(1+exp(-(ages - ahat[s])/ghat[s]) #Halibut Model
     ma[s,] <<- 1/(1+exp(-ghat[s]*(ages - ahat[s]))) #Sablefish 2017 Assessment
   }#next s
   
-  a <- 1
-  for(a in 1:n.age) {
-    ml[,a] <<- 1/(1+exp(-ml_par1*(la[,a]-ml_par2)))
-  }
+  # Extract: Length Bins and Maturity @ Length ================================================
+  #Length bins
+  lengths <<- as.vector(read.xlsx(file=file.path(dir.data, input.file), sheetName='Length_Bins'))
+  if(length(lengths)!=n.length) { stop("Number of length bins in consistent with input bins")}
+  
+  # ml_par1 <- as.numeric(in.mature[in.mature$Par=='ml_par1',(2:3)]) #Location parameter
+  # ml_par2 <- as.numeric(in.mature[in.mature$Par=='ml_par2',(2:3)]) #Scale parameter
+  
+  #Calculate Maturity @ Length
+  # ml <<- array(dim=c(n.sex, n.length), dimnames=list(sexes, lengths))  
+  
+  # l <- 1
+  # for(l in 1:n.length) {
+  #   ml[,l] <<- 1/(1+exp(-ml_par1*(lengths[,l]-ml_par2)))
+  # }
+  
+  #Use Length bins
   
   # Calculate Fecundity @ Age
   
