@@ -96,8 +96,11 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   
   # Extract: Length Bins and Maturity @ Length ================================================
   #Length bins
-  lengths <<- as.vector(read.xlsx(file=file.path(dir.data, input.file), sheetName='Length_Bins'))
-  if(length(lengths)!=n.length) { stop("Number of length bins in consistent with input bins")}
+  in.lengths <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Length_Bins', header = FALSE)
+  len <<- as.vector(in.lengths[,1])
+  # length.bins[1:n.length] <<- as.vector(in.lengths[,1]) #ERROR HERE!!!
+  # lengths <<- lengths
+  if(length(len)!=n.length) { stop("Number of length bins in consistent with input bins")}
   
   # ml_par1 <- as.numeric(in.mature[in.mature$Par=='ml_par1',(2:3)]) #Location parameter
   # ml_par2 <- as.numeric(in.mature[in.mature$Par=='ml_par2',(2:3)]) #Scale parameter
