@@ -23,8 +23,12 @@ dir.R <- file.path(wd,"R")
 # Source Necessary Files =========================================
 source(file.path(dir.R,'extract-pars.R'))
 source(file.path(dir.R,'calc-selectivity.R'))
-source(file.path(dir.R,'create-sim-objects.R'))
 source(file.path(dir.R,'calc-init-age-prop.R'))
+
+source(file.path(dir.R,'create-sim-objects.R'))
+source(file.path(dir.R,'create-sim-recruitments.R'))
+
+source(file.path(dir.R,'spatial-rec.R'))
 
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
