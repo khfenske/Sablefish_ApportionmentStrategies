@@ -26,9 +26,9 @@ source(file.path(dir.R,'calc-selectivity.R'))
 source(file.path(dir.R,'calc-init-age-prop.R'))
 
 source(file.path(dir.R,'create-sim-objects.R'))
-source(file.path(dir.R,'create-sim-recruitments.R'))
+source(file.path(dir.R,'create-sim-recruitments.R')) #Simulate Recruitment across years and sims
 
-source(file.path(dir.R,'spatial-rec.R'))
+source(file.path(dir.R,'spatial-rec.R')) #Apportion Recruitment Among Regions
 
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
@@ -61,6 +61,10 @@ for(i in 1:n.fish) {
 # Create Simulation Objects =======================================
 #NOTE: Currently calculates data for n areas, where n is defined in the input spreadsheet (n.areas)  
 create_sim_objects() #sets up all the spatial arrays to hold simulated data
+
+# Simualte Annual Recruitments ====================================
+create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL, 
+                        n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object
 
 # Initialize Population (year 1, or change to years 1-X) =============================================================
 #   Should probably update to start from FISHED equilibrium (and spatially mixed equilibrium??) or set to stable distribution of movement proportions...
