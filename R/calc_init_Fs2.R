@@ -9,8 +9,8 @@
 #obs_catch <- init_pop_catch[y,]
 #init_pop2 <- init_pop[,y,,]
 #wt_at_age <- wa
-#ixed_fish_selex <- selex$fish$USfixed_postIFQ
-#rawl_fish_selex <- selex$fish$USTrawl
+#fixed_fish_selex <- selex$fish$USfixed_postIFQ
+#trawl_fish_selex <- selex$fish$USTrawl
 #y=1
 #a=1
 #m=1
@@ -25,7 +25,7 @@ get_F<-function(Fa){ #<-fix inputs
   obs_catch <- init_pop_catch[y,m]
   init_pop2 <- init_pop[,y,,m]
   fratio2 <- fratio[m]
-  Fa <<- numeric(length=1)
+  Fa <- numeric(length=1)
   #wt_at_age <- wa
   fixed_fish_selex2 <- selex$fish$USfixed_postIFQ[m,,]
   trawl_fish_selex2 <- selex$fish$USTrawl[m,,]

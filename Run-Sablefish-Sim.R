@@ -87,7 +87,7 @@ if(move.type!=1) {stop("#### You screwed up move.type must equal 1")}
 #Kari working on this function...
 # currently, it is NOT WORKING
 
-#init_population <- calc_init_pop(init_year_N, init_pop_rec, init_rec_proportion, selex$fish$USfixed_postIFQ, selex$fish$USTrawl, wa)
+init_population <- calc_init_pop(init_year_N, init_pop_rec, init_rec_proportion, selex$fish$USfixed_postIFQ, selex$fish$USTrawl, wa)
 
 #sample the init population and create the .dat file history for 1979-2018 using the functions for sampling...
 
