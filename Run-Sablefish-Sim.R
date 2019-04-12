@@ -30,6 +30,9 @@ source(file.path(dir.R,'create-sim-recruitments.R')) #Simulate Recruitment acros
 
 source(file.path(dir.R,'spatial-rec.R')) #Apportion Recruitment Among Regions
 
+source(file.path(dir.R,'convert-Fmort2catch.R')) #Calculate total catch from F
+source(file.path(dir.R,'estimate-Fmort4catch.R')) #Estimate F that provides for a given catch
+
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
 
@@ -92,6 +95,8 @@ for(i in 1:n.sims) {
   y <- 2  
   for(y in 2:n.year) {
     
+    
+    
     m <- 1
     for (m in 1:n.area) {
     #Initial Recruitment (<- is this a bad section name? I don't understand why it's called this)
@@ -99,7 +104,9 @@ for(i in 1:n.sims) {
 
     #HARVEST CONTROL RULE
     temp.ssb <- sum(ssb[,,y-1,m,i]) #presumably this needs an actual HCR coded in??  Also, why is this here and not somewhere else?
+    
     # need to get an F to use for below
+    
     f <- 1
     for(f in 1:n.fish) {
       Fmort[f,y,m,i] <- 0.1#HCR_linear(curr.SSB=temp.ssb, SSB0=SSB0, floor.F=floors[g], ceiling.F=ceilings[g], 
