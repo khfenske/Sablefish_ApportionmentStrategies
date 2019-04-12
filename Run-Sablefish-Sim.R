@@ -109,6 +109,22 @@ for(i in 1:n.sims) {
     
     f <- 1
     for(f in 1:n.fish) {
+      # UPDATE: Instead of setting a fixed F, we can now set a fixed catch
+      #  biomass and find the F for the specific fishery
+      #   that will match that catch
+      
+      # Here lets specify an arbitrary fixed catch (kg)
+      catch <- 1e6 # 1 million kg.
+      
+      # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------
+      temp.Fmort <- estimate_Fmort4catch(catch=catch, 
+                                           temp.selex=va[f,area,,],
+                                           temp.N=N[,y-1,,m,i], 
+                                           wa=wa, mx=mx, 
+                                           bisection=TRUE)$Fmort
+      
+      
+      
       Fmort[f,y,m,i] <- 0.1#HCR_linear(curr.SSB=temp.ssb, SSB0=SSB0, floor.F=floors[g], ceiling.F=ceilings[g], 
                                  # ascent.range=ascent.range, plot=FALSE)
     }#next g (g for gear?)
