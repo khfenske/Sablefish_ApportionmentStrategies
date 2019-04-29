@@ -38,14 +38,14 @@ convert_Fmort2catch <- function(Fmort, temp.selex, temp.N, wa=wa, mx=mx) {
   # catch_at_age/temp.N
   
   #Calc total catch (in Kg)
-  catch <- sum(C_at_age)
+  catch <- sum(C_at_age*wa)
   return(catch)
 }
 
 
 # TESTING ==========================
-# temp.area <- 1
-# convert_Fmort2catch(Fmort=0.2, temp.selex=selex$fish$USfixed_postIFQ[temp.area,,],
-#                     temp.N=N[,y-1,,temp.area,i],
-#                     wa=wa, mx=mx)
+temp.area <- 1
+convert_Fmort2catch(Fmort=0.2, temp.selex=selex$fish$USfixed_postIFQ[temp.area,,],
+                    temp.N=N[,y-1,,temp.area,i],
+                    wa=wa, mx=mx)
   
