@@ -72,14 +72,14 @@ sim_plot_NatAge <- function(sim_N_data) {
     theme_bw(base_size=13)+ggtitle("Proportion Numbers by area all year")+
     scale_y_continuous(labels = scales::percent)
   ggsave("Numbers_area_prop_allyear.png",width=8,height=5,dpi=325, path=dir.output)
-  
-  b5<-b2 %>% group_by(Year,Area,Sim) 
-  b5<-b5 %>%  filter(Age==1)
-  b5$Year<-as.factor(b5$Year)
-  b5$Area<-as.factor(b5$Area)
-  ggplot(b5) + 
-    geom_boxplot(aes(x=Year,y=Numbers,fill=Area)) +
-    theme_bw(base_size=13) + ggtitle("Numbers at age 1") +
-    scale_y_log10(waiver())
-  ggsave("Number_at_age1_area", width=8,height=5,dpi=325,path=dir.output) #not sure why this one won't print
+  #the graph below isn't currently functioning, needs work, commented out for now
+  #b5<-b2 %>% group_by(Year,Area,Sim) 
+  #b5<-b5 %>%  filter(Age==1)
+  #b5$Year<-as.factor(b5$Year)
+  #b5$Area<-as.factor(b5$Area)
+  #ggplot(b5) + 
+   # geom_boxplot(aes(x=Year,y=Numbers,fill=Area)) +
+  #  theme_bw(base_size=13) + ggtitle("Numbers at age 1") +
+  #  scale_y_log10(waiver())
+  #ggsave("Number_at_age1_area", width=8,height=5,dpi=325,path=dir.output) #not sure why this one won't print
 }  
