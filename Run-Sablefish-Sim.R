@@ -65,9 +65,16 @@ for(i in 1:n.fish) {
 #NOTE: Currently calculates data for n areas, where n is defined in the input spreadsheet (n.areas)  
 create_sim_objects() #sets up all the spatial arrays to hold simulated data
 
-# Simualte Annual Recruitments ====================================
+# Simulate Annual Recruitments ====================================
 create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL, 
                         n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object
+
+# divide annual recruitments into areas 
+for(i in 1:n.sims){
+for(y in 1:n.year){
+  recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=c(1,1,1,1,1,1), ss=100, seed=1)      # this needs thought about sex distribution of recruitment.
+}}
+
 
 # Initialize Population (year 1, or change to years 1-X) =============================================================
 #   Should probably update to start from FISHED equilibrium (and spatially mixed equilibrium??) or set to stable distribution of movement proportions...
@@ -132,7 +139,7 @@ for(i in 1:n.sims) {
     #No Recruitment relationship  Can we change this so it reads in a rec value from a separate file which draws N simulations * N years worth of rec values all 
     # at once so the same recruitment can be applied to single and spatial models? Could make it so that if SSB is 0, 0 rec is used instead so we 
     # don't spontaneously generate fish if the pop crashes.
-    rec[,y-1,m,i] <- 0.5 * exp(mu_rec*(1+mx[,1]) + rnorm(1, 0, sigma_rec)) #Note this has the addition to account for assessment model predicting recruitment to age 2. 
+    #rec[,y-1,m,i] <- 0.5 * exp(mu_rec*(1+mx[,1]) + rnorm(1, 0, sigma_rec)) #Note this has the addition to account for assessment model predicting recruitment to age 2. 
     
     #Ricker
     # rec[,y-1] <- 0.5 * ricker_recruit(ssb[y-1], steep, bo)
@@ -167,8 +174,8 @@ for(i in 1:n.sims) {
     for(a in 1:n.age) {
       #Update Numbers and Biomass Matrix
       if(a==1) { #Age-1
-        N[,y,a,m,i] <- rec[,y-1,m,i]
-        B[,y,a,m,i] <- rec[,y-1,m,i]*wa[,a]
+        N[,y,a,m,i] <- recruits.area[y-1,m,i]
+        B[,y,a,m,i] <- recruits.area[y-1,m,i]*wa[,a]
         # N[,y,a] <- rec[,y-1]/wa[,a]
         # B[,y,a] <- rec[,y-1]
         

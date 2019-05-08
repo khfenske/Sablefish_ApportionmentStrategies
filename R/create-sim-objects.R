@@ -38,8 +38,9 @@ create_sim_objects <- function() {
   #Female spawning-stock biomass
   ssb <<- array(dim=c(n.sex, n.age, n.year, n.area, n.sims), dimnames=list(sexes, ages, years, areas, sims)) 
   #Recruitment
-  rec <<- array(dim=c(n.sex, n.year, n.area, n.sims), dimnames=list(sexes, years, areas, sims))
-
+  #rec <<- array(dim=c(n.sex, n.year, n.area, n.sims), dimnames=list(sexes, years, areas, sims))
+  recruits.area <<- array(dim=c(n.year, n.area, n.sims), dimnames=list(years, areas, sims))
+  
   #Assessment data inputs
   # longline survey RPN, 'current' year, for 6 areas then combine to 3
   Surv.RPN <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #longline survey RPN
