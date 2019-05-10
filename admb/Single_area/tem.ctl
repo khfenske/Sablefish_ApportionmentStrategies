@@ -52,11 +52,11 @@ tem_single2015.dat
 7.3     #weight for fishery age comps fish1_age 1
 8     #weight for survey age compositions srv1_age 1
 0     #weight for survey age comps srv2_age 1
-14     # wt_fish1_size          // Weight for fishery size compositions
-12     # wt_srv1_size           // Weight for survey size compostiions
+0 #14     # wt_fish1_size          // Weight for fishery size compositions
+0 #12     # wt_srv1_size           // Weight for survey size compostiions
 0     # wt_fish2_size       // weight for ?? size comps DON'T NEED THIS ONE
-10.5     # wt_srv2_size        // weight for ?? THIS WAS 1, I MADE IT 0
-3.5   # wt_fish3_size       // weight f
+0 #10.5     # wt_srv2_size        // weight for ?? THIS WAS 1, I MADE IT 0
+0 #3.5   # wt_fish3_size       // weight f
 0     # wt_fish4_size       // DON'T NEED THIS ONE
 0     #wt_srv5              //
 0     #wt_fish6             // WHAT IS FISH6??
