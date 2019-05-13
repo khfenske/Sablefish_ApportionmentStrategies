@@ -2,14 +2,14 @@
 #'
 #' @param true.values Vector of true abundance or biomass.
 #' @param sigma Standard deviation of observationr error.
-#' @param type Functional form of observation error, one of: 'lognorm', 'norm', or 'pois'. Opptions are log-normal, normal, Poisson.
+#' @param type Functional form of observation error, one of: 'lognorm', 'norm', or 'pois'. Options are log-normal, normal, Poisson.
 #' @param seed When specified the seed dictates consistent random number generation, for use across replicate simulations.
 #'
 #' @return Observed time series of abundance or biomass with randomly distributed error
 #' @export
 #'
 #' @examples
-sample_biom_abund <- function(true.values, sigma=NULL, type='lognorm', seed=NULL) {
+sample_biom_abund <- function(true.values, sigma, type, seed) {
   #Checking for inputs
   if(type %in% c('lognorm', 'norm', 'pois')) { stop("Please specify type as one of: lognorm, norm, or poisson.") }
   if(is.null(sigma) & type%in%c('lognorm','norm')) { stop("Please specify a level of observation error, as either a CV or sigma.") }
@@ -31,3 +31,8 @@ sample_biom_abund <- function(true.values, sigma=NULL, type='lognorm', seed=NULL
   
   return(obs.values)
 }
+
+##testing
+#true.values = c(10000, 10000, 10000)
+#sigma=0.2
+#sample_biom_abund(100,sigma=0.2,type='pois',seed=NULL)

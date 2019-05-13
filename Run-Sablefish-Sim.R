@@ -33,6 +33,8 @@ source(file.path(dir.R,'spatial-rec.R')) #Apportion Recruitment Among Regions
 source(file.path(dir.R,'convert-Fmort2catch.R')) #Calculate total catch from F
 source(file.path(dir.R,'estimate-Fmort4catch.R')) #Estimate F that provides for a given catch
 
+source(file.path(dir.R,'sample-biom-abund.R')) #sample biomass/numbers of OM population
+
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
 
@@ -102,12 +104,13 @@ for(i in 1:n.sims) {
   
   y <- 2  
   for(y in 2:n.year) {
+    # somewhere up here, set a bunch of seeds...
     
     m <- 1
     for (m in 1:n.area) {
      
     # Forward Simulation =============================================================
-    # Temporarily Assuming no movement, need to add that in 
+    # Temporarily Assuming no movement, need to add that in in the future
       
     #take most recent assessment and outputted ABC apportionment and calculate F 
     #apply F from the most recent "REAL" stock assessment (spatial model) to OM population (assume perfect execution)- update B, N, SSB
@@ -118,10 +121,11 @@ for(i in 1:n.sims) {
       #  biomass and find the F for the specific fishery
       #   that will match that catch
       
-      # Here lets specify an arbitrary fixed catch (kg) -- will need to eventually read it in 
+      # Here lets specify an arbitrary fixed catch (kg) -- will need to eventually read it in for the first year here (based on the most recent assessment 
+      #and harvest control rule output)...future year's catch will come from the EM/projectiom model and apportionment application, so this section still needs work
       catch <- 1e6 # 1 million kg.
       
-      # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------
+      # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------  #right now F is a single value - probably need to have spatial F?
       temp.Fmort <- estimate_Fmort4catch(catch=catch, 
                                            temp.selex=va[f,area,,],
                                            temp.N=N[,y-1,,m,i], 
@@ -129,7 +133,7 @@ for(i in 1:n.sims) {
                                            bisection=TRUE)$Fmort
       Fmort[f,y,m,i] <- temp.Fmort  #0.1#HCR_linear(curr.SSB=temp.ssb, SSB0=SSB0, floor.F=floors[g], ceiling.F=ceilings[g], 
                                  # ascent.range=ascent.range, plot=FALSE)
-    }#next g (g for gear?)
+    }#next g 
         
     a <- 1
     for(a in 1:n.age) {
@@ -140,7 +144,7 @@ for(i in 1:n.sims) {
         # N[,y,a] <- rec[,y-1]/wa[,a]
         # B[,y,a] <- rec[,y-1]
         
-        ## add movement for age 1 here? ##
+        ## add movement for age 1 here ##
       }else {
         h <- 1
         for(h in 1:n.sex) {
@@ -171,6 +175,7 @@ for(i in 1:n.sims) {
             harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
           }#next gear
         }#next sex
+        ## add movement for ages 
       }
       
       if(a==A) {
@@ -202,39 +207,58 @@ for(i in 1:n.sims) {
             harvest.b[h,y-1,a,f,m,i] <- harvest.n[h,y-1,a,f,m,i] * wa[h,a]
           }#next gear
         }#next sex
+        #add movement for plus group here
       }# If plus age group
       
     }#next age  
     
-    #calculate SSB for OM pop
+    #calculate SSB for OM pop  #maybe the year itentifier is wrong?
     ssb[,,y-1,m,i] <- ma*wa*N[,y-1,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
     
     } #next area
     
     ######Sample population for age comps, survey index, etc. 
-    # Generate Assessment Data:
-    # insert that code here for: where do these go?  how to sample for these and add error?
-    # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 (or how do we want to do this so it reads into a single area and a spatial model?)
-    # longline survey RPN, 'current' year, for 6 areas then combine to 3
-    # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 3
-    # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 3, single sex
-    # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex
-    # longline/fixed gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
-    # trawl gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
-    # longline survey length comps, 'current' year, for 6 areas then combine to 3, two sexes
+    #m <- 1 #maybe don't need all these loops
+    #for (m in 1:n.area) {
+      #a <- 1
+      #for(a in 1:n.age) {
+        #h <- 1
+        #for(h in 1:n.sex) {
+        ##### Generate Assessment Data: ######
+        # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
+          #write a function that makes it easy to specify (by area) the yield ratio
+      
+        # longline survey RPN, 'current' year, for 6 areas then combine to 1
+        Surv.RPN[,y,,m,i] <- sample_biom_abund(atest,sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
+        #(we'd talked about concatonating 'sim # + year' for seed)
+      
+        # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 1
+        Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
+        
+        # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 1, single sex
+        Fish.AC[,y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
+        
+        # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex
+        Surv.AC[,y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
+        
+        #### NOTE - not doing length comps for now ####
+        ## longline/fixed gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
+        ## trawl gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
+        # #longline survey length comps, 'current' year, for 6 areas then combine to 3, two sexes
+      
+        #} #next sex
+      #} #next age
+    #} #next area
     
-    call some sampling functions here for the above list
+    #Add sampled data to .dat file (generate/update .dat file)
     
-    
-    Add sampled data to .dat file
-    
-    Pass to EM, run EM
-    Get estimated quantities and HCR output 
-    apportion output (via chosen method) 
-    apply apportionment output to OM (start loop over)
+    #Pass to EM, run EM
+    #Get estimated quantities and HCR output 
+    #apportion output (via chosen method) 
+    #apply apportionment output to OM (start loop over)
     
 
-    #HARVEST CONTROL RULE
+    #HARVEST CONTROL RULE [this section may not need to be retained here]
     #temp.ssb <- sum(ssb[,,y-1,m,i]) #presumably this needs an actual HCR coded in??  Also, why is this here and not somewhere else?
     # No Recruitment relationship  Can we change this so it reads in a rec value from a separate file which draws N simulations * N years worth of rec values all 
     # at once so the same recruitment can be applied to single and spatial models? Could make it so that if SSB is 0, 0 rec is used instead so we 
@@ -250,7 +274,7 @@ for(i in 1:n.sims) {
 
     
     #=============================================================
-    #### Conduct Assessment #### <- this seems like the wrong place for this??
+    #### Conduct Assessment #### 
     #2) Call ADMB Model
     #add code here
     #=============================================================
@@ -261,10 +285,9 @@ for(i in 1:n.sims) {
     
 
     
-    #call a function that generates a .dat file here?
-    
+
     #=============================================================
-    #### Conduct Assessment #### <- this seems like the wrong place for this??
+    #### Conduct Assessment #### 
     #2) Call ADMB Model
     #add code here
     #=============================================================
@@ -280,7 +303,6 @@ for(i in 1:n.sims) {
 }#next i
 
 
-# need to print out or save a copy of the simulated data somehow
 
 
 
