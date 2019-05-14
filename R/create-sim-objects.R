@@ -47,15 +47,15 @@ create_sim_objects <- function() {
   # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 3
   Fish.RPW <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #fixed gear fishery RPW
   # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 3, single sex
-  Fish.AC <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims))
+  Fish.AC <<- array(dim=c(n.year, n.age, n.area, n.sims), dimnames=list(years,ages,areas,sims))
   # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex
-  Surv.AC <<-  array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims))
+  Surv.AC <<-  array(dim=c(n.year, n.age, n.area, n.sims), dimnames=list(years,ages,areas,sims))
   # longline/fixed gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
-  Fxfish.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))  
+  #Fxfish.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))  
   # trawl gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
-  Trfish.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))
+  #Trfish.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))
   # longline survey length comps, 'current' year, for 6 areas then combine to 3, two sexes
-  Fxsurv.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))
+  #Fxsurv.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))
   
   #Return section  #what does this section do?
    #out <- NULL

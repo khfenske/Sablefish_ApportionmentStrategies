@@ -14,9 +14,9 @@
 
 
 extract_pars <- function(input.file="Sablefish_Input.xlsx") {
-  require(tidyverse)
-  require(readxl)
-  require(xlsx)
+  #require(tidyverse)
+  #require(readxl)
+  #require(xlsx)
   
   #### TESTING
   # input.file <- "Sablefish_Input.xlsx"
