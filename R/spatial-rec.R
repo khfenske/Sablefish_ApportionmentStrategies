@@ -6,8 +6,10 @@
 #' @param seed Seed for setting random multinomial draw
 #'
 #' @return Vector of recruitment by area, with random apportionment around specififed area.props
-spatial_rec <- function(input.rec, area.props=c(1,2,3,1,1,1), ss=100, seed=1) {
-  set.seed(seed)
+spatial_rec <- function(input.rec, area.props, ss, seed) {
+  #spatial_rec <- function(input.rec, area.props=c(1,2,3,1,1,1), ss=100, seed=1) {  #why are values specified in this line for area.props and ss and seed? Can't they be called in the actual application of the function?
+    
+    set.seed(seed)
   #Standardize Area Proportions
   std.area.props <- area.props/sum(area.props)
   #Multinomial Sample

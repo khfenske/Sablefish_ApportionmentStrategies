@@ -34,7 +34,7 @@ source(file.path(dir.R,'convert-Fmort2catch.R')) #Calculate total catch from F
 source(file.path(dir.R,'estimate-Fmort4catch.R')) #Estimate F that provides for a given catch
 
 source(file.path(dir.R,'sample-biom-abund.R')) #sample biomass/numbers of OM population
-
+source(file.path(dir.R,'sample-age-comps.R')) #sample age comps of OM population
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
 
@@ -69,12 +69,12 @@ create_sim_objects() #sets up all the spatial arrays to hold simulated data
 
 # Simulate Annual Recruitments ====================================
 create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL, 
-                        n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object
+                        n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object DOES THE rec object need to be set up in the 'create-sim-objects.R' function?
 
 # divide annual recruitments into areas 
 for(i in 1:n.sims){
 for(y in 1:n.year){
-  recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=c(0.14,0.07,0.14,0.43,0.14,0.09), ss=100, seed=1)      # this needs thought about sex distribution of recruitment.
+  recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=c(0.14,0.07,0.14,0.43,0.14,0.09), ss=100, seed=1)      # sexes combined, recruitment in Numbers (I think)
 }}
 
 
@@ -97,6 +97,9 @@ for(i in 1:n.sims) {
 
 
 #Loop order: sim, year, area, age, sex.
+# Order - calculate F associated with catch permitted from previous year's assessment and apportionment, recruit new cohort, F and M occur, movement occurs, sample the 
+#(moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle']
+# ...then start over at beginning with a new year
 area <- 1
 i <- 1
 for(i in 1:n.sims) {
@@ -110,20 +113,18 @@ for(i in 1:n.sims) {
     for (m in 1:n.area) {
      
     # Forward Simulation =============================================================
-    # Temporarily Assuming no movement, need to add that in in the future
+    # Temporarily no movement, need to add that in in the future
       
-    #take most recent assessment and outputted ABC apportionment and calculate F 
-    #apply F from the most recent "REAL" stock assessment (spatial model) to OM population (assume perfect execution)- update B, N, SSB
-    # need to get an F to use for below
+    #take most recent (2018) assessment and outputted ABC apportionment and calculate F 
     f <- 1
     for(f in 1:n.fish) {
       # UPDATE: Instead of setting a fixed F, we can now set a fixed catch
       #  biomass and find the F for the specific fishery
-      #   that will match that catch
-      
+      #  that will match that catch. This is so we can input the catch from the EM projection and apportionment output and then calculate the associated F.
+      # need to think about how we deal with trawl vs longline F here - do we specify these catches currently?
       # Here lets specify an arbitrary fixed catch (kg) -- will need to eventually read it in for the first year here (based on the most recent assessment 
       #and harvest control rule output)...future year's catch will come from the EM/projectiom model and apportionment application, so this section still needs work
-      catch <- 1e6 # 1 million kg.
+      catch <- 1e7 # 10 million kg or 10,000 metric tons
       
       # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------  #right now F is a single value - probably need to have spatial F?
       temp.Fmort <- estimate_Fmort4catch(catch=catch, 
@@ -131,20 +132,21 @@ for(i in 1:n.sims) {
                                            temp.N=N[,y-1,,m,i], 
                                            wa=wa, mx=mx, 
                                            bisection=TRUE)$Fmort
-      Fmort[f,y,m,i] <- temp.Fmort  #0.1#HCR_linear(curr.SSB=temp.ssb, SSB0=SSB0, floor.F=floors[g], ceiling.F=ceilings[g], 
-                                 # ascent.range=ascent.range, plot=FALSE)
+      Fmort[f,y,m,i] <- temp.Fmort  #0.1
     }#next g 
         
     a <- 1
     for(a in 1:n.age) {
       #Update Numbers and Biomass Matrix
       if(a==1) { #Age-1
-        N[,y,a,m,i] <- recruits.area[y-1,m,i]
-        B[,y,a,m,i] <- recruits.area[y-1,m,i]*wa[,a]
+        N[,y,a,m,i] <- 0.5*recruits.area[y-1,m,i] #multiplying by 0.5 to split evenly between sexes
+        B[,y,a,m,i] <- 0.5*recruits.area[y-1,m,i]*wa[,a]
         # N[,y,a] <- rec[,y-1]/wa[,a]
         # B[,y,a] <- rec[,y-1]
+        ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
         
         ## add movement for age 1 here ##
+        
       }else {
         h <- 1
         for(h in 1:n.sex) {
@@ -157,11 +159,12 @@ for(i in 1:n.sims) {
           mort[h,y-1,a-1,m,i] <- 1-surv[h,y-1,a-1,m,i]
           
           #Update
-          N[h,y,a,m,i] <- N[h,y-1,a-1,m,i]*surv[h,y-1,a-1,m,i] #add movement here?
+          N[h,y,a,m,i] <- N[h,y-1,a-1,m,i]*surv[h,y-1,a-1,m,i] 
           # B[h,y,a,i] <- B[h,y-1,a-1,i]*surv[h,y-1,a-1,i]
           B[h,y,a,m,i] <- N[h,y,a,m,i]*wa[h,a]
+          ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
           #Total Catch
-          C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number of halibut
+          C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
           C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
           
           f <- 1
@@ -170,7 +173,7 @@ for(i in 1:n.sims) {
             # temp.Z <- temp.F + mx[h,a-1]
             temp.Z <- sum(Fmort[,y,m,i]*va[,m,h,a-1]) + mx[h,a-1]
             
-            harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z))
+            harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) 
             
             harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
           }#next gear
@@ -193,6 +196,8 @@ for(i in 1:n.sims) {
           N[h,y,a,m,i] <- N[h,y,a,m,i] + N[h,y-1,a,m,i]*surv[h,y-1,a,m,i] #New Entrants (calculated above), plus existing plus group occupants.
           # B[h,y,a,i] <- B[h,y,a,i] + B[h,y-1,a,i]*surv[h,y-1,a,i] 
           B[h,y,a,m,i] <- N[h,y,a,m,i] * wa[h,a]
+          ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
+          
           #Total Catch
           C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number of halibut
           C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
@@ -211,55 +216,41 @@ for(i in 1:n.sims) {
       }# If plus age group
       
     }#next age  
-    
-    #calculate SSB for OM pop  #maybe the year itentifier is wrong?
-    ssb[,,y-1,m,i] <- ma*wa*N[,y-1,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
-    
     } #next area
     
     ######Sample population for age comps, survey index, etc. 
-    #m <- 1 #maybe don't need all these loops
-    #for (m in 1:n.area) {
-      #a <- 1
-      #for(a in 1:n.age) {
-        #h <- 1
-        #for(h in 1:n.sex) {
-        ##### Generate Assessment Data: ######
+        ##### Generate EM Data: ######
         # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
           #write a function that makes it easy to specify (by area) the yield ratio
       
         # longline survey RPN, 'current' year, for 6 areas then combine to 1
-        Surv.RPN[,y,,m,i] <- sample_biom_abund(atest,sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
+        #Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
         #(we'd talked about concatonating 'sim # + year' for seed)
       
         # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 1
-        Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
+        #Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
         
         # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 1, single sex
-        Fish.AC[,y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
+        #Fish.AC[,y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
         
         # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex
-        Surv.AC[,y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
-        
-        #### NOTE - not doing length comps for now ####
-        ## longline/fixed gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
-        ## trawl gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
-        # #longline survey length comps, 'current' year, for 6 areas then combine to 3, two sexes
-      
-        #} #next sex
-      #} #next age
-    #} #next area
+        #Surv.AC[,y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
+
     
     #Add sampled data to .dat file (generate/update .dat file)
-    
-    #Pass to EM, run EM
-    #Get estimated quantities and HCR output 
-    #apportion output (via chosen method) 
-    #apply apportionment output to OM (start loop over)
-    
 
-    #HARVEST CONTROL RULE [this section may not need to be retained here]
-    #temp.ssb <- sum(ssb[,,y-1,m,i]) #presumably this needs an actual HCR coded in??  Also, why is this here and not somewhere else?
+    #=============================================================
+    #### Conduct Assessment #### 
+    #2) Call ADMB Model
+    #add code here
+    #=============================================================
+    #### Determine SPR ####
+    # this will come out of my EM
+    #=============================================================
+    #### Set Harvest Limits & apply apportionment method we are testing ####
+    # output spatial catch limit (by gear?)
+    
+    ### side notes:
     # No Recruitment relationship  Can we change this so it reads in a rec value from a separate file which draws N simulations * N years worth of rec values all 
     # at once so the same recruitment can be applied to single and spatial models? Could make it so that if SSB is 0, 0 rec is used instead so we 
     # don't spontaneously generate fish if the pop crashes.
@@ -268,35 +259,6 @@ for(i in 1:n.sims) {
     # rec[,y-1] <- 0.5 * ricker_recruit(ssb[y-1], steep, bo)
     #Beverton-Holt
     # rec[,y-1,i] <-  0.5 * beverton_holt_recruit(sum(ssb[,,y-1,i]), steep, bo=ro) * exp(rnorm(1,0,sigma_rec) - ((sigma_rec^2)/2))
-    
-
-    
-
-    
-    #=============================================================
-    #### Conduct Assessment #### 
-    #2) Call ADMB Model
-    #add code here
-    #=============================================================
-    #### Determine SPR ####
-    # doesn't this come out of my EM?
-    #=============================================================
-    #### Set Harvest Limits ####
-    
-
-    
-
-    #=============================================================
-    #### Conduct Assessment #### 
-    #2) Call ADMB Model
-    #add code here
-    #=============================================================
-    #### Determine SPR ####
-    # doesn't this come out of my EM?
-    #=============================================================
-    #### Set Harvest Limits ####    
-    
-    
     
   }#next y
   
