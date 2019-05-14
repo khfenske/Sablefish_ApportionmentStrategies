@@ -220,15 +220,17 @@ for(i in 1:n.sims) {
     
     ######Sample population for age comps, survey index, etc. 
         ##### Generate EM Data: ######
+    m <- 1
+    for (m in 1:n.area) {
         # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
           #write a function that makes it easy to specify (by area) the yield ratio
       
         # longline survey RPN, 'current' year, for 6 areas then combine to 1
-        #Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
+        Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
         #(we'd talked about concatonating 'sim # + year' for seed)
       
         # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 1
-        #Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
+        Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
         
         # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 1, single sex
         #Fish.AC[,y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
@@ -259,7 +261,7 @@ for(i in 1:n.sims) {
     # rec[,y-1] <- 0.5 * ricker_recruit(ssb[y-1], steep, bo)
     #Beverton-Holt
     # rec[,y-1,i] <-  0.5 * beverton_holt_recruit(sum(ssb[,,y-1,i]), steep, bo=ro) * exp(rnorm(1,0,sigma_rec) - ((sigma_rec^2)/2))
-    
+    } #next area m
   }#next y
   
 }#next i

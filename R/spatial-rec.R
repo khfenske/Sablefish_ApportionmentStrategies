@@ -27,7 +27,7 @@ spatial_rec <- function(input.rec, area.props, ss, seed) {
 # input.rec <- 1e3
 # area.props <- c(1,2,3,1,1,1)
 # seed <- 1
-# 
+# ss=20
 # 
 # #True Proportions
 # true.props <- area.props/sum(area.props) * input.rec
@@ -48,3 +48,4 @@ spatial_rec <- function(input.rec, area.props, ss, seed) {
 # barplot(t(trial.output.2), col=rainbow(length(area.props)),
 #           xlab='Input Multinomial Sample Size (ss argument)')
 # 
+#spatial_rec(1e3,area.props = c(1,2,3,1,1,1), seed=1, ss=20)
