@@ -32,6 +32,8 @@ require(readxl)
 require(xlsx)
 # for sample-age-comps.R
 require(gtools) 
+#for .dat file building
+require(PBSmodelling)
         
 # Source Necessary Files =========================================
 source(file.path(dir.R,'extract-pars.R'))
@@ -100,6 +102,7 @@ for(y in 1:n.year){
 #   this sets up the population proportions for year 1 for each of the N number of simulations.
 #   I think we need to add code here, starting with init.prop, to run forward ~50-60 years to make a fished equilib...
 #   and build our initial .dat file (summed across n.areas), us F generated from actual observed catches
+#  might need to call the a dat maker function here to read in our .dat template and then fill it with the data we generate here to initialize the population
 init.prop <- calc_init_age_prop(bo=mu_rec)
 
 i <- 1
@@ -235,17 +238,17 @@ for(i in 1:n.sims) {
     } #next area
     
     ######Sample population for age comps, survey index, etc. 
-        ##### Generate EM Data: ######
+    ##### Generate EM Data: ######
     m <- 1
     for (m in 1:n.area) {
         # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
           #write a function that makes it easy to specify (by area) the yield ratio
       
-        # longline survey RPN, 'current' year, for 6 areas then combine to 1
+        # longline survey RPN, 'current' year, for 6 areas then combine to 1  -- check units
         Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
         #(we'd talked about concatonating 'sim # + year' for seed)
       
-        # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 1
+        # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 1  -- check units
         Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
         
         # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 1, single sex
@@ -255,8 +258,19 @@ for(i in 1:n.sims) {
         #Surv.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
 
     
-    #Add sampled data to .dat file (generate/update .dat file)
-
+    ######### aggregate OM data across age and/or areas for EM and track over time
+    #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
+        #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
+        OM_fixed_catch[y,i] <- sum(harvest.b[,y,,2,,i]) #2 - US fixed post-IFQ
+        OM_trawl_catch[y,i] <- sum(harvest.b[,y,,3,,i]) #3 - US trawl
+        
+    #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
+        OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])
+        
+        
+    ##Add sampled data to .dat file (generate/update .dat file)
+    
+        
     #=============================================================
     #### Conduct Assessment #### 
     #2) Call ADMB Model
