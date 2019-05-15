@@ -249,10 +249,10 @@ for(i in 1:n.sims) {
         Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
         
         # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 1, single sex
-        Fish.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
+        #Fish.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
         
         # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex
-        Surv.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
+        #Surv.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
 
     
     #Add sampled data to .dat file (generate/update .dat file)

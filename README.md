@@ -74,8 +74,8 @@ Name      | Description                       | Dimensions
 ----------|-----------------------------------|----------------------------------
 surv.RPN  | longline survey RPN, 'current' year, for 6 areas then combine to 3 | `[1:n.sex, 1:n.year, 1:n.age, 1:n.area, 1:n.sims]`
 Fish.RPW  | longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 3 | `[1:n.sex, 1:n.year, 1:n.age, 1:n.area, 1:n.sims]`
-Fish.AC   | longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 3, single sex | `[1:n.sex, 1:n.year, 1:n.age, 1:n.area, 1:n.sims]`
-Surv.AC   | longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex | `[1:n.sex, 1:n.year, 1:n.age, 1:n.area, 1:n.sims]`
+Fish.AC   | longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 3, single sex | `[1:n.year, 1:n.age, 1:n.area, 1:n.sims]`
+Surv.AC   | longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex | `[1:n.year, 1:n.age, 1:n.area, 1:n.sims]`
 
 
 ## Lists
