@@ -30,20 +30,24 @@ testdat$obs_domLLsurv_lci[testdat$nyrs_domLLsurv] <- testdat$obs_domLLsurv_biom[
 testdat$obs_domLLsurv_uci[testdat$nyrs_domLLsurv] <- testdat$obs_domLLsurv_biom[testdat$nyrs_domLLsurv]+(2*testdat$obs_domLLsurv_se[testdat$nyrs_domLLsurv])
 
 #domestic LL fishery RPW (check units)
-testdat$nyrs_LLfish
-testdat$yrs_LLfish
-testdat$obs_LLfish_biom
-testdat$obs_LLfish_se
-testdat$obs_LLfish_lci
-testdat$obs_LLfish_uci
+testdat$nyrs_LLfish <- testdat$nyrs_LLfish + 1 #advance the number of years
+testdat$yrs_LLfish[testdat$nyrs_LLfish] <- testdat$yrs_LLfish[testdat$nyrs_LLfish] + 1
+testdat$obs_LLfish_biom[testdat$nyrs_LLfish] <- OM_Fish.RPW[y,i]
+testdat$obs_LLfish_se[testdat$nyrs_LLfish] <- 0.1* testdat$obs_LLfish_biom[testdat$nyrs_LLfish]
+testdat$obs_LLfish_lci[testdat$nyrs_LLfish] <- testdat$obs_LLfish_biom[testdat$nyrs_LLfish]-(2*testdat$obs_LLfish_se[testdat$nyrs_LLfish])
+testdat$obs_LLfish_uci[testdat$nyrs_LLfish] <- testdat$obs_LLfish_biom[testdat$nyrs_LLfish]+(2*testdat$obs_LLfish_se[testdat$nyrs_LLfish])
   
+#domestic LL fishery age comps
+testdat$nyrs_LLfish_age <- testdat$nyrs_LLfish_age + 1 #advance the number of years
+testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] <- testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] + 1
+testdat$nsamples_LLfish_age_bsaiwgcgeg[testdat$nyrs_LLfish_age] <- INCOMPLETE  #add to number of samples
+testdat$oac_LLfish_bsaiwgcgeg[testdat$nyrs_LLfish_age,] <- OM_Fish.RPW.age[,,i] #add a row of age comps for year y (or y-1 if we want to maintain the lag)
 
-  testdat$
-  testdat$
-  testdat$
+#domestic LL survey age comps
   
+#compliation code (like what's used for the spatial model to make.dat)
 
 #somehow write the file and save to the right folder so we can call the new EM
-write.csv(testdat, file="C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/updated_dat.csv") #eventually it'll need to overwrite the original
+write.table(testdat, file="C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/updated_dat.csv") #eventually it'll need to overwrite the original
 
 } #close function

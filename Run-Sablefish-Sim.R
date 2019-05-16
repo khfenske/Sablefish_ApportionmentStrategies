@@ -266,10 +266,15 @@ for(i in 1:n.sims) {
         
     #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
         OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])
+        OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
         
+    #aggregate age comps for fishery and survey across areas (weight by catch at age in each area)
+        aggregate comps over areas here...
+        
+        OM_Fish.RPW.age[y,a,i] <- 
         
     ##Add sampled data to .dat file (generate/update .dat file)
-    
+      #call the function?
         
     #=============================================================
     #### Conduct Assessment #### 
