@@ -29,6 +29,7 @@ create_sim_objects <- function() {
   OM_Surv.RPN <<- matrix(nrow=n.year, ncol=n.sims, dimnames=list(years,sims)) #matrix to hold all of the OM survey RPN data, summed across areas
   OM_Fish.RPW <<- matrix(nrow=n.year, ncol=n.sims, dimnames=list(years,sims)) #matrix to hold all of the OM fishery RPW data, sumed across areas
   OM_Fish.RPW.age <<- array(dim=c(n.year, n.age, n.sims),dimnames=list(years, ages, sims)) #array to hold the OM fishery age comps, summed across areas
+  OM_Surv.RPN.age <<- array(dim=c(n.year, n.age, n.sims),dimnames=list(years, ages, sims)) #array to hold the OM survey age comps, summed across areas
   
   #Total Instantaneous mortality
   Z.a <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) 

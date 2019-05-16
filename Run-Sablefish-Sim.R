@@ -257,6 +257,7 @@ for(i in 1:n.sims) {
         # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex
         #Surv.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
 
+    } #next area m
     
     ######### aggregate OM data across age and/or areas for EM and track over time
     #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
@@ -269,12 +270,15 @@ for(i in 1:n.sims) {
         OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
         
     #aggregate age comps for fishery and survey across areas (weight by catch at age in each area)
-        aggregate comps over areas here...
+        aggregate comps over areas here...(or in function that is called here)
         
         OM_Fish.RPW.age[y,a,i] <- 
-        
-    ##Add sampled data to .dat file (generate/update .dat file)
-      #call the function?
+        OM_Surv.RPN.age[y,a,i]
+    
+    ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
+        build_datfile()
+    ## Generate the updated .dat file to be pushed to the EM
+        compile_datfile()
         
     #=============================================================
     #### Conduct Assessment #### 
@@ -282,9 +286,11 @@ for(i in 1:n.sims) {
     #add code here
     #=============================================================
     #### Determine SPR ####
+    # extract SPR (read in a report file)
     # this will come out of my EM
     #=============================================================
     #### Set Harvest Limits & apply apportionment method we are testing ####
+    # call the apportionment method here
     # output spatial catch limit (by gear?)
     
     ### side notes:
@@ -296,7 +302,7 @@ for(i in 1:n.sims) {
     # rec[,y-1] <- 0.5 * ricker_recruit(ssb[y-1], steep, bo)
     #Beverton-Holt
     # rec[,y-1,i] <-  0.5 * beverton_holt_recruit(sum(ssb[,,y-1,i]), steep, bo=ro) * exp(rnorm(1,0,sigma_rec) - ((sigma_rec^2)/2))
-    } #next area m
+
   }#next y
   
 }#next i
