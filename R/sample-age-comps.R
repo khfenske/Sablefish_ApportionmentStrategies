@@ -5,7 +5,7 @@
 #' @param type Type of error, of type: 'multinomial' or 'dirichlet'
 #' @param cpar WHAT IS CPAR??
 #'
-#' @return OBSERVED AGE COMPOSITIONS? WHAT DIMENSIONS?
+#' @return OBSERVED AGE COMPOSITIONS? WHAT DIMENSIONS? in numbers??
 #' @export
 #'
 #' @examples

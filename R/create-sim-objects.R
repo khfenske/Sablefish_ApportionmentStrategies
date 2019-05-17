@@ -48,19 +48,19 @@ create_sim_objects <- function() {
   recruits.area <<- array(dim=c(n.year, n.area, n.sims), dimnames=list(years, areas, sims))
   
   #Assessment data inputs
-  # longline survey RPN, 'current' year, for 6 areas then combine to 3
+  # longline survey RPN, 'current' year
   Surv.RPN <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #longline survey RPN
-  # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 3
+  # longline/fixed gear fishery CPUE/RPW
   Fish.RPW <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #fixed gear fishery RPW
-  # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 3, single sex
-  Fish.AC <<- array(dim=c(n.year, n.age, n.area, n.sims), dimnames=list(years,ages,areas,sims))
-  # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex
-  Surv.AC <<-  array(dim=c(n.year, n.age, n.area, n.sims), dimnames=list(years,ages,areas,sims))
-  # longline/fixed gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
+  # longline/fixed gear fishery age comps
+  Fish.AC <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years,ages,areas,sims))
+  # longline survey age comps
+  Surv.AC <<-  array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years,ages,areas,sims))
+  # longline/fixed gear fishery length comps,
   #Fxfish.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))  
-  # trawl gear fishery length comps, lagged 1 year, for 6 areas then combine to 3, two sexes
+  # trawl gear fishery length comps
   #Trfish.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))
-  # longline survey length comps, 'current' year, for 6 areas then combine to 3, two sexes
+  # longline survey length comps, 'current' year
   #Fxsurv.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))
   
   #Return section  #what does this section do?

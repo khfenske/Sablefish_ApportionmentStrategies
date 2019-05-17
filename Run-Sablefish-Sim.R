@@ -244,17 +244,17 @@ for(i in 1:n.sims) {
         # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
           #write a function that makes it easy to specify (by area) the yield ratio
       
-        # longline survey RPN, 'current' year, for 6 areas then combine to 1  -- check units
+        # longline survey RPN, 'current' year  -- check units
         Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
         #(we'd talked about concatonating 'sim # + year' for seed)
       
-        # longline/fixed gear fishery CPUE/RPW, lagged 1 year, for 6 areas then combine to 1  -- check units
+        # longline/fixed gear fishery CPUE/RPW  -- check units
         Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
         
-        # longline/fixed gear fishery age comps, lagged 1 year, for 6 areas then combine to 1, single sex
+        # longline/fixed gear fishery age comps in numbers (not proportions yet) #do these need to be generated for each sex then combined?
         #Fish.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
         
-        # longline survey age comps, lagged 1 year, for 6 areas then combine to 3, single sex
+        # longline survey age comps in numbers (not proportions yet) single sex
         #Surv.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
 
     } #next area m
@@ -272,12 +272,12 @@ for(i in 1:n.sims) {
     #aggregate age comps for fishery and survey across areas (weight by catch at age in each area)
         #aggregate comps over areas here...(or in function that is called here)
         
-        #OM_Fish.RPW.age[y,a,i] <- 
-        #OM_Surv.RPN.age[y,a,i]
+        #OM_Fish.RPW.age[,y,a,i] <- aggr_agecomp(Fish.AC, n.area, harvest.n) #is harvest.n the right one to use?
+        #OM_Surv.RPN.age[,y,a,i]
     
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
-    ## Generate the updated .dat file to be pushed to the EM
-        #build_datfile() 
+    ## then generate the updated .dat file to be pushed to the EM
+        #build_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
         
         
     #=============================================================
