@@ -270,15 +270,15 @@ for(i in 1:n.sims) {
         OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
         
     #aggregate age comps for fishery and survey across areas (weight by catch at age in each area)
-        aggregate comps over areas here...(or in function that is called here)
+        #aggregate comps over areas here...(or in function that is called here)
         
-        OM_Fish.RPW.age[y,a,i] <- 
-        OM_Surv.RPN.age[y,a,i]
+        #OM_Fish.RPW.age[y,a,i] <- 
+        #OM_Surv.RPN.age[y,a,i]
     
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
-        build_datfile()
     ## Generate the updated .dat file to be pushed to the EM
-        compile_datfile()
+        #build_datfile() 
+        
         
     #=============================================================
     #### Conduct Assessment #### 
