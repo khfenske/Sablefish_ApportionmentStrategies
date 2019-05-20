@@ -251,7 +251,7 @@ for(i in 1:n.sims) {
         # longline/fixed gear fishery CPUE/RPW  -- check units
         Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
         
-        # longline/fixed gear fishery age comps in numbers (not proportions yet) #do these need to be generated for each sex then combined?
+        # longline/fixed gear fishery age comps in numbers (not proportions yet) 
         #Fish.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
         
         # longline survey age comps in numbers (not proportions yet) single sex
@@ -269,11 +269,9 @@ for(i in 1:n.sims) {
         OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])
         OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
         
-    #aggregate age comps for fishery and survey across areas (weight by catch at age in each area)
-        #aggregate comps over areas here...(or in function that is called here)
-        
-        #OM_Fish.RPW.age[,y,a,i] <- aggr_agecomp(Fish.AC, n.area, harvest.n) #is harvest.n the right one to use?
-        #OM_Surv.RPN.age[,y,a,i]
+    #call the function to aggregate age comps for fishery and survey across areas (weight by catch/harvest at age in each area, sum across areas, then spit out a vector or age comps)
+        #OM_Fish.RPW.age[,y,a,i] <- aggr_agecomp(Fish.AC, harvest.num) #is harvest.n the right one to use?
+        #OM_Surv.RPN.age[,y,a,i] <- aggr_agecomp(Surv.AC, harvest.num)
     
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
