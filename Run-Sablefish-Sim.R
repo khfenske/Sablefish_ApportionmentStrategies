@@ -86,6 +86,7 @@ for(i in 1:n.fish) {
 create_sim_objects() #sets up all the spatial arrays to hold simulated data
 
 # Simulate Annual Recruitments ====================================
+#setup_years <- 39 #number of years to run the loop setting up the initial population and building initial dat file
 create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL, 
                         n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object DOES THE rec object need to be set up in the 'create-sim-objects.R' function?
 
@@ -103,7 +104,8 @@ for(y in 1:n.year){
 #   I think we need to add code here, starting with init.prop, to run forward ~50-60 years to make a fished equilib...
 #   and build our initial .dat file (summed across n.areas), us F generated from actual observed catches
 #  might need to call the a dat maker function here to read in our .dat template and then fill it with the data we generate here to initialize the population
-init.prop <- calc_init_age_prop(bo=mu_rec)
+
+#init.prop <- calc_init_age_prop(bo=mu_rec)
 
 i <- 1
 m <- 1
@@ -113,6 +115,9 @@ for(i in 1:n.sims) {
   N[,1,,m,i] <- B[,1,,m,i] / wa
   } #close area
 }#next i
+
+#set up initial population and dat file
+calc_init_pop(init.prop,)
 
 
 #Loop order: sim, year, area, age, sex.
@@ -270,8 +275,8 @@ for(i in 1:n.sims) {
         OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
         
     #call the function to aggregate age comps for fishery and survey across areas (weight by catch/harvest at age in each area, sum across areas, then spit out a vector or age comps)
-        #OM_Fish.RPW.age[,y,a,i] <- aggr_agecomp(Fish.AC, harvest.num) #is harvest.n the right one to use?
-        #OM_Surv.RPN.age[,y,a,i] <- aggr_agecomp(Surv.AC, harvest.num)
+        #OM_Fish.RPW.age[,y,,i] <- aggr_agecomp(Fish.AC, harvest.num) #is harvest.n the right one to use?
+        #OM_Surv.RPN.age[,y,,i] <- aggr_agecomp(Surv.AC, harvest.num)
     
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
