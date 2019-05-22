@@ -10,25 +10,25 @@
 #'
 #' @examples
 sample_age_comps <- function(true.props, Nsamp, cpar=NULL) {
-  #require(gtools) #will call this at the start of the Run-sablefish-sim.R
+  require(gtools) #will call this at the start of the Run-sablefish-sim.R
     #Initial Checking
     # cpar - A value of 1 indicates the same standard deviation as a multinomial of the given Nsamp, 2 indicates twice, etc. 
     # Values greater than one indicate overdispersion, and less indicate underdispersion.
   
   #cpar <- 2
   #True data
-  probs <- as.numeric(newcomp[-(1:6)]/sum(newcomp[-(1:6)]))
+  probs <- as.numeric(true.props[-(1:6)]/sum(true.props[-(1:6)]))
   ## If cpar is NA this signifies to use the multinomial (is null the same as NA for this purpose?)
   if(is.null(cpar)){ #MULTINOMIAL
-    newcomp[-(1:6)] <- rmultinom(1, size=newcomp$Nsamp, prob=probs)#/newcomp$Nsamp
+    true.props[-(1:6)] <- rmultinom(1, size=true.props$Nsamp, prob=probs)#/newcomp$Nsamp
   } else { # use Dirichlet
-    lambda <- newcomp$Nsamp/cpar[i]^2 - 1
+    lambda <- true.props$Nsamp/cpar[i]^2 - 1
     if(lambda<0)
       stop(paste("Invalid Dirichlet parameter: Lambda=", lambda))
-    newcomp[-(1:6)] <- gtools::rdirichlet(1,probs * lambda)
+    true.props[-(1:6)] <- gtools::rdirichlet(1,probs * lambda)
     ## Use the effective sample size when using Dirichlet
-    effectiveN <- newcomp$Nsamp/cpar[i]^2
-    newcomp$Nsamp <- effectiveN
+    effectiveN <- true.props$Nsamp/cpar[i]^2
+    true.props$Nsamp <- effectiveN
   }
   return(obs.comp)
 }

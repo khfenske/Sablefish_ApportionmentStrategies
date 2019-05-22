@@ -90,7 +90,8 @@ create_sim_objects() #sets up all the spatial arrays to hold simulated data
 create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL, 
                         n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object DOES THE rec object need to be set up in the 'create-sim-objects.R' function?
 
-# divide annual recruitments into areas 
+# divide annual recruitments into areas - the values for area.props are from the proportions of age-2 fish by area from the LL survey, average across all years.
+# see the excel file in the repository (in data folder)
 for(i in 1:n.sims){
 for(y in 1:n.year){
   recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=c(0.14,0.07,0.14,0.43,0.14,0.09), ss=100, seed=1)      # sexes combined, recruitment in Numbers (I think)
