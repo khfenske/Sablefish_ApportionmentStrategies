@@ -117,7 +117,7 @@ for(i in 1:n.sims) {
 }#next i
 
 #set up initial population and dat file
-calc_init_pop(init.prop,)
+#calc_init_pop(init.prop,)
 
 
 #Loop order: sim, year, area, age, sex.
@@ -197,7 +197,7 @@ for(i in 1:n.sims) {
             # temp.Z <- temp.F + mx[h,a-1]
             temp.Z <- sum(Fmort[,y,m,i]*va[,m,h,a-1]) + mx[h,a-1]
             
-            harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) 
+            harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
             
             harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
           }#next gear
@@ -281,20 +281,23 @@ for(i in 1:n.sims) {
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
         #build_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
-        
+    
+        #calculate the moving average ratio between gear types (F ratio)    CODE THIS
         
     #=============================================================
     #### Conduct Assessment #### 
     #2) Call ADMB Model
     #add code here
+        #Dana think about the code in the EM here between gear types for distibuting F across selectivities
     #=============================================================
     #### Determine SPR ####
     # extract SPR (read in a report file)
-    # this will come out of my EM
+    # this will come out of my EM  CHECK IF THERE ARE CODE CHANGES IN THE EM ABOUT F RATIO
     #=============================================================
     #### Set Harvest Limits & apply apportionment method we are testing ####
     # call the apportionment method here
     # output spatial catch limit (by gear?)
+        
     
     ### side notes:
     # No Recruitment relationship  Can we change this so it reads in a rec value from a separate file which draws N simulations * N years worth of rec values all 
