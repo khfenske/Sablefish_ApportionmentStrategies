@@ -47,6 +47,7 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   n.year <<- as.numeric(in.sim$Value[in.sim$Par=='n.year'])
   years <<- 1:n.year
   Bstart <<- as.numeric(in.sim$Value[in.sim$Par=='Bstart'])
+  Nstart <<- as.numeric(in.sim$Value[in.sim$Par=='Nstart'])
   n.sims <<- as.numeric(in.sim$Value[in.sim$Par=='n.sims'])
   
   # Extract: Growth Parameters ==============================================================
@@ -144,7 +145,7 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   
   # Extract: Recruitment Parameters ==============================================================
   in.rec <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Recruitment')
-  mu_rec <<- in.rec$Value[in.rec$Par=='mu_rec']
+  mu_rec <<- in.rec$Value[in.rec$Par=='mu_rec'] #what are units?
   sigma_rec <<- in.rec$Value[in.rec$Par=='sigma_rec']
 
   # Selectivity: Survey ==========================================================================

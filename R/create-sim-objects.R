@@ -18,8 +18,8 @@ create_sim_objects <- function() {
   
   sims <<- paste0('sim',c(1:n.sims))
   
-  B <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Biomass (pounds)
-  N <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Numbers
+  B <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Biomass (pounds) <- check units
+  N <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Numbers <- check units
   C.b <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Catch (lbs)
   C.n <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Catch (number)
   harvest.b <<- array(dim=c(n.sex, n.year, n.age, n.fish, n.area, n.sims), dimnames=list(sexes, years, ages, fish, areas, sims))  #Harvest (lbs) by fish type

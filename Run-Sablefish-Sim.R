@@ -92,30 +92,41 @@ create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL,
 
 # divide annual recruitments into areas - the values for area.props are from the proportions of age-2 fish by area from the LL survey, average across all years.
 # see the excel file in the repository (in data folder)
+rec.by.area.props <- c(0.14,0.07,0.14,0.43,0.14,0.09)
 for(i in 1:n.sims){
 for(y in 1:n.year){
-  recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=c(0.14,0.07,0.14,0.43,0.14,0.09), ss=100, seed=1)      # sexes combined, recruitment in Numbers (I think)
+  recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=rec.by.area.props, ss=100, seed=1)      # sexes combined, recruitment in Numbers (I think)
 }}
 
-
-# Initialize Population (year 1, or change to years 1-X) =============================================================
-#   Should probably update to start from FISHED equilibrium (and spatially mixed equilibrium??) or set to stable 
-#   distribution of movement proportions...
-#   this sets up the population proportions for year 1 for each of the N number of simulations.
-#   I think we need to add code here, starting with init.prop, to run forward ~50-60 years to make a fished equilib...
-#   and build our initial .dat file (summed across n.areas), us F generated from actual observed catches
-#  might need to call the a dat maker function here to read in our .dat template and then fill it with the data we generate here to initialize the population
-
-#init.prop <- calc_init_age_prop(bo=mu_rec)
-
+# ================================================================
+# Initialize Population - Conditioning the simulations (year 1, or change to years 1977-2018) =============================================================
+N.by.area.props <- as.vector(c(0.123525838,0.138168043,0.112731838,0.401168634,0.102462464,0.121943183)) #mean proportion by area for n.areas from survey RPN (1979-2018) (from SurveyRPN.xlsx)
+#init.prop <- calc_init_age_prop(bo=mu_rec) #setting up proportions at age for 1977
+# instead of above funtion, read in proportions at age for males and females from 1977 estimated N from the single are EM, which are the same for both sexes so read in once here 
+Nprop.by.age <- as.vector(c(0.01499621,0.012601811,0.031930367,	0.030601254,	0.249981823,	0.051333394,	0.023219615,	0.009110259,	0.024604504,
+                           0.025654192,	0.014809429,	0.013695526,	0.012304411,	0.010897499,	0.009556439,	0.008318243,	0.007200544,
+                           0.006206813,	0.005333111,	0.004572241,	0.403269678,	0.003351983,	0.002870484,	0.002458885,	0.002107328,
+                           0.001806924,	0.001549864,	0.001330032,	0.001142024,	0.013185113)) #for 1:n.ages
+##### Condition year 1 (aka 1977):
+# since we track numbers in this model, I will initialize things in numbers instead of biomass
 i <- 1
 m <- 1
+a <- 1
 for(i in 1:n.sims) {
   for(m in 1:n.area) {
-  B[,1,,m,i] <- Bstart*1e6 * (init.prop[,,m]) #dim=c(n.sex, n.year, n.age, n.area, n.sims) (for both B and N)
-  N[,1,,m,i] <- B[,1,,m,i] / wa
+    for(a in 1:n.age) {
+    N[,1,a,m,i] <- Nstart * 0.5 * (Nprop.by.age[a]) #Nstart is in millions (check units), 0.5 is to divide equally between sexes 
+    #N <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Numbers
+    } #close age
   } #close area
 }#next i
+#weight initial proportions at age by areas weights
+for(m in 1:n.area) {N[,1,,m,] <- N[,1,,m,] * N.by.area.props[m]} #N by age and area, in millions of fish
+#now calculate biomass
+for(a in 1:n.age) {B[,1,a,,] <- N[,1,a,,] * wa[,a]}  #B units??? millions of kg?
+
+#N[,1,,,1]
+#B[,1,,,1]
 
 #set up initial population and dat file
 #calc_init_pop(init.prop,)

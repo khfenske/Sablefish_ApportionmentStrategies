@@ -8,14 +8,14 @@
 #a=2
 #m=2
 
-calc_init_age_prop <- function(bo) {
+calc_init_age_prop <- function(bo, init_area_props) {
   #init.prop <- matrix(nrow=n.sex, ncol=n.age, dimnames=list(sexes,ages))
   init.prop <- array(dim=c(n.sex,n.age,n.area), dimnames=list(sexes,ages,areas))
-  
+  #divide initial B0 into areas based on the mean proportion of fish in areas from LL survey for 
   for(m in 1:n.area) {
   for(a in 1:n.age) {
     if(a==1) {
-      init.prop[,a,m] <- bo#*mx[,a]
+      init.prop[,a,m] <- bo #* init_area_props[m]#*mx[,a]
     }else {
       init.prop[,a,m] <- bo*exp(-(a-1)*mx[,a]) 
     }
