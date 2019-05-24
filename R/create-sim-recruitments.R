@@ -12,7 +12,8 @@
 #' @export
 #'
 #' @examples
-create_sim_recruitments <- function(mu_rec, sigma_rec, rho_rec=NULL, n.year, n.sims, seed) { #why are values specified in this line for area.props and ss and seed? Can't they be called in the actual application of the function?
+create_sim_recruitments <- function(mu_rec, sigma_rec, rho_rec=NULL, n.year, n.sims, seed) { #why are values specified 
+  # in this line for area.props and ss and seed? Can't they be called in the actual application of the function?
   #create_sim_recruitments <- function(mu_rec, sigma_rec, rho_rec=NULL, n.year, n.sims, seed=101) {
     
   ### TESTING ###
