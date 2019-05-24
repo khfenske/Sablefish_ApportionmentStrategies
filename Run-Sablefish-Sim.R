@@ -19,6 +19,7 @@ dir.figs <- file.path(wd,"figs")
 dir.output <- file.path(wd,"output")
 dir.admb <- file.path(wd,"admb")
 dir.R <- file.path(wd,"R")
+dir.x <- file.path("C:/Repositories/hidden files with conf data") #change this path to whatever place you have the confidential catch data files stored. DO NOT LOAD TO GITHUB.
 
 # Call all packages and libraries once, up front ===================
 # for Run_Sim_data_plots.R
@@ -37,6 +38,8 @@ require(PBSmodelling)
         
 # Source Necessary Files =========================================
 source(file.path(dir.R,'extract-pars.R'))
+source(file.path(dir.R,'extract-catch.R'))
+
 source(file.path(dir.R,'calc-selectivity.R'))
 source(file.path(dir.R,'calc-init-age-prop.R'))
 
@@ -55,8 +58,24 @@ source(file.path(dir.R,'sample-age-comps.R')) #sample age comps of OM population
         
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
+extract_catch(input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
+# confidential data, catch is in kt
+# major kludge.
+  cond.catch2 <- array(dim=c(42, n.area, 4), dimnames=list(2:43,1:n.area,fish))
+  cond.catch2[,1,1] <- cond.catch$FG1
+  cond.catch2[,2,1] <- cond.catch$FG2
+  cond.catch2[,3,1] <- cond.catch$FG3
+  cond.catch2[,4,1] <- cond.catch$FG4
+  cond.catch2[,5,1] <- cond.catch$FG5
+  cond.catch2[,6,1] <- cond.catch$FG6
+  cond.catch2[,1,3] <- cond.catch$TG1
+  cond.catch2[,2,3] <- cond.catch$TG2
+  cond.catch2[,3,3] <- cond.catch$TG3
+  cond.catch2[,4,3] <- cond.catch$TG4
+  cond.catch2[,5,3] <- cond.catch$TG5
+  cond.catch2[,6,3] <- cond.catch$TG6
 
-# Calculate Selectivity ==========================================
+  # Calculate Selectivity ==========================================
 
 selex <- list() #Selectivity List
 #NOTE: You can also include as multidimensional arrays in place of list named, better for looping, harder to look up. Tradeoffs.
@@ -98,16 +117,16 @@ for(y in 1:n.year){
   recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=rec.by.area.props, ss=100, seed=1)      # sexes combined, recruitment in Numbers (I think)
 }}
 
-# ================================================================
-# Initialize Population - Conditioning the simulations (year 1, or change to years 1977-2018) =============================================================
+# ==================================================================================
+# Initialize Population - Conditioning the simulations (year 1, or 1976) ===========
 N.by.area.props <- as.vector(c(0.123525838,0.138168043,0.112731838,0.401168634,0.102462464,0.121943183)) #mean proportion by area for n.areas from survey RPN (1979-2018) (from SurveyRPN.xlsx)
-#init.prop <- calc_init_age_prop(bo=mu_rec) #setting up proportions at age for 1977
-# instead of above funtion, read in proportions at age for males and females from 1977 estimated N from the single are EM, which are the same for both sexes so read in once here 
+#init.prop <- calc_init_age_prop(bo=mu_rec) #setting up proportions at age for 1976
+# instead of above funtion, read in proportions at age for males and females from 1976 estimated N from the single are EM, which are the same for both sexes so read in once here 
 Nprop.by.age <- as.vector(c(0.01499621,0.012601811,0.031930367,	0.030601254,	0.249981823,	0.051333394,	0.023219615,	0.009110259,	0.024604504,
                            0.025654192,	0.014809429,	0.013695526,	0.012304411,	0.010897499,	0.009556439,	0.008318243,	0.007200544,
                            0.006206813,	0.005333111,	0.004572241,	0.403269678,	0.003351983,	0.002870484,	0.002458885,	0.002107328,
                            0.001806924,	0.001549864,	0.001330032,	0.001142024,	0.013185113)) #for 1:n.ages
-##### Condition year 1 (aka 1977):
+##### Condition year 1 (aka 1976):
 # since we track numbers in this model, I will initialize things in numbers instead of biomass
 i <- 1
 m <- 1
@@ -124,33 +143,127 @@ for(i in 1:n.sims) {
 for(m in 1:n.area) {N[,1,,m,] <- N[,1,,m,] * N.by.area.props[m]} #N by age and area, in millions of fish
 #now calculate biomass
 for(a in 1:n.age) {B[,1,a,,] <- N[,1,a,,] * wa[,a]}  #B units??? millions of kg?
-
 #N[,1,,,1]
 #B[,1,,,1]
 
+# ==============Condition years 2-43 (aka 1977-2018)
 #set up initial population and dat file
-#calc_init_pop(init.prop,)
+
+i <- 1
+y <- 2 
+for(i in 1:n.sims) {
+  print(paste('Sim:',i,'of',n.sims))
+  for(y in 2:n.year) {
+    m <- 1
+    for(m in 1:n.area) {
+    a <- 1
+    for(a in 1:n.age) {
+      #Update Numbers and Biomass Matrix
+      if(a==1) { #Age-1
+        N[,y,a,m,i] <- 0.5*cond.rec$Recruitment[y-1] #multiplying by 0.5 to split evenly between sexes, y-1 calls the first year of cond.rec list
+        B[,y,a,m,i] <- 0.5*cond.rec$Recruitment[y-1]*wa[,a]
+        # N[,y,a] <- rec[,y-1]/wa[,a]
+        # B[,y,a] <- rec[,y-1]
+        ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
+        
+        ## add movement for age 1 here ##
+        
+      }else {
+        h <- 1
+        for(h in 1:n.sex) {
+          #Instantaneous Version
+          #F.a[h,y-1,a-1,m,i] <- sum(Fmort[,y,m,i]*va[,m,h,a-1]) #va dim = n.fish,n.area,n.sex,n.age
+          #Z.a[h,y-1,a-1,m,i] <- F.a[h,y-1,a-1,m,i] + mx[h,a-1]  #Natural mortality is NOT time-varying
+          
+          #Continuous
+          #surv[h,y-1,a-1,m,i] <- exp(-Z.a[h,y-1,a-1,m,i])
+          #mort[h,y-1,a-1,m,i] <- 1-surv[h,y-1,a-1,m,i]
+          
+          #Update
+          N[h,y,a,m,i] <- N[h,y-1,a-1,m,i]*surv[h,y-1,a-1,m,i] 
+          # B[h,y,a,i] <- B[h,y-1,a-1,i]*surv[h,y-1,a-1,i]
+          B[h,y,a,m,i] <- N[h,y,a,m,i]*wa[h,a]
+          ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
+          #Total Catch
+          C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
+          C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
+          
+          f <- 1
+          for(f in 1:n.fish) {
+            temp.F <- Fmort[f,y,m,i]*va[f,m,h,a-1]
+            # temp.Z <- temp.F + mx[h,a-1]
+            temp.Z <- sum(Fmort[,y,m,i]*va[,m,h,a-1]) + mx[h,a-1]
+            
+            harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
+            
+            harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
+          }#next gear
+        }#next sex
+        ## add movement for ages 
+      }
+      
+      if(a==A) {
+        h <- 1
+        for(h in 1:n.sex) {
+          #Fish in Plus Group
+          F.a[h,y-1,a,m,i] <- sum(Fmort[,y,m,i]*va[,m,h,a])
+          Z.a[h,y-1,a,m,i] <- F.a[h,y-1,a,m,i] + mx[h,a]  #Natural mortality is NOT time-varying        
+          
+          #Continuous
+          surv[h,y-1,a,m,i] <- exp(-Z.a[h,y-1,a,m,i])
+          mort[h,y-1,a,m,i] <- 1-surv[h,y-1,a,m,i]
+          
+          #Update
+          N[h,y,a,m,i] <- N[h,y,a,m,i] + N[h,y-1,a,m,i]*surv[h,y-1,a,m,i] #New Entrants (calculated above), plus existing plus group occupants.
+          # B[h,y,a,i] <- B[h,y,a,i] + B[h,y-1,a,i]*surv[h,y-1,a,i] 
+          B[h,y,a,m,i] <- N[h,y,a,m,i] * wa[h,a]
+          ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
+          
+          #Total Catch
+          C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number of halibut
+          C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
+          
+          f <- 1
+          for(f in 1:n.fish) {
+            temp.F <- Fmort[g,y,m,i]*va[f,m,h,a]
+            # temp.Z <- temp.F + mx[h,a]
+            temp.Z <- sum(Fmort[,y,m,i]*va[,m,h,a]) + mx[h,a]
+            # 
+            harvest.n[h,y-1,a,f,m,i] <- N[h,y-1,a,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z))
+            harvest.b[h,y-1,a,f,m,i] <- harvest.n[h,y-1,a,f,m,i] * wa[h,a]
+          }#next gear
+        }#next sex
+        #add movement for plus group here
+      }# If plus age group
+      
+    }#next age  
+   } #close area
+  } #close year
+}#next i sim
 
 
+
+
+#=====================================================================================
+    # Forward Simulation =============================================================
+    # Temporarily no movement, need to add that in in the future
+      
 #Loop order: sim, year, area, age, sex.
-# Order - calculate F associated with catch permitted from previous year's assessment and apportionment, recruit new cohort, F and M occur, movement occurs, sample the 
+# Order - calculate F associated with catch permitted from previous year's assessment and apportionment, 
+#recruit new cohort, F and M occur, movement occurs, sample the 
 #(moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle']
 # ...then start over at beginning with a new year
 area <- 1
 i <- 1
 for(i in 1:n.sims) {
   print(paste('Sim:',i,'of',n.sims))
-  
-  y <- 2  
-  for(y in 2:n.year) {
+  y <- 44  
+  for(y in 44:n.year) {
     # somewhere up here, set a bunch of seeds...
     
     m <- 1
     for (m in 1:n.area) {
-     
-    # Forward Simulation =============================================================
-    # Temporarily no movement, need to add that in in the future
-      
+
     #take most recent (2018) assessment and outputted ABC apportionment and calculate F 
     f <- 1
     for(f in 1:n.fish) {

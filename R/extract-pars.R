@@ -211,6 +211,18 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   catchability <<- list() 
   catchability$survey <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='qSurvey')
   catchability$fishery <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='qFishery')
-}
+  
+  # Extract: Recruitment values from EM for model conditioning==========
+  # these values are summed across sexes and from the 2018 management EM (because grabbing them
+  # from my single area EM would only get us values through 2015 at present...so these are a bit different)
+  #cond.rec <<- list()  
+  cond.rec <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='Conditioning_recruitment')
+  
+  }
+
+
+
+
 
 # extract_pars(input.file="Sablefish_Input.xlsx")
+  
