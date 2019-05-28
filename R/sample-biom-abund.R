@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-sample_biom_abund <- function(true.values, sigma, type, seed) {
+sample_biom_abund <- function(true.values, sigma, type, seed=NULL) {
   #Checking for inputs
   #if(type %in% c('lognorm', 'norm', 'pois')) { stop("Please specify type as one of: lognorm, norm, or poisson.") }
   if(is.null(sigma) & type%in%c('lognorm','norm')) { stop("Please specify a level of observation error, as either a CV or sigma.") }
@@ -35,7 +35,8 @@ sample_biom_abund <- function(true.values, sigma, type, seed) {
 
 
 ##testing
-#true.values = c(10000, 10000, 10000)
-#sigma=0.2
-#type='lognorm'
-#sample_biom_abund(c(100,100,200),sigma=0.2,type='lognorm', seed=1)
+# true.values = c(10000, 10000, 10000)
+# sigma=0.2
+# type='lognorm'
+# sample_biom_abund(true.values=true.values,sigma=0.2,type='norm', seed=NULL)
+
