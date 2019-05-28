@@ -41,7 +41,7 @@ sample_age_comps <- function(true.props, Nsamp, cpar=NULL, seed=NULL) {
 }
 
 #testing
-true.props = c(1,10,5,1)
-Nsamp = 100
-cpar = NULL
-sample_age_comps(true.props,Nsamp,cpar=cpar)
+# true.props = c(1,10,5,1)
+# Nsamp = 100
+# cpar = NULL
+# sample_age_comps(true.props,Nsamp,cpar=cpar)
