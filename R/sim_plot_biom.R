@@ -11,6 +11,7 @@
 #ages (30)
 #reas (6)
 #sims (100)
+#sim_biom_data <- B
 
 sim_plot_biom <- function(sim_biom_data) {
   # Define Workflow Paths ==============================================================

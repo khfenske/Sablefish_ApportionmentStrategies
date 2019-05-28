@@ -144,7 +144,7 @@ i <- 1
 y <- 2 
 for(i in 1:n.sims) {
   print(paste('Sim:',i,'of',n.sims))
-  for(y in 2:n.year) {
+  for(y in 2:43) {
     m <- 1
     for(m in 1:n.area) {
     a <- 1
@@ -155,7 +155,7 @@ for(i in 1:n.sims) {
         B[,y,a,m,i] <- 0.5*cond.rec$Recruitment[y-1]*wa[,a]
         # N[,y,a] <- rec[,y-1]/wa[,a]
         # B[,y,a] <- rec[,y-1]
-        ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #units?
+        ssb[,a,y,m,i] <- ma[,a]*wa[,a]*N[,y,a,m,i] #units?
         
         ## add movement for age 1 here ##
         
@@ -164,9 +164,9 @@ for(i in 1:n.sims) {
         for(h in 1:n.sex) {
 
           #Update
-          N[h,y,a,m,i] <- N[h,y-1,a-1,m,i]*(exp(-mx[h,a-1])) - cond_catch_at_age[y,m,h,a-1]
+          N[h,y,a,m,i] <- (N[h,y-1,a-1,m,i]*(exp(-mx[h,a-1]))) - cond_catch_at_age[y-1,m,h,a]
           B[h,y,a,m,i] <- N[h,y,a,m,i]*wa[h,a]
-          ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] 
+          ssb[h,a,y,m,i] <- ma[h,a]*wa[h,a]*N[h,y,a,m,i] 
           
         }#next sex
         ## add movement for ages 
@@ -177,9 +177,9 @@ for(i in 1:n.sims) {
         for(h in 1:n.sex) {
           #Fish in Plus Group
           #Update
-          N[h,y,a,m,i] <- N[h,y,a,m,i] + N[h,y-1,a,m,i]*(exp(-Mx[h,a-1])) - cond_catch_at_age[y,m,h,a-1] #New Entrants (calculated above), plus existing plus group occupants.
+          N[h,y,a,m,i] <- N[h,y,a,m,i] + N[h,y-1,a,m,i]*(exp(-mx[h,a-1])) - cond_catch_at_age[y-1,m,h,a] #New Entrants (calculated above), plus existing plus group occupants.
           B[h,y,a,m,i] <- N[h,y,a,m,i] * wa[h,a]
-          ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
+          ssb[h,a,y,m,i] <- ma[h,a]*wa[h,a]*N[h,y,a,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
           
         }#next sex
         #add movement for plus group here
