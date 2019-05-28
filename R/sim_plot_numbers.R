@@ -13,7 +13,7 @@ sim_plot_NatAge <- function(sim_N_data) {
   #meltedN <- melt(N, varnames = c("Sex", "Year", "Age", "Area", "Sim"), na.rm=FALSE, value.name = "Numbers")
   
   b2 <- meltedN
-
+  
   b3<-b2%>%group_by(Year,Area,Sim) %>% summarize(Numbers=sum(Numbers,na.rm=T))
   b4<-b3[b3$Year<21,] ## keeping dimensions reasonable for now
   b4$Year<-as.factor(b4$Year)
