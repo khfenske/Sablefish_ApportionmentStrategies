@@ -32,7 +32,7 @@ create_sim_recruitments <- function(mu_rec, sigma_rec, rho_rec=NULL, n.year, n.s
   
   i <- 1
   for(i in 1:n.sims) {
-    devs <- rnorm(n.year, 0, sigma_rec)
+    devs <- rnorm(n.year, 0, sigma_rec) 
     
     #If recruitment is NOT autocorrelated
     if(is.null(rho_rec)) {

@@ -106,7 +106,7 @@ build_datfile <- function() {
     L_4<-"#fixed_catch"
     L_5<-paste(as.vector(testdat$fixed_catch),collapse=" ")
     L_6<-"#trawl_catch"
-    L_7<-past(as.vector(testdat$trawl_catch),collapse=" ")
+    L_7<-paste(as.vector(testdat$trawl_catch),collapse=" ")
     
     FC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7)
     
@@ -149,7 +149,7 @@ build_datfile <- function() {
     L_4<-"#yrs_LLfish"
     L_5<-paste(as.vector(testdat$yrs_LLfish),collapse=" ")
     L_6<-"#obs_LLfish_biom"
-    L_7<-paste(as.vector(testdat$bs_LLfish_biom),collapse=" ")
+    L_7<-paste(as.vector(testdat$obs_LLfish_biom),collapse=" ")
     L_8<-"#obs_LLfish_se"
     L_9<- paste(as.vector(testdat$obs_LLfish_se),collapse=" ")
     L_10<-"#obs_LLfish_lci"

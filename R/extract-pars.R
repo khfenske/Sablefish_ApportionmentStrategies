@@ -49,7 +49,7 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   Bstart <<- as.numeric(in.sim$Value[in.sim$Par=='Bstart'])
   Nstart <<- as.numeric(in.sim$Value[in.sim$Par=='Nstart'])
   n.sims <<- as.numeric(in.sim$Value[in.sim$Par=='n.sims'])
-  
+
   # Extract: Growth Parameters ==============================================================
   in.growth <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Growth')
   linf <- as.numeric(in.growth[in.growth$Par=='linf',(2:3)])

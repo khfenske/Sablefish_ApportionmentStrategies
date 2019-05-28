@@ -55,13 +55,16 @@ source(file.path(dir.R,'estimate-Fmort4catch.R')) #Estimate F that provides for 
 source(file.path(dir.R,'sample-biom-abund.R')) #sample biomass/numbers of OM population
 source(file.path(dir.R,'sample-age-comps.R')) #sample age comps of OM population
 
+source(file.path(dir.R,'sablefish-conditioning-datfile-builder.R'))
+source(file.path(dir.R,'sablefish-datfile-builder.R'))
+
 
         
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 # confidential data, catch is in kt
-
+ 
 
 # Calculate Selectivity ==========================================
 
@@ -187,8 +190,61 @@ for(i in 1:n.sims) {
       
     }#next age  
    } #close area
+    
+    ######Sample the conditioning population for age comps, survey index, etc. 
+    ##### Generate EM Data: ######
+    m <- 1
+    for (m in 1:n.area) {
+      # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
+      #write a function that makes it easy to specify (by area) the yield ratio
+      
+      # longline survey RPN, 'current' year  -- check units
+      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
+      #(we'd talked about concatonating 'sim # + year' for seed)
+      
+      # longline/fixed gear fishery CPUE/RPW  -- check units
+      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
+      
+      for(h in 1:n.sex){
+        # longline/fixed gear fishery age comps in numbers (not proportions yet) 
+        #Fish.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
+        
+        # longline survey age comps in numbers (not proportions yet) single sex
+        #Surv.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
+      }
+    } #next area m
+    
+    ######### aggregate OM data across age, sex and/or areas for EM and track over time
+    #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
+    #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
+    #OM_fixed_catch[y,i] <- sum(harvest.b[,y,,2,,i]) #2 - US fixed post-IFQ
+    #OM_trawl_catch[y,i] <- sum(harvest.b[,y,,3,,i]) #3 - US trawl
+    
+    #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
+    OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])
+    OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
+    
+    #call the function to aggregate age comps for fishery and survey across areas (weight by catch/harvest at age in each area, sum across areas, then spit out a vector or age comps)
+    #OM_Fish.RPW.age[,y,,i] <- aggr_agecomp(Fish.AC, harvest.num) #is harvest.n the right one to use?
+    #OM_Surv.RPN.age[,y,,i] <- aggr_agecomp(Surv.AC, harvest.num)
+    
   } #close year
 }#next i sim
+
+
+    ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
+    ## then generate the updated .dat file to be pushed to the EM
+    build_conditioning_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
+    
+
+
+
+
+
+
+
+
+
 
 
 
@@ -330,15 +386,16 @@ for(i in 1:n.sims) {
         # longline/fixed gear fishery CPUE/RPW  -- check units
         Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
         
+        for(h in 1:n.sex){
         # longline/fixed gear fishery age comps in numbers (not proportions yet) 
-        #Fish.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
+        Fish.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
         
         # longline survey age comps in numbers (not proportions yet) single sex
-        #Surv.AC[y,,m,i] <- sample_age_comps() #true.props, Nsamp, cpar
-
+        Surv.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
+        }
     } #next area m
     
-    ######### aggregate OM data across age and/or areas for EM and track over time
+    ######### aggregate OM data across age, sex and/or areas for EM and track over time
     #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
         #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
         OM_fixed_catch[y,i] <- sum(harvest.b[,y,,2,,i]) #2 - US fixed post-IFQ
@@ -389,5 +446,5 @@ for(i in 1:n.sims) {
 
 
 
-
+#write.table(N[1,,,1,1], file="male A1 sim1.csv")
 

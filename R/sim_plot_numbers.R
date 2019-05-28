@@ -15,7 +15,7 @@ sim_plot_NatAge <- function(sim_N_data) {
   b2 <- meltedN
   
   b3<-b2%>%group_by(Year,Area,Sim) %>% summarize(Numbers=sum(Numbers,na.rm=T))
-  b4<-b3[b3$Year<21,] ## keeping dimensions reasonable for now
+  b4<-b3 #[b3$Year<21,] ## keeping dimensions reasonable for now
   b4$Year<-as.factor(b4$Year)
   b4$Area<-as.factor(b4$Area)
   ggplot(b4)+geom_boxplot(aes(x=factor(Year),y=Numbers),colour="red")+theme_bw(base_size=13)
@@ -23,7 +23,7 @@ sim_plot_NatAge <- function(sim_N_data) {
   ggsave("Numbers_area_box.png",width=8,height=5,dpi=325, path=dir.output)
 
   b3<-b2%>%group_by(Age,Area,Sim) %>% summarize(Numbers=sum(Numbers,na.rm=T))
-  b4<-b3[b3$Age<15,] ## keeping dimensions reasonable for now
+  b4<-b3#[b3$Age<15,] ## keeping dimensions reasonable for now
   b4$Age<-as.factor(b4$Age)
   b4$Area<-as.factor(b4$Area)
   ggplot(b4)+geom_boxplot(aes(x=Age,y=Numbers),colour="red")+theme_bw(base_size=13)
