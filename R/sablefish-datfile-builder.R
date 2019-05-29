@@ -186,9 +186,9 @@ build_datfile <- function() {
     L_9<-paste(as.vector(testdat$oac_LLfish_bsaiwgcgeg[1,]),collapse=" ") #this might need work...
     for(y in 2:length(testdat$oac_LLfish_bsaiwgcgeg[,1])){
       L_add<-paste(as.vector(testdat$oac_LLfish_bsaiwgcgeg[y,]),collapse=" ")
-      L_10<-c(L_9,L_add)}
+      L_9<-c(L_9,L_add)}
 
-    FAC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10)
+    FAC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9)
       
 
     L_1<-"# Domestic LL survey Age Compositions"
@@ -202,9 +202,9 @@ build_datfile <- function() {
     L_9<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[1,]),collapse=" ") #this might need work...
     for(y in 2:length(testdat$oac_domLLsurv_bsaiwgcgeg[,1])){
       L_add<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[y,]),collapse=" ")
-      L_10<-c(L_9,L_add)}
+      L_9<-c(L_9,L_add)}
     
-    USAC1<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10)
+    USAC1<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9)
     
     
     L_1<-"# Domestic LL/Fixed gear fishery length compositions"
@@ -218,14 +218,14 @@ build_datfile <- function() {
     L_9<-paste(as.vector(testdat$osc_LLfish_m[1,]),collapse=" ")
     for(y in 2:length(testdat$osc_LLfish_m[,1])){
       L_add<-paste(as.vector(testdat$osc_LLfish_m[y,]),collapse=" ")
-      L_10<-c(L_9,L_add)}
-    L_11<-"#osc_LLfish_f"
-    L_12<-paste(as.vector(testdat$osc_LLfish_f[1,]),collapse=" ")
+      L_9<-c(L_9,L_add)}
+    L_10<-"#osc_LLfish_f"
+    L_11<-paste(as.vector(testdat$osc_LLfish_f[1,]),collapse=" ")
     for(y in 2:length(testdat$osc_LLfish_f[,1])){
       L_add<-paste(as.vector(testdat$osc_LLfish_f[y,]),collapse=" ")
-    L_13<-c(L_12,L_add)}
+    L_11<-c(L_11,L_add)}
     
-    FFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13)
+    FFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
     
     L_1<-"# U.S. Trawl gear fishery length compositions"
     L_2<-"#nyrs_fish3_size"
@@ -238,14 +238,14 @@ build_datfile <- function() {
     L_9<-paste(as.vector(testdat$osc_fish3_m[1,]),collapse=" ")
     for(y in 2:length(testdat$osc_fish3_m[,1])){
       L_add<-paste(as.vector(testdat$osc_fish3_m[y,]),collapse=" ")
-      L_10<-c(L_9,L_add)}
-    L_11<-"#osc_fish3_f"
-    L_12<-paste(as.vector(testdat$osc_fish3_f[1,]),collapse=" ")
+      L_9<-c(L_9,L_add)}
+    L_10<-"#osc_fish3_f"
+    L_11<-paste(as.vector(testdat$osc_fish3_f[1,]),collapse=" ")
     for(y in 2:length(testdat$osc_fish3_f[,1])){
       L_add<-paste(as.vector(testdat$osc_fish3_f[y,]),collapse=" ")
-      L_13<-c(L_12,L_add)}
+      L_11<-c(L_11,L_add)}
     
-    TFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13)
+    TFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
     
     
     L_1<-"# U.S. Domestic LL Survey Length Proportions"
@@ -259,14 +259,14 @@ build_datfile <- function() {
     L_9<-paste(as.vector(testdat$osc_srv1_m[1,]),collapse=" ")
     for(y in 2:length(testdat$osc_srv1_m[,1])){
       L_add<-paste(as.vector(testdat$osc_srv1_m[y,]),collapse=" ")
-      L_10<-c(L_9,L_add)}
-    L_11<-"#osc_srv1_f"
-    L_12<-paste(as.vector(testdat$osc_srv1_f[1,]),collapse=" ")
+      L_9<-c(L_9,L_add)}
+    L_10<-"#osc_srv1_f"
+    L_11<-paste(as.vector(testdat$osc_srv1_f[1,]),collapse=" ")
     for(y in 2:length(testdat$osc_srv1_f[,1])){
       L_add<-paste(as.vector(testdat$osc_srv1_f[y,]),collapse=" ")
-      L_13<-c(L_12,L_add)}
+      L_11<-c(L_11,L_add)}
     
-    USS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13)
+    USS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
     
     
     L_1<-"# US/Japanese coop LL survey length Composition"
@@ -280,14 +280,14 @@ build_datfile <- function() {
     L_9<-paste(as.vector(testdat$osc_srv2_m[1,]),collapse=" ")
     for(y in 2:length(testdat$osc_srv2_m[,1])){
       L_add<-paste(as.vector(testdat$osc_srv2_m[y,]),collapse=" ")
-      L_10<-c(L_9,L_add)}
-    L_11<-"#osc_srv2_f"
-    L_12<-paste(as.vector(testdat$osc_srv2_f[1,]),collapse=" ")
+      L_9<-c(L_9,L_add)}
+    L_10<-"#osc_srv2_f"
+    L_11<-paste(as.vector(testdat$osc_srv2_f[1,]),collapse=" ")
     for(y in 2:length(testdat$osc_srv2_f[,1])){
       L_add<-paste(as.vector(testdat$osc_srv2_f[y,]),collapse=" ")
-      L_13<-c(L_12,L_add)}
+      L_11<-c(L_11,L_add)}
     
-    JPLLSC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13)
+    JPLLSC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
     
     
     

@@ -11,7 +11,7 @@ build_conditioning_datfile <- function() {
   #use the PBSmodeling package to read the ADMB .dat file into the model and update it with new OM generated data
   #note that catch is in 1000 mt units when read in
   testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/permanant_tem_single2015.dat") #should I read this in as global?
-  #head(testdat, 20)
+  #head(testdat, 49)
   #names(testdat)
   
   #add newly generated data from OM to the .dat file
@@ -25,7 +25,7 @@ build_conditioning_datfile <- function() {
   #testdat$nyrs_domLLsurv <- testdat$nyrs_domLLsurv + 1 #advance one year on number of years
   #testdat$yrs_domLLsurv[testdat$nyrs_domLLsurv] <- testdat$yrs_domLLsurv[testdat$nyrs_domLLsurv-1] + 1 #add a year to the sequence
   testdat$obs_domLLsurv_biom <- OM_Surv.RPN[-1,1] #RPN data from the conditioning OM
-  testdat$obs_domLLsurv_biom <- testdat$obs_domLLsurv_biom[1:42]
+  testdat$obs_domLLsurv_biom <- testdat$obs_domLLsurv_biom[1:42] #indicate the years of conditioning
   testdat$obs_domLLsurv_se <- 0.1*testdat$obs_domLLsurv_biom#temp fill in bogus values, need to decide if these are needed 
   testdat$obs_domLLsurv_lci <- testdat$obs_domLLsurv_biom-(2*testdat$obs_domLLsurv_se) #add a lower CI value
   testdat$obs_domLLsurv_uci <- testdat$obs_domLLsurv_biom+(2*testdat$obs_domLLsurv_se) #add an upper CI value
@@ -204,9 +204,9 @@ build_conditioning_datfile <- function() {
   L_9<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[1,]),collapse=" ") #this might need work...
   for(y in 2:length(testdat$oac_domLLsurv_bsaiwgcgeg[,1])){
     L_add<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[y,]),collapse=" ")
-    L_10<-c(L_9,L_add)}
+    L_9<-c(L_9,L_add)}
   
-  USAC1<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10)
+  USAC1<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9)
   
   
   L_1<-"# Domestic LL/Fixed gear fishery length compositions"
@@ -220,14 +220,14 @@ build_conditioning_datfile <- function() {
   L_9<-paste(as.vector(testdat$osc_LLfish_m[1,]),collapse=" ")
   for(y in 2:length(testdat$osc_LLfish_m[,1])){
     L_add<-paste(as.vector(testdat$osc_LLfish_m[y,]),collapse=" ")
-    L_10<-c(L_9,L_add)}
-  L_11<-"#osc_LLfish_f"
-  L_12<-paste(as.vector(testdat$osc_LLfish_f[1,]),collapse=" ")
+    L_9<-c(L_9,L_add)}
+  L_10<-"#osc_LLfish_f"
+  L_11<-paste(as.vector(testdat$osc_LLfish_f[1,]),collapse=" ")
   for(y in 2:length(testdat$osc_LLfish_f[,1])){
     L_add<-paste(as.vector(testdat$osc_LLfish_f[y,]),collapse=" ")
-    L_13<-c(L_12,L_add)}
+    L_11<-c(L_11,L_add)}
   
-  FFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13)
+  FFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
   
   L_1<-"# U.S. Trawl gear fishery length compositions"
   L_2<-"#nyrs_fish3_size"
@@ -240,14 +240,14 @@ build_conditioning_datfile <- function() {
   L_9<-paste(as.vector(testdat$osc_fish3_m[1,]),collapse=" ")
   for(y in 2:length(testdat$osc_fish3_m[,1])){
     L_add<-paste(as.vector(testdat$osc_fish3_m[y,]),collapse=" ")
-    L_10<-c(L_9,L_add)}
-  L_11<-"#osc_fish3_f"
-  L_12<-paste(as.vector(testdat$osc_fish3_f[1,]),collapse=" ")
+    L_9<-c(L_9,L_add)}
+  L_10<-"#osc_fish3_f"
+  L_11<-paste(as.vector(testdat$osc_fish3_f[1,]),collapse=" ")
   for(y in 2:length(testdat$osc_fish3_f[,1])){
     L_add<-paste(as.vector(testdat$osc_fish3_f[y,]),collapse=" ")
-    L_13<-c(L_12,L_add)}
+    L_11<-c(L_11,L_add)}
   
-  TFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13)
+  TFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
   
   
   L_1<-"# U.S. Domestic LL Survey Length Proportions"
@@ -261,14 +261,14 @@ build_conditioning_datfile <- function() {
   L_9<-paste(as.vector(testdat$osc_srv1_m[1,]),collapse=" ")
   for(y in 2:length(testdat$osc_srv1_m[,1])){
     L_add<-paste(as.vector(testdat$osc_srv1_m[y,]),collapse=" ")
-    L_10<-c(L_9,L_add)}
-  L_11<-"#osc_srv1_f"
-  L_12<-paste(as.vector(testdat$osc_srv1_f[1,]),collapse=" ")
+    L_9<-c(L_9,L_add)}
+  L_10<-"#osc_srv1_f"
+  L_11<-paste(as.vector(testdat$osc_srv1_f[1,]),collapse=" ")
   for(y in 2:length(testdat$osc_srv1_f[,1])){
     L_add<-paste(as.vector(testdat$osc_srv1_f[y,]),collapse=" ")
-    L_13<-c(L_12,L_add)}
+    L_11<-c(L_11,L_add)}
   
-  USS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13)
+  USS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
   
   
   L_1<-"# US/Japanese coop LL survey length Composition"
@@ -282,14 +282,14 @@ build_conditioning_datfile <- function() {
   L_9<-paste(as.vector(testdat$osc_srv2_m[1,]),collapse=" ")
   for(y in 2:length(testdat$osc_srv2_m[,1])){
     L_add<-paste(as.vector(testdat$osc_srv2_m[y,]),collapse=" ")
-    L_10<-c(L_9,L_add)}
-  L_11<-"#osc_srv2_f"
-  L_12<-paste(as.vector(testdat$osc_srv2_f[1,]),collapse=" ")
+    L_9<-c(L_9,L_add)}
+  L_10<-"#osc_srv2_f"
+  L_11<-paste(as.vector(testdat$osc_srv2_f[1,]),collapse=" ")
   for(y in 2:length(testdat$osc_srv2_f[,1])){
     L_add<-paste(as.vector(testdat$osc_srv2_f[y,]),collapse=" ")
-    L_13<-c(L_12,L_add)}
+    L_11<-c(L_11,L_add)}
   
-  JPLLSC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13)
+  JPLLSC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
   
   
   
