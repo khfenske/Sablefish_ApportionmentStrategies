@@ -22,13 +22,13 @@ sample_age_comps <- function(true.props, Nsamp, cpar=NULL, seed=NULL) {
   probs <- as.numeric(true.props/sum(true.props))
   ## If cpar is NA this signifies to use the multinomial 
   if(is.null(cpar)){ #MULTINOMIAL
-    obs.comp <- rmultinom(1, size=Nsamp, prob=probs)[,1]/Nsamp  
+    obs.comp <<- rmultinom(1, size=Nsamp, prob=probs)[,1]/Nsamp  
     effectiveN <- Nsamp
   } else { # use Dirichlet
     lambda <- Nsamp/cpar^2 - 1
     if(lambda<0)
       stop(paste("Invalid Dirichlet parameter: Lambda=", lambda))
-    obs.comp <- gtools::rdirichlet(1,probs * lambda)
+    obs.comp <<- gtools::rdirichlet(1,probs * lambda)
     ## Use the effective sample size when using Dirichlet
     effectiveN <- Nsamp/cpar^2
   }
@@ -38,10 +38,15 @@ sample_age_comps <- function(true.props, Nsamp, cpar=NULL, seed=NULL) {
   out$Nsamp <- Nsamp
   out$effectiveN <- effectiveN
   return(out)
+  return(obs.comp)
 }
 
 #testing
-# true.props = c(1,10,5,1)
-# Nsamp = 100
-# cpar = NULL
-# sample_age_comps(true.props,Nsamp,cpar=cpar)
+#h=1
+#y=2
+#m=1
+#i=1
+#true.props = N[h,y,,m,i]
+ #Nsamp = 100
+ #cpar = NULL
+ #sample_age_comps(true.props,Nsamp,cpar=cpar)

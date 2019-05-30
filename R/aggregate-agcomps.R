@@ -11,24 +11,24 @@
 aggr_agecomp <- function(input.comps, harvest.num) {
 
   #sum sampled age comps (in numbers) across sexes for each area
-  input.comps2 <- matrix(data=NA, nrow=n.areas, ncol=n.age, dimnames=list(areas,ages)) #=c(n.age, n.area), dimnames=list(years,ages,areas,sims))
+  input.comps2 <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages)) #=c(n.age, n.area), dimnames=list(years,ages,areas,sims))
   input.comps2[,] <- input.comps[1,,] + input.comps[2,,]
   #add zeros if needed
   input.comps2[is.na(input.comps2)] <- 0
 
   #sum harvest in number across sexes for each area
-  sum.harvest <- matrix(data=NA, nrow=num.areas, ncol=n.age, dimnames=list(areas,ages))
+  sum.harvest <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages))
   sum.harvest[,] <- harvest.num[1,,] + harvest.num[2,,]
   
   #calculate catch/harvest proportions by area for each age
-  harvest.prop <- matrix(data=NA, nrow=num.areas, ncol=n.age, dimnames=list(areas,ages))
+  harvest.prop <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages))
   a <- 1
   for(a in 1:n.age) {
     harvest.prop[,a] <- prop.table(sum.harvest[,a])  #for each age a, there's a n.areas (long) column of proportions by area
   }
   
   #for each age, weight comps by proportion of harvest in each area
-  wt.comps <- matrix(data=NA, nrow=num.areas, ncol=n.age, dimnames=list(areas,ages))
+  wt.comps <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages))
   sum.comps <- as.vector(NA)  
   a <- 1
   for(a in 1:n.age) {

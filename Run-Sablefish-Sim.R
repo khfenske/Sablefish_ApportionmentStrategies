@@ -45,7 +45,8 @@ source(file.path(dir.R,'calc-init-age-prop.R'))
 
 source(file.path(dir.R,'create-sim-objects.R'))
 source(file.path(dir.R,'create-sim-recruitments.R')) #Simulate Recruitment across years and sims
-source(file.path(dir.R,'create-cond-catch.R')) #creates an array of catch by year,age,sex,area,fish
+source(file.path(dir.R,'create-cond-catch.R')) #creates an array of catch by year,age,sex,area,fish 
+#the catch values in the actual catch spreadsheet are confidential, so dummy values are in place now.
 
 source(file.path(dir.R,'spatial-rec.R')) #Apportion Recruitment Among Regions
 
@@ -54,6 +55,7 @@ source(file.path(dir.R,'estimate-Fmort4catch.R')) #Estimate F that provides for 
 
 source(file.path(dir.R,'sample-biom-abund.R')) #sample biomass/numbers of OM population
 source(file.path(dir.R,'sample-age-comps.R')) #sample age comps of OM population
+source(file.path(dir.R,'aggregate-agcomps.R')) #sample age comps of OM population
 
 source(file.path(dir.R,'sablefish-conditioning-datfile-builder.R'))
 source(file.path(dir.R,'sablefish-datfile-builder.R'))
@@ -63,7 +65,7 @@ source(file.path(dir.R,'sablefish-datfile-builder.R'))
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
-# confidential data, catch is in kt
+# confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
  
 
 # Calculate Selectivity ==========================================
@@ -99,7 +101,7 @@ create_sim_objects() #sets up all the spatial arrays to hold simulated data
 # Simulate Annual Recruitments ====================================
 #setup_years <- 39 #number of years to run the loop setting up the initial population and building initial dat file
 create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL, 
-                        n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object DOES THE rec object need to be set up in the 'create-sim-objects.R' function?
+                        n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object 
 
 # divide annual recruitments into areas - the values for area.props are from the proportions of age-2 fish by area from the LL survey, average across all years.
 # see the excel file in the repository (in data folder)
@@ -118,10 +120,10 @@ Nprop.by.age <- as.vector(c(0.01499621,0.012601811,0.031930367,	0.030601254,	0.2
                            0.025654192,	0.014809429,	0.013695526,	0.012304411,	0.010897499,	0.009556439,	0.008318243,	0.007200544,
                            0.006206813,	0.005333111,	0.004572241,	0.403269678,	0.003351983,	0.002870484,	0.002458885,	0.002107328,
                            0.001806924,	0.001549864,	0.001330032,	0.001142024,	0.013185113)) #for 1:n.ages
-#get catch at age data from single area EM
+#get catch at age in numbers from single area EM
 cond_catch_at_age <- array(data=NA, dim=c(42,n.area,n.sex,n.age),dimnames=list(2:43,1:n.area,sexes,ages))
 cond_catch_at_age <- cond_catch_AA(cond.catch, va)
-
+sum(cond_catch_at_age[1,,,])
 ##### Condition year 1 (aka 1976):
 # since we track numbers in this model, I will initialize things in numbers instead of biomass
 i <- 1
@@ -138,7 +140,7 @@ for(i in 1:n.sims) {
 #weight initial proportions at age by areas weights
 for(m in 1:n.area) {N[,1,,m,] <- N[,1,,m,] * N.by.area.props[m]} #N by age and area, in millions of fish
 #now calculate biomass
-for(a in 1:n.age) {B[,1,a,,] <- N[,1,a,,] * wa[,a]}  #B units??? millions of kg since (if?) wa is in kg?
+for(a in 1:n.age) {B[,1,a,,] <- N[,1,a,,] * wa[,a]}  #B units??? kt? (which is millions of kg)
 
 
 # ==============Condition years 2-43 (aka 1977-2018)
@@ -154,8 +156,9 @@ for(i in 1:n.sims) {
     for(a in 1:n.age) {
       #Update Numbers and Biomass Matrix
       if(a==1) { #Age-1
-        N[,y,a,m,i] <- 0.5*cond.rec$Recruitment[y-1] #multiplying by 0.5 to split evenly between sexes, y-1 calls the first year of cond.rec list
-        B[,y,a,m,i] <- 0.5*cond.rec$Recruitment[y-1]*wa[,a]
+        #cond.rec are values read in from an excel file in the extract-pars.R function - they are estimated recruitments for 1977-2018 from the single area EM
+        N[,y,a,m,i] <- 0.5*(cond.rec$Recruitment[y-1]) #multiplying by 0.5 to split evenly between sexes, y-1 calls the first year of cond.rec list 
+        B[,y,a,m,i] <- N[,y,a,m,i] * wa[,a]
         # N[,y,a] <- rec[,y-1]/wa[,a]
         # B[,y,a] <- rec[,y-1]
         ssb[,a,y,m,i] <- ma[,a]*wa[,a]*N[,y,a,m,i] #units?
@@ -192,7 +195,7 @@ for(i in 1:n.sims) {
    } #close area
     
     ######Sample the conditioning population for age comps, survey index, etc. 
-    ##### Generate EM Data: ######
+    ##### Sample the conditioning period population/data: ######
     m <- 1
     for (m in 1:n.area) {
       # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
@@ -207,10 +210,11 @@ for(i in 1:n.sims) {
       
       for(h in 1:n.sex){
         # longline/fixed gear fishery age comps in numbers (not proportions yet) 
-        #Fish.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
-        
+         sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
+         Fish.AC[h,y,,m,i] <- obs.comp
         # longline survey age comps in numbers (not proportions yet) single sex
-        #Surv.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
+         sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
+         Surv.AC[h,y,,m,i] <- obs.comp
       }
     } #next area m
     
@@ -225,7 +229,7 @@ for(i in 1:n.sims) {
     OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
     
     #call the function to aggregate age comps for fishery and survey across areas (weight by catch/harvest at age in each area, sum across areas, then spit out a vector or age comps)
-    #OM_Fish.RPW.age[,y,,i] <- aggr_agecomp(Fish.AC, harvest.num) #is harvest.n the right one to use?
+    #OM_Fish.RPW.age[,y,,i] <- aggr_agecomp(Fish.AC[,y,,,i], cond_catch_at_age[y,,,]) #is harvest.n the right one to use?
     #OM_Surv.RPN.age[,y,,i] <- aggr_agecomp(Surv.AC, harvest.num)
     
   } #close year
@@ -245,10 +249,6 @@ for(i in 1:n.sims) {
 
 
 
-
-
-
-
 #=====================================================================================
     # Forward Simulation =============================================================
     # Temporarily no movement, need to add that in in the future
@@ -258,6 +258,33 @@ for(i in 1:n.sims) {
 #recruit new cohort, F and M occur, movement occurs, sample the 
 #(moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle']
 # ...then start over at beginning with a new year
+    
+#specify 2018 catch by area, gear, in biomass (kt) check units
+dim(C.b)
+dim(cond_catch_at_age)
+
+  for (m in 1:n.area) {
+    for(a in 1:n.age) {
+      for (h in 1:n.sex) {
+      C.b[h,43,a,m,] <- cond_catch_at_age[42,m,h,a]
+      }}}
+
+for(i in 1:n.sims) {
+  for (m in 1:n.area) {
+    #for(a in 1:n.age) {
+      for (f in 1:n.fish) {
+        for (h in 1:n.sex) {
+temp.Fmort <- estimate_Fmort4catch(catch=C.b[h,43,,m,i], 
+                                   temp.selex=va[f,m,h,],
+                                   temp.N=N[h,y-1,,m,i], 
+                                   wa=wa, mx=mx, 
+                                   bisection=TRUE)$Fmort
+Fmort[f,y,m,i] <- temp.Fmort 
+      }}}}#}
+
+
+
+
 area <- 1
 i <- 1
 for(i in 1:n.sims) {
@@ -270,24 +297,24 @@ for(i in 1:n.sims) {
     for (m in 1:n.area) {
 
     #take most recent (2018) assessment and outputted ABC apportionment and calculate F 
-    f <- 1
-    for(f in 1:n.fish) {
+    #f <- 1
+    #for(f in 1:n.fish) {
       # UPDATE: Instead of setting a fixed F, we can now set a fixed catch
       #  biomass and find the F for the specific fishery
       #  that will match that catch. This is so we can input the catch from the EM projection and apportionment output and then calculate the associated F.
       # need to think about how we deal with trawl vs longline F here - do we specify these catches currently?
       # Here lets specify an arbitrary fixed catch (kg) -- will need to eventually read it in for the first year here (based on the most recent assessment 
       #and harvest control rule output)...future year's catch will come from the EM/projectiom model and apportionment application, so this section still needs work
-      catch <- 1e7 # 10 million kg or 10,000 metric tons
+      #catch <- 1e7 # 10 million kg or 10,000 metric tons
       
       # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------  #right now F is a single value - probably need to have spatial F?
-      temp.Fmort <- estimate_Fmort4catch(catch=catch, 
-                                           temp.selex=va[f,area,,],
-                                           temp.N=N[,y-1,,m,i], 
-                                           wa=wa, mx=mx, 
-                                           bisection=TRUE)$Fmort
-      Fmort[f,y,m,i] <- temp.Fmort  #0.1
-    }#next g 
+      #temp.Fmort <- estimate_Fmort4catch(catch=catch, 
+                                           #temp.selex=va[f,area,,],
+                                           #temp.N=N[,y-1,,m,i], 
+                                           #wa=wa, mx=mx, 
+                                           #bisection=TRUE)$Fmort
+      #Fmort[f,y,m,i] <- temp.Fmort  #0.1
+    #}#next g 
         
     a <- 1
     for(a in 1:n.age) {

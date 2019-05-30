@@ -58,10 +58,12 @@ for(y in 1:42) {
   }
 }
 #convert from catch in kt (millions of kg) of biomass to numbers in millions
+EMcond_catch <- EMcond_catch*1000000 #catch in kg
 for (a in 1:n.age){
   for (h in 1:n.sex) {
-EMcond_catch[,,,h,a] <- EMcond_catch[,,,h,a]*(wa[h])
+EMcond_catch[,,,h,a] <- EMcond_catch[,,,h,a]*(wa[h]) #catch in numbers
   }}
+EMcond_catch <- EMcond_catch/1000000 #catch in millions of fish (numbers)
 #sum over fishery/gear for catch in number by year, age, sex, area
 EMcond_catch2 <- array(data=NA, dim=c(42,n.area,n.sex,n.age),dimnames=list(2:43,1:n.area,sexes,ages))
 
