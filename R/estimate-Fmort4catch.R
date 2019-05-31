@@ -111,6 +111,6 @@ estimate_Fmort4catch <- function(catch, temp.selex, temp.N, wa=wa, mx=mx, bisect
 # temp.N <- N[,y-1,,temp.area,i] #Sex, year, age, area, sim
 # bisection <- TRUE
 # 
- estimate_Fmort4catch(catch=catch, temp.selex=temp.selex, 
-                      temp.N=temp.N, wa=wa, mx=mx, bisection=bisection)
+# estimate_Fmort4catch(catch=catch, temp.selex=temp.selex, 
+#                      temp.N=temp.N, wa=wa, mx=mx, bisection=bisection)
 # 

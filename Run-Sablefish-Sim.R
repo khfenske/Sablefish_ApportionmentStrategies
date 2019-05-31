@@ -126,6 +126,11 @@ cond_catch_at_age <- cond_catch_AA(cond.catch, va, Ctype=2) #Ctype 1= biomass (k
 temp.catchnumbiom <- vector(length=42)
 for(y in 1:42){
 temp.catchnumbiom[y] <- sum(cond_catch_at_age[y,,,])}
+### set up N samples and sigmas for sampling
+LLsurvRPNsigma <- 0.2
+LLfishRPWsigma <- 0.4
+LLsurvAC_sampsize <- 20
+LLfishAC_sampsize <- 20
 
 ##### Condition year 1 (aka 1976):
 # since we track numbers in this model, I will initialize things in numbers instead of biomass
@@ -172,7 +177,7 @@ for(i in 1:n.sims) {
     a <- 1
     for(a in 1:n.age) {
       #Update Numbers and Biomass Matrix
-      if(a==1) { #Age-1
+      if(a==1) { #Age 1
         #cond.rec are values read in from an excel file in the extract-pars.R function - they are estimated recruitments for 1977-2018 from the single area EM
         N[,y,a,m,i] <- 0.5*(cond.rec$Recruitment[y-1]) #multiplying by 0.5 to split evenly between sexes, y-1 calls the first year of cond.rec list 
         B[,y,a,m,i] <- N[,y,a,m,i] * wa[,a]
@@ -216,7 +221,7 @@ for(i in 1:n.sims) {
         ## add movement for ages 
       }
       
-      if(a==A) {
+      if(a==n.age) {
         h <- 1
         for(h in 1:n.sex) {
           #Fish in Plus Group
@@ -239,7 +244,7 @@ for(i in 1:n.sims) {
           
           f <- 1
           for(f in 1:n.fish) {
-            temp.F <- F.mort[g,y,m,i]*va[f,m,h,a]
+            temp.F <- F.mort[f,y,m,i]*va[f,m,h,a]
             # temp.Z <- temp.F + mx[h,a]
             temp.Z <- sum(F.mort[,y,m,i]*va[,m,h,a]) + mx[h,a]
             # 
@@ -262,18 +267,18 @@ for(i in 1:n.sims) {
       #write a function that makes it easy to specify (by area) the yield ratio
       
       # longline survey RPN, 'current' year  -- check units
-      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
+      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=LLsurvRPNsigma, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
       #(we'd talked about concatonating 'sim # + year' for seed)
       
       # longline/fixed gear fishery CPUE/RPW  -- check units
-      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
+      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=LLfishRPWsigma, type='lognorm', seed=333)
       
       for(h in 1:n.sex){
         # longline/fixed gear fishery age comps in numbers (not proportions yet) 
-        sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
+        sample_age_comps(harvest.n[h,y,,2,m,i], Nsamp=LLsurvAC_sampsize, cpar=NULL) 
         Fish.AC[h,y,,m,i] <- obs.comp
         # longline survey age comps in numbers (not proportions yet) single sex
-        sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
+        sample_age_comps(N[h,y,,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL) #true.props, Nsamp, cpar
         Surv.AC[h,y,,m,i] <- obs.comp
       }
     } #next area m
@@ -422,7 +427,7 @@ for(i in 1:n.sims) {
         ## add movement for ages 
       }
       
-      if(a==A) {
+      if(a==n.age) {
         h <- 1
         for(h in 1:n.sex) {
           #Fish in Plus Group

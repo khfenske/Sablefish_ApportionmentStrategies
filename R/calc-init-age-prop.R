@@ -19,7 +19,7 @@ calc_init_age_prop <- function(bo, init_area_props) {
     }else {
       init.prop[,a,m] <- bo*exp(-(a-1)*mx[,a]) 
     }
-    if(a==A) {
+    if(a==n.age) {
       init.prop[,a,m] <- init.prop[,a,m]/(1-exp(-mx[,a]))
     }
   } #close age

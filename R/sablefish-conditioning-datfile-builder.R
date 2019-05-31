@@ -33,8 +33,8 @@ build_conditioning_datfile <- function() {
   #domestic LL fishery RPW (check units)
   #testdat$nyrs_LLfish <- testdat$nyrs_LLfish + 1 #advance the number of years
   #testdat$yrs_LLfish[testdat$nyrs_LLfish] <- testdat$yrs_LLfish[testdat$nyrs_LLfish] + 1 #add a year to the sequence
-  testdat$obs_LLfish_biom <- OM_Fish.RPW[-1,1] #add newest RPW data from OM
-  testdat$obs_LLfish_biom <- testdat$obs_LLfish_biom[1:42]
+  testdat$obs_LLfish_biom <- OM_Fish.RPW[-1,1] #RPW data from OM
+  testdat$obs_LLfish_biom <- testdat$obs_LLfish_biom[1:42] #conditioning years
   testdat$obs_LLfish_se <- 0.1* testdat$obs_LLfish_biom #add a SE value
   testdat$obs_LLfish_lci <- testdat$obs_LLfish_biom-(2*testdat$obs_LLfish_se)#add a lower CI value
   testdat$obs_LLfish_uci <- testdat$obs_LLfish_biom+(2*testdat$obs_LLfish_se)#add an upper CI value
@@ -42,8 +42,8 @@ build_conditioning_datfile <- function() {
   #domestic LL fishery age comps
   #testdat$nyrs_LLfish_age <- testdat$nyrs_LLfish_age + 1 #advance the number of years
   #testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] <- testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] + 1 #add a year to the sequence
-  #testdat$nsamples_LLfish_age_bsaiwgcgeg[testdat$nyrs_LLfish_age] <- INCOMPLETE  #add to number of samples
-  #testdat$oac_LLfish_bsaiwgcgeg[testdat$nyrs_LLfish_age,] <- OM_Fish.RPW.age[,,i] #add a row of age comps for year y (or y-1 if we want to maintain the lag)
+  testdat$nsamples_LLfish_age_bsaiwgcgeg[testdat$nyrs_LLfish_age] <- INCOMPLETE  #add to number of samples
+  testdat$oac_LLfish_bsaiwgcgeg[testdat$nyrs_LLfish_age,] <- OM_Fish.RPW.age[,,i] #add a row of age comps for year y (or y-1 if we want to maintain the lag)
   
   #domestic LL survey age comps
   #testdat$nyrs_domLLsurv_age <- testdat$nyrs_domLLsurv_age + 1 #advance the number of years
@@ -53,16 +53,6 @@ build_conditioning_datfile <- function() {
   
   
   #Write the new .dat file
-  #====================================================================================================
-  #================ Get Working Directories, define format vectors, define data call parameters
-  #====================================================================================================
-  
-  ######### Define vector for formatting
-  #Sep<-"#=========================================================================================================================="
-  
-  #====================================================================================================
-  #================ Header
-  #====================================================================================================
   #L_1<-Sep
   #L_2<-"# Sablefish Model_1_single_area .dat file"
   #L_3<-paste("# Single area model(bsaiwgcgeg) data prepared by Kari Fenske on,",substr(Sys.time(),1,10),sep=" ")
@@ -71,9 +61,6 @@ build_conditioning_datfile <- function() {
   #L_6<-""
   #Header<-c(L_1,L_2,L_3,L_4,L_5,L_6)
   
-  #====================================================================================================
-  #===== Model Input Parameters/Values
-  #====================================================================================================
   ######### Concatenate (first, define lines, then put together)
   L_1<-"# Sablefish Model_1_single_area .dat file"
   L_2<-"# Model input parameters/vectors"
