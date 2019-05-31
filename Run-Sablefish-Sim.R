@@ -213,9 +213,9 @@ for(i in 1:n.sims) {
             # temp.Z <- temp.F + mx[h,a-1]
             temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a-1]) + mx[h,a-1]
             
-            harvest.n[h,y,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
+            harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
             
-            harvest.b[h,y,a-1,f,m,i] <- harvest.n[h,y,a-1,f,m,i] * wa[h,a-1]
+            harvest.b[h,y,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
           }#next gear
         }#next sex
         ## add movement for ages 
@@ -226,11 +226,11 @@ for(i in 1:n.sims) {
         for(h in 1:n.sex) {
           #Fish in Plus Group
           F.a[h,y-1,a,m,i] <- sum(F.mort[,y-1,m,i]*va[,m,h,a])
-          Z.a[h,y-1,a,m,i] <- F.a[h,y,a,m,i] + mx[h,a]  #Natural mortality is NOT time-varying        
+          Z.a[h,y-1,a,m,i] <- F.a[h,y-1,a,m,i] + mx[h,a]  #Natural mortality is NOT time-varying        
           
           #Continuous
-          surv[h,y,a,m,i] <- exp(-Z.a[h,y,a,m,i])
-          mort[h,y,a,m,i] <- 1-surv[h,y,a,m,i]
+          surv[h,y-1,a,m,i] <- exp(-Z.a[h,y-1,a,m,i])
+          mort[h,y-1,a,m,i] <- 1-surv[h,y-1,a,m,i]
           
           #Update
           N[h,y,a,m,i] <- N[h,y,a,m,i] + N[h,y-1,a,m,i]*surv[h,y-1,a,m,i] #New Entrants (calculated above), plus existing plus group occupants.
@@ -239,8 +239,8 @@ for(i in 1:n.sims) {
           ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
           
           #Total Catch
-          C.n[h,y,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number of halibut
-          C.b[h,y,a,m,i] <- C.n[h,y,a,m,i] * wa[h,a]
+          C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number of halibut
+          C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
           
           f <- 1
           for(f in 1:n.fish) {
@@ -248,8 +248,8 @@ for(i in 1:n.sims) {
             # temp.Z <- temp.F + mx[h,a]
             temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a]) + mx[h,a]
             # 
-            harvest.n[h,y,a,f,m,i] <- N[h,y-1,a,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z))
-            harvest.b[h,y,a,f,m,i] <- harvest.n[h,y,a,f,m,i] * wa[h,a]
+            harvest.n[h,y-1,a,f,m,i] <- N[h,y-1,a,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z))
+            harvest.b[h,y-1,a,f,m,i] <- harvest.n[h,y-1,a,f,m,i] * wa[h,a]
           }#next gear
           
         }#next sex
@@ -276,10 +276,10 @@ for(i in 1:n.sims) {
       for(h in 1:n.sex){
         # longline/fixed gear fishery age comps in numbers 
         #sample_age_comps(harvest.n[h,y,,2,m,i], Nsamp=LLsurvAC_sampsize, cpar=NULL) 
-        #Fish.AC[h,y,,m,i] <- obs.comp
+        #Fish.AC[h,y-1,m,i] <- obs.comp
         # longline survey age comps in numbers
         #sample_age_comps(N[h,y,,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL) #true.props, Nsamp, cpar
-        #Surv.AC[h,y,,m,i] <- obs.comp
+        #Surv.AC[h,y-1,,m,i] <- obs.comp
       } #next sex
     } #next area m
     

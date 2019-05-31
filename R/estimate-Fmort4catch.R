@@ -30,11 +30,11 @@ estimate_Fmort4catch <- function(catch, temp.selex, temp.N, wa=wa, mx=mx, bisect
     #   current estimate is relative to the objective (catch)
     range <- vector(length=2)
     range[1] <- 1e-3
-    range[2] <- 1
+    range[2] <- 2 #this limits the F mort to an upper bound of 1 when it's set to 1
 
     #Iterate
     i <- 1
-    for(i in 1:30) {
+    for(i in 1:60) { #this is the number of iterations
       #MIDPOINT
       midpoint <- mean(range)
       
