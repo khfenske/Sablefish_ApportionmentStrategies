@@ -2,14 +2,16 @@
 #' get into the correct format, and apply selectivity so we have
 #' catch at age 
 #'
-#' @param cond.catch - this is catch for conditioning the OM, by area, gear, and year
-#' @param va - vulnerability at age
+#' @param EMcatch - this is catch for conditioning the OM, by area, gear, and year
+#' @param vuln.age - vulnerability at age
+#' @param Ctype - output catch in numbers (millions) or biomass (kt)
+#'        Ctype = 1 outputs catch in biomass (Kt), Ctype=2 outputs catch in numbers (millions)
 #'
 #' @return EMcond_catch
 #' @export
 
 
-cond_catch_AA  <- function(EMcatch, vuln.age) {
+cond_catch_AA  <- function(EMcatch, vuln.age, Ctype) {
 #build catch by year, area and gear arrays
 cond.catch2 <- array(dim=c(42, n.area, n.fish), dimnames=list(2:43,1:n.area,fish))
 cond.catch2[,1,1] <- c(EMcatch$FG1[1:19], rep(0, times=23))
@@ -42,10 +44,10 @@ va_prop <- array(dim=c(n.fish,n.area,n.sex,n.age), dimnames=list(fish,1:n.area,s
 #make vulnerablility into a proportional multiplier 
 for(m in 1:n.area) { 
   for(f in 1:n.fish) {
-    va_prop[f,m,,] <- prop.table(va[f,m,,])
+    va_prop[f,m,,] <- prop.table(vuln.age[f,m,,])
   }
 }
-
+#get catch at age by area
 for(y in 1:42) {
   for(m in 1:n.area) { 
     for(f in 1:n.fish) {
@@ -57,19 +59,29 @@ for(y in 1:42) {
     }
   }
 }
+
+#switch between catch in N or kt
+if(Ctype==1) {
+  #sum over fishery/gear for catch in kt by year, age, sex, area
+  EMcond_catch2 <- array(data=NA, dim=c(42,n.area,n.sex,n.age),dimnames=list(2:43,1:n.area,sexes,ages))
+  EMcond_catch2[,,,] <- EMcond_catch[,1,,,] +EMcond_catch[,2,,,]+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
+  return(EMcond_catch2)
+  
+}else {
+  
 #convert from catch in kt (millions of kg) of biomass to numbers in millions
-EMcond_catch <- EMcond_catch*1000000 #catch in kg
-for (a in 1:n.age){
-  for (h in 1:n.sex) {
-EMcond_catch[,,,h,a] <- EMcond_catch[,,,h,a]*(wa[h]) #catch in numbers
-  }}
-EMcond_catch <- EMcond_catch/1000000 #catch in millions of fish (numbers)
-#sum over fishery/gear for catch in number by year, age, sex, area
-EMcond_catch2 <- array(data=NA, dim=c(42,n.area,n.sex,n.age),dimnames=list(2:43,1:n.area,sexes,ages))
+  EMcond_catch <- EMcond_catch*1000000 #catch in kg
+  for (a in 1:n.age){
+    for (h in 1:n.sex) {
+    EMcond_catch[,,,h,a] <- EMcond_catch[,,,h,a]/(wa[h]) #divide by weight at age (in kg) to get catch in numbers
+    }}
+  EMcond_catch <- EMcond_catch/1000000 #catch in millions of fish (numbers)
 
-EMcond_catch2[,,,] <- EMcond_catch[,1,,,] +EMcond_catch[,2,,,]+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
-
-return(EMcond_catch2) #numbers of catch at age,sex,area,
+  #sum over fishery/gear for catch in number by year, age, sex, area
+  EMcond_catch2 <- array(data=NA, dim=c(42,n.area,n.sex,n.age),dimnames=list(2:43,1:n.area,sexes,ages))
+  EMcond_catch2[,,,] <- EMcond_catch[,1,,,] +EMcond_catch[,2,,,]+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
+  return(EMcond_catch2) #numbers of catch at age,sex,area,
+  }
 }
 
 

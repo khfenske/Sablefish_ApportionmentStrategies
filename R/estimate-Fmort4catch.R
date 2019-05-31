@@ -18,10 +18,9 @@ estimate_Fmort4catch <- function(catch, temp.selex, temp.N, wa=wa, mx=mx, bisect
   
   ### Testing ###
   # temp.area <- 1
-  # temp.selex <- selex$fish$USfixed_postIFQ[temp.area,,]
-  # 
-  # catch <- 1e8 #kg
-  # temp.N <- N[,y-1,,temp.area,i] #Sex, year, age, area, sim
+  # temp.selex <- va[2,1,,]
+  # catch <- (temp.catchnumbiom[1]*1000000) #kg
+  # temp.N <- N[,2,,temp.area,1] #Sex, year, age, area, sim
   # bisection <- FALSE
   ###############
   
@@ -53,8 +52,8 @@ estimate_Fmort4catch <- function(catch, temp.selex, temp.N, wa=wa, mx=mx, bisect
       }
       
       # KARI: Uncomment me to see how bisection marches toward success.
-      # print(range)
-      # print(pred_catch)
+       #print(range)
+       #print(pred_catch)
     }#next i
     
     #Extract result to return ============
@@ -112,6 +111,6 @@ estimate_Fmort4catch <- function(catch, temp.selex, temp.N, wa=wa, mx=mx, bisect
 # temp.N <- N[,y-1,,temp.area,i] #Sex, year, age, area, sim
 # bisection <- TRUE
 # 
-# estimate_Fmort4catch(catch=catch, temp.selex=temp.selex, 
-#                      temp.N=temp.N, wa=wa, mx=mx, bisection=bisection)
+ estimate_Fmort4catch(catch=catch, temp.selex=temp.selex, 
+                      temp.N=temp.N, wa=wa, mx=mx, bisection=bisection)
 # 
