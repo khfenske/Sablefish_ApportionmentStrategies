@@ -12,12 +12,10 @@
 sample_age_comps <- function(true.props, Nsamp, cpar=NULL, seed=NULL) {
   #require(gtools) #will call this at the start of the Run-sablefish-sim.R instead of here
   if(!is.null(seed)) { set.seed(seed) } #Allow code to set the seed for random draw
-  
-    #Initial Checking
+
     # cpar - A value of 1 indicates the same standard deviation as a multinomial of the given Nsamp, 2 indicates twice, etc. 
     # Values greater than one indicate overdispersion, and less indicate underdispersion.
-  
-  #cpar <- 2  #  <- is this for testing??
+
   #True data
   probs <- as.numeric(true.props/sum(true.props))
   ## If cpar is NA this signifies to use the multinomial 
@@ -37,8 +35,8 @@ sample_age_comps <- function(true.props, Nsamp, cpar=NULL, seed=NULL) {
   out$obs.comp <- obs.comp
   out$Nsamp <- Nsamp
   out$effectiveN <- effectiveN
-  return(out)
-  return(obs.comp)
+  #return(out)
+  return(out$obs.comp)
 }
 
 #testing
@@ -47,6 +45,8 @@ sample_age_comps <- function(true.props, Nsamp, cpar=NULL, seed=NULL) {
 #m=1
 #i=1
 #true.props = N[h,y,,m,i]
- #Nsamp = 100
- #cpar = NULL
- #sample_age_comps(true.props,Nsamp,cpar=cpar)
+#Nsamp = 100
+#cpar = NULL
+#seed=12
+
+#sample_age_comps(true.props,Nsamp,cpar=cpar, seed=12)

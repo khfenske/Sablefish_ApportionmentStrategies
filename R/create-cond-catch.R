@@ -13,20 +13,20 @@
 
 cond_catch_AA  <- function(EMcatch, vuln.age, Ctype) {
 #build catch by year, area and gear arrays
-cond.catch2 <- array(dim=c(42, n.area, n.fish), dimnames=list(2:43,1:n.area,fish))
-cond.catch2[,1,1] <- c(EMcatch$FG1[1:19], rep(0, times=23))
-cond.catch2[,2,1] <- c(EMcatch$FG2[1:19], rep(0, times=23))
-cond.catch2[,3,1] <- c(EMcatch$FG3[1:19], rep(0, times=23))
-cond.catch2[,4,1] <- c(EMcatch$FG4[1:19], rep(0, times=23))
-cond.catch2[,5,1] <- c(EMcatch$FG5[1:19], rep(0, times=23))
-cond.catch2[,6,1] <- c(EMcatch$FG6[1:19], rep(0, times=23))
+cond.catch2 <- array(dim=c(43, n.area, n.fish), dimnames=list(1:43,1:n.area,fish))
+cond.catch2[,1,1] <- c(EMcatch$FG1[1:20], rep(0, times=23))
+cond.catch2[,2,1] <- c(EMcatch$FG2[1:20], rep(0, times=23))
+cond.catch2[,3,1] <- c(EMcatch$FG3[1:20], rep(0, times=23))
+cond.catch2[,4,1] <- c(EMcatch$FG4[1:20], rep(0, times=23))
+cond.catch2[,5,1] <- c(EMcatch$FG5[1:20], rep(0, times=23))
+cond.catch2[,6,1] <- c(EMcatch$FG6[1:20], rep(0, times=23))
 
-cond.catch2[,1,2] <- c(rep(0, times=19), EMcatch$FG1[20:42])
-cond.catch2[,2,2] <- c(rep(0, times=19), EMcatch$FG2[20:42])
-cond.catch2[,3,2] <- c(rep(0, times=19), EMcatch$FG3[20:42])
-cond.catch2[,4,2] <- c(rep(0, times=19), EMcatch$FG4[20:42])
-cond.catch2[,5,2] <- c(rep(0, times=19), EMcatch$FG5[20:42])
-cond.catch2[,6,2] <- c(rep(0, times=19), EMcatch$FG6[20:42])
+cond.catch2[,1,2] <- c(rep(0, times=20), EMcatch$FG1[21:43])
+cond.catch2[,2,2] <- c(rep(0, times=20), EMcatch$FG2[21:43])
+cond.catch2[,3,2] <- c(rep(0, times=20), EMcatch$FG3[21:43])
+cond.catch2[,4,2] <- c(rep(0, times=20), EMcatch$FG4[21:43])
+cond.catch2[,5,2] <- c(rep(0, times=20), EMcatch$FG5[21:43])
+cond.catch2[,6,2] <- c(rep(0, times=20), EMcatch$FG6[21:43])
 
 cond.catch2[,1,3] <- EMcatch$TG1
 cond.catch2[,2,3] <- EMcatch$TG2
@@ -38,7 +38,7 @@ cond.catch2[,6,3] <- EMcatch$TG6
 cond.catch2[is.na(cond.catch2)]<-0
 
 #=====calculate catch by sex, area, gear, year, age
-EMcond_catch <- array(data=NA, dim=c(42,n.fish,n.area,n.sex,n.age),dimnames=list(2:43,fish,1:n.area,sexes,ages))
+EMcond_catch <- array(data=NA, dim=c(43,n.fish,n.area,n.sex,n.age),dimnames=list(1:43,fish,1:n.area,sexes,ages))
 va_prop <- array(dim=c(n.fish,n.area,n.sex,n.age), dimnames=list(fish,1:n.area,sexes,ages))
 
 #make vulnerablility into a proportional multiplier 
@@ -48,7 +48,7 @@ for(m in 1:n.area) {
   }
 }
 #get catch at age by area
-for(y in 1:42) {
+for(y in 1:43) {
   for(m in 1:n.area) { 
     for(f in 1:n.fish) {
       for(h in 1:n.sex) {
@@ -63,7 +63,7 @@ for(y in 1:42) {
 #switch between catch in N or kt
 if(Ctype==1) {
   #sum over fishery/gear for catch in kt by year, age, sex, area
-  EMcond_catch2 <- array(data=NA, dim=c(42,n.area,n.sex,n.age),dimnames=list(2:43,1:n.area,sexes,ages))
+  EMcond_catch2 <- array(data=NA, dim=c(43,n.area,n.sex,n.age),dimnames=list(1:43,1:n.area,sexes,ages))
   EMcond_catch2[,,,] <- EMcond_catch[,1,,,] +EMcond_catch[,2,,,]+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
   return(EMcond_catch2)
   
@@ -78,7 +78,7 @@ if(Ctype==1) {
   EMcond_catch <- EMcond_catch/1000000 #catch in millions of fish (numbers)
 
   #sum over fishery/gear for catch in number by year, age, sex, area
-  EMcond_catch2 <- array(data=NA, dim=c(42,n.area,n.sex,n.age),dimnames=list(2:43,1:n.area,sexes,ages))
+  EMcond_catch2 <- array(data=NA, dim=c(43,n.area,n.sex,n.age),dimnames=list(1:43,1:n.area,sexes,ages))
   EMcond_catch2[,,,] <- EMcond_catch[,1,,,] +EMcond_catch[,2,,,]+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
   return(EMcond_catch2) #numbers of catch at age,sex,area,
   }
