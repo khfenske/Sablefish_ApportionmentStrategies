@@ -121,11 +121,19 @@ Nprop.by.age <- as.vector(c(0.01499621,0.012601811,0.031930367,	0.030601254,	0.2
                            0.006206813,	0.005333111,	0.004572241,	0.403269678,	0.003351983,	0.002870484,	0.002458885,	0.002107328,
                            0.001806924,	0.001549864,	0.001330032,	0.001142024,	0.013185113)) #for 1:n.ages
 #get catch at age in numbers (millions) or biomass (kt) from single area EM
-cond_catch_at_age <- array(data=NA, dim=c(43,n.area,n.sex,n.age),dimnames=list(1:43,1:n.area,sexes,ages))
+cond_catch_at_age <- array(data=NA, dim=c(43,n.fish,n.area,n.sex,n.age),dimnames=list(1:43,fish,1:n.area,sexes,ages))
 cond_catch_at_age <- cond_catch_AA(cond.catch, va, Ctype=2) #Ctype 1= biomass (kt), 2=numbers (millions)
-temp.catchnumbiom <- vector(length=43)
-for(y in 1:43){
-temp.catchnumbiom[y] <- sum(cond_catch_at_age[y,,,])}
+#sum across ages and sexes
+#temp.catchnumbiom <- array(data=NA, dim=c(43,n.fish,n.area),dimnames=list(1:43,fish,1:n.area))
+#temp.catchnumbiom[,,] <- cond_catch_at_age[]
+#for(y in 1:43){
+#  for(f in 1:fish) {
+#    for(m in 1:n.area) {
+#      for(h in 1:n.sex) {
+#        for(a in 1:n.age) {
+#temp.catchnumbiom[y,f,m] <- sum(cond_catch_at_age[,,,h,a]) }}} }}
+#cond_catch_at_age[1,1,1,,]
+
 ### set up N samples and sigmas for sampling
 LLsurvRPNsigma <- 0.2
 LLfishRPWsigma <- 0.4
@@ -166,7 +174,7 @@ for(i in 1:n.sims) {
       #catch <- temp.catchnumbiom[y-1] #y-1 gives us 1976 catch when y=2
       
       # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------ 
-      temp.Fmort <- estimate_Fmort4catch(catch=temp.catchnumbiom[y-1], 
+      temp.Fmort <- estimate_Fmort4catch(catch=1.2 ,#temp.catchnumbiom[y-1,f,m], 
       temp.selex=va[f,m,,],
       temp.N=N[,y-1,,m,i], 
       wa=wa, mx=mx, 

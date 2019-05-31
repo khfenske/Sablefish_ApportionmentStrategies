@@ -63,8 +63,8 @@ for(y in 1:43) {
 #switch between catch in N or kt
 if(Ctype==1) {
   #sum over fishery/gear for catch in kt by year, age, sex, area
-  EMcond_catch2 <- array(data=NA, dim=c(43,n.area,n.sex,n.age),dimnames=list(1:43,1:n.area,sexes,ages))
-  EMcond_catch2[,,,] <- EMcond_catch[,1,,,] +EMcond_catch[,2,,,]+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
+  EMcond_catch2 <- array(data=NA, dim=c(43,n.fish,n.area,n.sex,n.age),dimnames=list(1:43,fish,1:n.area,sexes,ages))
+  EMcond_catch2[,,,,] <- EMcond_catch[,,,,]#[,1,,,] +EMcond_catch[,2,,,]+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
   return(EMcond_catch2)
   
 }else {
@@ -78,8 +78,8 @@ if(Ctype==1) {
   EMcond_catch <- EMcond_catch/1000000 #catch in millions of fish (numbers)
 
   #sum over fishery/gear for catch in number by year, age, sex, area
-  EMcond_catch2 <- array(data=NA, dim=c(43,n.area,n.sex,n.age),dimnames=list(1:43,1:n.area,sexes,ages))
-  EMcond_catch2[,,,] <- EMcond_catch[,1,,,] +EMcond_catch[,2,,,]+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
+  EMcond_catch2 <- array(data=NA, dim=c(43,n.fish,n.area,n.sex,n.age),dimnames=list(1:43,fish,1:n.area,sexes,ages))
+  EMcond_catch2[,,,,] <- EMcond_catch[,,,,]#+EMcond_catch[,,,2,]#+EMcond_catch[,3,,,]+EMcond_catch[,4,,,]
   return(EMcond_catch2) #numbers of catch at age,sex,area,
   }
 }
