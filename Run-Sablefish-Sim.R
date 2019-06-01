@@ -60,6 +60,7 @@ source(file.path(dir.R,'aggregate-agcomps.R')) #sample age comps of OM populatio
 source(file.path(dir.R,'sablefish-conditioning-datfile-builder.R'))
 source(file.path(dir.R,'sablefish-datfile-builder.R'))
 
+source(file.path(dir.R,'read-movement-rates.R')) #Function to read in movement rates
 
         
 # Extract Parameters =============================================
@@ -67,6 +68,8 @@ extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 # confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
  
+# Read in Movement Rates =========================================
+prob.move <- read_movement_rates(input.file="Sablefish_Input.xlsx")
 
 # Calculate Selectivity ==========================================
 
