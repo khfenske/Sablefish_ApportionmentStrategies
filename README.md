@@ -44,6 +44,7 @@ ln.wa             | Matrix - ln(Weight @ Age)         | `[1:n.sex, 1:n.age]`
 wa                | Matrix - Weight @ Age             | `[1:n.sex, 1:n.age]`
 ma                | Matrix - Maturity @ Age           | `[1:n.sex, 1:n.age]`
 mx                | Matrix - Natural Mortality @ Age  | `[1:n.sex, 1:n.age]`
+prob.move         | 3D Array - Movement probability: area from, area to, age | `[1:n.area, 1:n.area, 1:n.age]`
 *lx* **not implemented** | Matrix - Survivorship to Age      | `[1:n.sex, 1:n.age]`
 ml *error!*       | Matrix - Maturity @ Length        | `[1:n.sex, 1:n.age]` - Should be length bins.
 
