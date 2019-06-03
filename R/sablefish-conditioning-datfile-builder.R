@@ -15,15 +15,8 @@ build_conditioning_datfile <- function() {
   #names(testdat)
   
   #add newly generated data from OM to the .dat file
-  #testdat$endyr <- testdat$endyr + 1 #advance one year on end year
-  #catch
-  #testdat$n_yrs_catch <- testdat$n_yrs_catch + 1 #advance the number of years of catch data
-  #testdat$fixed_catch[testdat$n_yrs_catch] <- OM_fixed_catch[y,i] #add newest fixed gear catch (make sure units are in 1000 mt)
-  #testdat$trawl_catch[testdat$n_yrs_catch] <- OM_trawl_catch[y,i] #add newest trawl gear catch (make sure units are in 1000 mt)
   
   #domestic LL survey RPN (check units)
-  #testdat$nyrs_domLLsurv <- testdat$nyrs_domLLsurv + 1 #advance one year on number of years
-  #testdat$yrs_domLLsurv[testdat$nyrs_domLLsurv] <- testdat$yrs_domLLsurv[testdat$nyrs_domLLsurv-1] + 1 #add a year to the sequence
   testdat$obs_domLLsurv_biom <- OM_Surv.RPN[-1,1] #RPN data from the conditioning OM
   testdat$obs_domLLsurv_biom <- testdat$obs_domLLsurv_biom[1:42] #indicate the years of conditioning
   testdat$obs_domLLsurv_se <- 0.1*testdat$obs_domLLsurv_biom#temp fill in bogus values, need to decide if these are needed 
@@ -31,8 +24,6 @@ build_conditioning_datfile <- function() {
   testdat$obs_domLLsurv_uci <- testdat$obs_domLLsurv_biom+(2*testdat$obs_domLLsurv_se) #add an upper CI value
   
   #domestic LL fishery RPW (check units)
-  #testdat$nyrs_LLfish <- testdat$nyrs_LLfish + 1 #advance the number of years
-  #testdat$yrs_LLfish[testdat$nyrs_LLfish] <- testdat$yrs_LLfish[testdat$nyrs_LLfish] + 1 #add a year to the sequence
   testdat$obs_LLfish_biom <- OM_Fish.RPW[-1,1] #RPW data from OM
   testdat$obs_LLfish_biom <- testdat$obs_LLfish_biom[1:42] #conditioning years
   testdat$obs_LLfish_se <- 0.1* testdat$obs_LLfish_biom #add a SE value
@@ -40,16 +31,11 @@ build_conditioning_datfile <- function() {
   testdat$obs_LLfish_uci <- testdat$obs_LLfish_biom+(2*testdat$obs_LLfish_se)#add an upper CI value
   
   #domestic LL fishery age comps
-  #testdat$nyrs_LLfish_age <- testdat$nyrs_LLfish_age + 1 #advance the number of years
-  #testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] <- testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] + 1 #add a year to the sequence
-  testdat$nsamples_LLfish_age_bsaiwgcgeg[testdat$nyrs_LLfish_age] <- INCOMPLETE  #add to number of samples
-  testdat$oac_LLfish_bsaiwgcgeg[testdat$nyrs_LLfish_age,] <- OM_Fish.RPW.age[,,i] #add a row of age comps for year y (or y-1 if we want to maintain the lag)
+  #testdat$oac_LLfish_bsaiwgcgeg[testdat$nyrs_LLfish_age,] <- OM_Fish.RPW.age[,,i] #replace EM comps with conditioning comps
   
   #domestic LL survey age comps
-  #testdat$nyrs_domLLsurv_age <- testdat$nyrs_domLLsurv_age + 1 #advance the number of years
-  #testdat$yrs_domLLsurv_age[testdat$nyrs_domLLsurv_age] <- testdat$yrs_domLLsurv_age[testdat$nyrs_domLLsurv_age] + 1 #add a year to the sequence
-  #testdat$nsamples_domLLsurv_age_bsaiwgcgeg[testdat$nyrs_domLLsurv_age] <- INCOMPLETE  #add to number of samples
-  #testdat$oac_LLsurv_bsaiwgcgeg[testdat$nyrs_domLLsurv_age,] <- OM_Surv.RPN.age[,,i] #add a row of age comps for year y (or y-1 if we want to maintain the lag)
+  #testdat$oac_LLsurv_bsaiwgcgeg[testdat$nyrs_domLLsurv_age,] <- OM_Surv.RPN.age[,,i] #replace EM comps with conditioning comps
+  
   
   
   #Write the new .dat file

@@ -127,15 +127,8 @@ Nprop.by.age <- as.vector(c(0.01499621,0.012601811,0.031930367,	0.030601254,	0.2
 cond_catch_at_age <- array(data=NA, dim=c(43,n.fish,n.area,n.sex,n.age),dimnames=list(1:43,fish,1:n.area,sexes,ages))
 cond_catch_at_age <- cond_catch_AA(cond.catch, va, Ctype=2) #Ctype 1= biomass (kt), 2=numbers (millions)
 #sum across ages and sexes
-#temp.catchnumbiom <- array(data=NA, dim=c(43,n.fish,n.area),dimnames=list(1:43,fish,1:n.area))
-#temp.catchnumbiom[,,] <- cond_catch_at_age[]
-#for(y in 1:43){
-#  for(f in 1:fish) {
-#    for(m in 1:n.area) {
-#      for(h in 1:n.sex) {
-#        for(a in 1:n.age) {
-#temp.catchnumbiom[y,f,m] <- sum(cond_catch_at_age[,,,h,a]) }}} }}
-#cond_catch_at_age[1,1,1,,]
+temp.catchnumbiom <- array(data=NA, dim=c(43,n.fish,n.area),dimnames=list(1:43,fish,1:n.area))
+temp.catchnumbiom <- apply(cond_catch_at_age,1:3,sum)
 
 ### set up N samples and sigmas for sampling
 LLsurvRPNsigma <- 0.2
@@ -177,7 +170,7 @@ for(i in 1:n.sims) {
       #catch <- temp.catchnumbiom[y-1] #y-1 gives us 1976 catch when y=2
       
       # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------ 
-      temp.Fmort <- estimate_Fmort4catch(catch=1.2 ,#temp.catchnumbiom[y-1,f,m], 
+      temp.Fmort <- estimate_Fmort4catch(catch=temp.catchnumbiom[y-1,f,m], 
       temp.selex=va[f,m,,],
       temp.N=N[,y-1,,m,i], 
       wa=wa, mx=mx, 
@@ -265,35 +258,68 @@ for(i in 1:n.sims) {
           
         }#next sex
         #add movement for plus group here
+        
       }# If plus age group
-      
-    }#next age  
-   } #close area
+     }#next age  
     
-    ######Sample the conditioning population for age comps, survey index, etc. 
+   } #close area
+  } #close year
+}#next i sim
+
+
     ##### Sample the conditioning period population/data: ######
+    #since this section is deterministic, all the sampling can be done at the end, not within the main loop.
+i <- 1
+y <- 2 
+for(i in 1:n.sims) {
+  ###first sample abundance and fishery indices for all years
+  for(y in 2:43) {
     m <- 1
-    for (m in 1:n.area) {
-      # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
+    for(m in 1:n.area) {
       #write a function that makes it easy to specify (by area) the yield ratio
       
-      # longline survey RPN, 'current' year  -- check units
+      # sample longline survey RPN, 'current' year  -- check units
       Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=LLsurvRPNsigma, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
       #(we'd talked about concatonating 'sim # + year' for seed)
       
       # longline/fixed gear fishery CPUE/RPW  -- check units
       Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=LLfishRPWsigma, type='lognorm', seed=333)
-      
+    } #next area m
+  } #close year 
+  
+  ###then sample age comps for a different set of years for each set of comps
+  # longline/fixed gear post-IFQ fishery age comps in numbers 
+  y <- 24  
+  for(y in 24:42) { #for 1999-2017 (a one year lag in having age comps accessible)
+    m <- 1
+    for(m in 1:n.area) {
+      h<-1
       for(h in 1:n.sex){
-        # longline/fixed gear fishery age comps in numbers 
-        #sample_age_comps(harvest.n[h,y,,2,m,i], Nsamp=LLsurvAC_sampsize, cpar=NULL) 
-        #Fish.AC[h,y-1,m,i] <- obs.comp
-        # longline survey age comps in numbers
-        #sample_age_comps(N[h,y,,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL) #true.props, Nsamp, cpar
-        #Surv.AC[h,y-1,,m,i] <- obs.comp
+        # longline/fixed gear post-IFQ fishery age comps in numbers 
+        sample_age_comps(harvest.n[h,y,,2,m,i], Nsamp=LLsurvAC_sampsize, cpar=NULL) 
+        Fish.AC[h,y,,m,i] <- obs.comp
       } #next sex
     } #next area m
-    
+  } #close year 
+  
+  # longline survey age comps in numbers
+  y <- 21  
+  for(y in 21:42) { #for 1996-2017
+    m <- 1
+    for(m in 1:n.area) {
+      h<-1
+      for(h in 1:n.sex){
+        # longline survey age comps in numbers
+        sample_age_comps(N[h,y,,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL) #true.props, Nsamp, cpar
+        Surv.AC[h,y,,m,i] <- obs.comp
+      } #next sex
+    } #next area m
+  } #close year 
+
+  y <- 2  
+  for(y in 2:43) {
+    m <- 1
+    for(m in 1:n.area) {
     ######### aggregate OM data across age, sex and/or areas for EM and track over time
     #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
     #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
@@ -305,12 +331,12 @@ for(i in 1:n.sims) {
     OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
     
     #call the function to aggregate age comps for fishery and survey across areas (weight by catch/harvest at age in each area, sum across areas, then spit out a vector or age comps)
+    #for sure need to aggregate over sex and areas, may not need to weight by catch in areas
     #OM_Fish.RPW.age[,y,,i] <- aggr_agcomp(Fish.AC[,y,,,i], cond_catch_at_age[y,,,]) #is harvest.n the right one to use?
     #OM_Surv.RPN.age[,y,,i] <- aggr_agcomp(Surv.AC[,y,,,i], harvest.num)
-    
+    } #next area m
   } #close year
-}#next i sim
-
+}#next i sim 
 
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM

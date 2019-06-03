@@ -52,11 +52,11 @@ sim_plot_initprop <- function() {
 
     #compare EMdata to condition output
     #survey RPN
-    plot(testdat$yrs_domLLsurv,testdat$obs_domLLsurv_biom, typ="l", ylim=c(0,700))
+    plot(testdat$yrs_domLLsurv,testdat$obs_domLLsurv_biom, typ="l", ylim=c(0,1000))
     lines(testdat$yrs_domLLsurv,OM_Surv.RPN[15:40,1])
     
     #fishery RPW
-    plot(testdat$yrs_LLfish,testdat$obs_LLfish_biom, typ="l", ylim=c(0,1500))
+    plot(testdat$yrs_LLfish,testdat$obs_LLfish_biom, typ="l", ylim=c(0,2500))
     lines(testdat$yrs_LLfish,OM_Fish.RPW[15:39,1])    
 
     }
