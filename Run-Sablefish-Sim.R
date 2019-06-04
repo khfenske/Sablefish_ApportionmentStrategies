@@ -71,6 +71,17 @@ extract_catch(input.file="catch_input_conditioning.xlsx") #using a separate func
 # Read in Movement Rates =========================================
 prob.move <- read_movement_rates(input.file="Sablefish_Input.xlsx")
 
+#prob.move2 is for testing to make sure I have movement code right.
+prob.move2 <- array(data=NA, dim=c(n.area,n.area,n.age), dimnames=list(areas,areas,ages))
+for (m in 1:n.age) {
+  prob.move2[1,,m] <- c(1,0,0,0,0,0)
+  prob.move2[2,,m] <- c(0,1,0,0,0,0)
+  prob.move2[3,,m] <- c(0,0,1,0,0,0)
+  prob.move2[4,,m] <- c(0,0,0,1,0,0)
+  prob.move2[5,,m] <- c(0,0,0,0,1,0)
+  prob.move2[6,,m] <- c(0,0,0,0,0,1)
+}
+
 # Calculate Selectivity ==========================================
 
 selex <- list() #Selectivity List
@@ -100,6 +111,8 @@ for(i in 1:n.fish) {
 # Create Simulation Objects =======================================
 #NOTE: Currently calculates data for n areas, where n is defined in the input spreadsheet (n.areas)  
 create_sim_objects() #sets up all the spatial arrays to hold simulated data
+#set up an array to hold the N array during movement code
+N_hold <- array(dim=c(n.sex, n.year, n.area, n.age, n.sims), dimnames=list(sexes, years, areas, ages, sims))
 
 # Simulate Annual Recruitments ====================================
 #setup_years <- 39 #number of years to run the loop setting up the initial population and building initial dat file
@@ -189,7 +202,13 @@ for(i in 1:n.sims) {
         # B[,y,a] <- rec[,y-1]
         ssb[,a,y,m,i] <- ma[,a]*wa[,a]*N[,y,a,m,i] #units?
         
-        ## add movement for age 1 here ##
+        ## add movement for age 1 here ## (ignore B and ssb for now since they are derived quantities)
+        #for (m in 1:n.area) {
+          #for (h in 1:n.sex){
+          #N_hold[h,y,,a,i]<-N[h,y,a,,i]
+          #N_hold[h,y,,a,i]<- t(prob.move[,,a])%*% N_hold[h,y,,a,i]
+          #N[h,y,a,,i]<-N_hold[h,y,,a,i]
+        #}#}
         
       }else {
         h <- 1
@@ -223,6 +242,12 @@ for(i in 1:n.sims) {
           }#next gear
         }#next sex
         ## add movement for ages 
+        #for (m in 1:n.area) {
+        #for (h in 1:n.sex){
+          #N_hold[h,y,,a,i]<-N[h,y,a,,i]
+          #N_hold[h,y,,a,i]<-t(prob.move[,,a]%*%N_hold[h,y,,a,i])
+          #N[h,y,a,,i]<-N_hold[h,y,,a,i]
+        #}#}
       }
       
       if(a==n.age) {
@@ -258,13 +283,31 @@ for(i in 1:n.sims) {
           
         }#next sex
         #add movement for plus group here
-        
+        #for (h in 1:n.sex){
+          #N_hold[h,y,,a,i]<-N[h,y,a,,i]
+          #N_hold[h,y,,a,i]<-t(prob.move[,,a])%*%N_hold[h,y,,a,i]
+          #N[h,y,a,,i]<-N_hold[h,y,,a,i]
+        #}
       }# If plus age group
      }#next age  
-    
    } #close area
   } #close year
 }#next i sim
+
+
+#save a few things for reference for checking movement code
+N.ref <- N
+B.ref <- B
+F.mort.ref <- F.mort
+harvest.n.ref <- harvest.n
+Fish.AC.ref <- Fish.AC
+
+N[1,2,,,1]
+N[1,1,,,1]
+N.ref[1,2,,,1]
+
+prob.move[,,1]
+
 
 
     ##### Sample the conditioning period population/data: ######
@@ -342,10 +385,6 @@ for(i in 1:n.sims) {
     ## then generate the updated .dat file to be pushed to the EM
     build_conditioning_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
     
-
-
-
-
 
 
 
