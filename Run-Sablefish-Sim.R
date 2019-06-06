@@ -378,7 +378,7 @@ for(i in 1:n.sims) {
 
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
-    build_conditioning_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
+    #build_conditioning_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
     
 
 #=====================================================================================
@@ -390,7 +390,7 @@ for(i in 1:n.sims) {
 #recruit new cohort, F and M occur, movement occurs, sample the 
 #(moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle']
 # ...then start over at beginning with a new year
-    
+ standin_catch <- temp.catchnumbiom[1:5,,]   
 
 area <- 1
 i <- 1
@@ -418,7 +418,7 @@ for(i in 1:n.sims) {
       #take most recent (2018) assessment and outputted ABC apportionment and calculate F       
       for(m in 1:n.area) {
         for(f in 1:n.fish) {
-        temp.Fmort <- estimate_Fmort4catch(catch=1.0, #need to read in catch from the apportionment
+        temp.Fmort <- estimate_Fmort4catch(catch=standin_catch[1,f,m], #need to read in catch from the apportionment
                      temp.selex=va[f,m,,],
                      temp.N=N[h,y-1,,m,i], 
                      wa=wa, mx=mx, 
