@@ -184,10 +184,10 @@ for(i in 1:n.sims) {
       for(f in 1:n.fish) {
       # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------ 
       temp.Fmort <- estimate_Fmort4catch(catch=temp.catchnumbiom[y-1,f,m], 
-      temp.selex=va[f,m,,],
-      temp.N=N[,y-1,,m,i], 
-      wa=wa, mx=mx, 
-      bisection=TRUE)$Fmort
+        temp.selex=va[f,m,,],
+        temp.N=N[,y-1,,m,i], 
+          wa=wa, mx=mx, 
+        bisection=TRUE)$Fmort
       F.mort[f,y-1,m,i] <- temp.Fmort  
       } #next fishery/gear 
     } #close area
@@ -371,6 +371,10 @@ for(i in 1:n.sims) {
     
     #call the function to aggregate age comps for fishery and survey across areas (weight by catch/harvest at age in each area, 
     #sum across areas, then spit out a vector or age comps)
+    #Fish.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
+    # longline survey age comps in numbers (not proportions yet) single sex
+    #Surv.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
+    
     #for sure need to aggregate over sex and areas, may not need to weight by catch in areas
     #OM_Fish.RPW.age[,y,,i] <- aggr_agcomp(Fish.AC[,y,,,i], cond_catch_at_age[y,,,]) #is harvest.n the right one to use?
     #OM_Surv.RPN.age[,y,,i] <- aggr_agcomp(Surv.AC[,y,,,i], harvest.num)
@@ -392,35 +396,13 @@ for(i in 1:n.sims) {
     # Temporarily no movement, need to add that in in the future
       
 #Loop order: sim, year, area, age, sex.
-# Order - calculate F associated with catch permitted from previous year's assessment and apportionment, 
+# Order - read in output from last assessment, calculate F associated with catch permitted from previous year's assessment and apportionment, 
 #recruit new cohort, F and M occur, movement occurs, sample the 
 #(moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle']
 # ...then start over at beginning with a new year
     
-#specify 2018 catch by area, gear, in biomass (kt)
-dim(C.b)
-dim(cond_catch_at_age)
-
-for (m in 1:n.area) {
-  for(a in 1:n.age) {
-    for (h in 1:n.sex) {
-    C.b[h,43,a,m,] <- cond_catch_at_age[43,m,h,a]
-    }}}
-
-for(i in 1:n.sims) {
-  for (m in 1:n.area) {
-    for (f in 1:n.fish) {
-      for (h in 1:n.sex) {
-      temp.Fmort <- estimate_Fmort4catch(catch=C.b[h,43,,m,i], 
-                                   temp.selex=va[f,m,h,],
-                                   temp.N=N[h,y-1,,m,i], 
-                                   wa=wa, mx=mx, 
-                                   bisection=TRUE)$Fmort
-      F.mort[f,43,m,i] <- temp.Fmort 
-      }}}}
-
-
-
+      standin_catch <- array(data=NA,dim=c(5,4,6),dimnames=list(44:48,fish,areas))
+      standin_catch <- temp.catchnumbiom[39:43,,]
 
 area <- 1
 i <- 1
@@ -429,30 +411,38 @@ for(i in 1:n.sims) {
   y <- 44  
   for(y in 44:n.year) {
     # somewhere up here, set a bunch of seeds...
+    #for the first year (2018) of forward projections, specify the catch (TAC) apportioned to each area somehow
+    if(y==44) { 
+      for(m in 1:n.area) {
+        for(f in 1:n.fish) {
+        temp.Fmort <- estimate_Fmort4catch(catch=temp.catchnumbiom[y-1,f,m], 
+                      temp.selex=va[f,m,,],
+                      temp.N=N[h,y-1,,m,i], 
+                      wa=wa, mx=mx, 
+                      bisection=TRUE)$Fmort
+        F.mort[f,y-1,m,i] <- temp.Fmort 
+        } #close fish
+      } #close area
+
+    } else {
+      #read in a rep file
+
+      #take most recent (2018) assessment and outputted ABC apportionment and calculate F       
+      for(m in 1:n.area) {
+        for(f in 1:n.fish) {
+        temp.Fmort <- estimate_Fmort4catch(catch=standin_catch[1,f,m], #need to read in catch from the apportionment
+                     temp.selex=va[f,m,,],
+                     temp.N=N[h,y-1,,m,i], 
+                     wa=wa, mx=mx, 
+                     bisection=TRUE)$Fmort
+        F.mort[f,y-1,m,i] <- temp.Fmort
+        }#close fish  
+      } #close area
+    } #close else
     
+
     m <- 1
     for (m in 1:n.area) {
-
-    #take most recent (2018) assessment and outputted ABC apportionment and calculate F 
-    #f <- 1
-    #for(f in 1:n.fish) {
-      # UPDATE: Instead of setting a fixed F, we can now set a fixed catch
-      #  biomass and find the F for the specific fishery
-      #  that will match that catch. This is so we can input the catch from the EM projection and apportionment output and then calculate the associated F.
-      # need to think about how we deal with trawl vs longline F here - do we specify these catches currently?
-      # Here lets specify an arbitrary fixed catch (kg) -- will need to eventually read it in for the first year here (based on the most recent assessment 
-      #and harvest control rule output)...future year's catch will come from the EM/projectiom model and apportionment application, so this section still needs work
-      #catch <- 1e7 # 10 million kg or 10,000 metric tons
-      
-      # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------  #right now F is a single value - probably need to have spatial F?
-      #temp.Fmort <- estimate_Fmort4catch(catch=catch, 
-                                           #temp.selex=va[f,area,,],
-                                           #temp.N=N[,y-1,,m,i], 
-                                           #wa=wa, mx=mx, 
-                                           #bisection=TRUE)$Fmort
-      #Fmort[f,y,m,i] <- temp.Fmort  #0.1
-    #}#next g 
-        
     a <- 1
     for(a in 1:n.age) {
       #Update Numbers and Biomass Matrix
@@ -492,7 +482,6 @@ for(i in 1:n.sims) {
             temp.Z <- sum(F.mort[,y,m,i]*va[,m,h,a-1]) + mx[h,a-1]
             
             harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
-            
             harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
           }#next gear
         }#next sex
@@ -522,7 +511,7 @@ for(i in 1:n.sims) {
           
           f <- 1
           for(f in 1:n.fish) {
-            temp.F <- F.mort[g,y,m,i]*va[f,m,h,a]
+            temp.F <- F.mort[f,y,m,i]*va[f,m,h,a]
             # temp.Z <- temp.F + mx[h,a]
             temp.Z <- sum(F.mort[,y,m,i]*va[,m,h,a]) + mx[h,a]
             # 
@@ -550,13 +539,14 @@ for(i in 1:n.sims) {
         # longline/fixed gear fishery CPUE/RPW  -- check units
         Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
         
-        for(h in 1:n.sex){
+        #for(h in 1:n.sex){
         # longline/fixed gear fishery age comps in numbers (not proportions yet) 
-        Fish.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
+        #Fish.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
+        #OM_Fish.RPW.age[,y,,i] <- aggr_agcomp(Fish.AC[,y,,,i], cond_catch_at_age[y,,,]) #is harvest.n the right one to use?
         
         # longline survey age comps in numbers (not proportions yet) single sex
-        Surv.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
-        }
+        #Surv.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
+        #} #close sex
     } #next area m
     
     ######### aggregate OM data across age, sex and/or areas for EM and track over time
@@ -610,5 +600,4 @@ for(i in 1:n.sims) {
 
 
 
-#write.table(N[1,,,1,1], file="male A1 sim1.csv")
 
