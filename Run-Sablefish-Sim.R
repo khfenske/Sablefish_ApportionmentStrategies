@@ -350,7 +350,7 @@ for(i in 1:n.sims) {
       h<-1
       for(h in 1:n.sex){
         # longline survey age comps in numbers
-        sample_age_comps(N[h,y,,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+135)) #true.props, Nsamp, cpar
+        sample_age_comps(N[h,y,,m,i]*selex$surv$USLongline[h,], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+135)) #true.props, Nsamp, cpar
         Surv.AC[h,y,,m,i] <- obs.comp
       } #next sex
       OM_Surv.RPN.age[y,,i] <- aggr_agecomp(Surv.AC[,y,,,i], Surv.RPN[,y,,,i])
@@ -378,8 +378,9 @@ for(i in 1:n.sims) {
 
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
-    #build_conditioning_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
-    
+#only building a single conditioning dat file instead of 1 for each sim since they should all be the same for this project (for now)
+    build_conditioning_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
+    #check that is is grabbing the right values
 
 #=====================================================================================
     # Forward Simulation =============================================================
@@ -390,7 +391,8 @@ for(i in 1:n.sims) {
 #recruit new cohort, F and M occur, movement occurs, sample the 
 #(moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle']
 # ...then start over at beginning with a new year
- standin_catch <- temp.catchnumbiom[1:5,,]   
+
+
 
 area <- 1
 i <- 1
@@ -403,11 +405,11 @@ for(i in 1:n.sims) {
     if(y==44) { 
       for(m in 1:n.area) {
         for(f in 1:n.fish) {
-        temp.Fmort <- estimate_Fmort4catch(catch=temp.catchnumbiom[y-1,f,m], 
+        temp.Fmort <- estimate_Fmort4catch(catch=1.0,#temp.catchnumbiom[y-1,f,m], 
                       temp.selex=va[f,m,,],
-                      temp.N=N[h,y-1,,m,i], 
+                      temp.N=N[,y-1,,m,i], 
                       wa=wa, mx=mx, 
-                      bisection=TRUE)$Fmort
+                      bisection=FALSE)$Fmort
         F.mort[f,y-1,m,i] <- temp.Fmort 
         } #close fish
       } #close area
@@ -418,11 +420,11 @@ for(i in 1:n.sims) {
       #take most recent (2018) assessment and outputted ABC apportionment and calculate F       
       for(m in 1:n.area) {
         for(f in 1:n.fish) {
-        temp.Fmort <- estimate_Fmort4catch(catch=standin_catch[1,f,m], #need to read in catch from the apportionment
+        temp.Fmort <- estimate_Fmort4catch(catch=1.0,#standin_catch[1,f,m], #need to read in catch from the apportionment
                      temp.selex=va[f,m,,],
-                     temp.N=N[h,y-1,,m,i], 
+                     temp.N=N[,y-1,,m,i], 
                      wa=wa, mx=mx, 
-                     bisection=TRUE)$Fmort
+                     bisection=FALSE)$Fmort
         F.mort[f,y-1,m,i] <- temp.Fmort
         }#close fish  
       } #close area

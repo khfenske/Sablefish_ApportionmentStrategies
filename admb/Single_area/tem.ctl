@@ -1,9 +1,9 @@
 Model_1_bsaiwgcgeg
-tem_single2015.dat
+tem_single2018.dat
 1     #nareas
 3     #SRType 3=average, 2=Bholt, 1=Ricker  
 1930  #start year rec estimate [styr_rec_est]  or 1930?
-2013  #end year rec est [endyr_rec_est]
+2017  #end year rec est [endyr_rec_est]
 2     #rec likelihood type [rec_like_type]  ONLY 2 IS FUNCTIONAL
 
 2#3     #phase F - phase for fishing mortality deviations
