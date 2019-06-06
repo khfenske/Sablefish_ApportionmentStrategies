@@ -42,7 +42,7 @@ aggr_agecomp <- function(input.comps, harvest.num) {
   comp.prop <- prop.table(sum.comps)
   
   #output and close function
-  report(temp.comp)
+  return(comp.prop)
 }
 
 

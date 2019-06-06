@@ -31,10 +31,10 @@ build_conditioning_datfile <- function() {
   testdat$obs_LLfish_uci <- testdat$obs_LLfish_biom+(2*testdat$obs_LLfish_se)#add an upper CI value
   
   #domestic LL fishery age comps
-  #testdat$oac_LLfish_bsaiwgcgeg[testdat$nyrs_LLfish_age,] <- OM_Fish.RPW.age[,,i] #replace EM comps with conditioning comps
+  testdat$oac_LLfish_bsaiwgcgeg[testdat$nyrs_LLfish_age,] <- OM_Fish.RPW.age[,,i] #replace EM comps with conditioning comps
   
   #domestic LL survey age comps
-  #testdat$oac_LLsurv_bsaiwgcgeg[testdat$nyrs_domLLsurv_age,] <- OM_Surv.RPN.age[,,i] #replace EM comps with conditioning comps
+  testdat$oac_LLsurv_bsaiwgcgeg[testdat$nyrs_domLLsurv_age,] <- OM_Surv.RPN.age[,,i] #replace EM comps with conditioning comps
   
   
   
