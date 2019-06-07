@@ -59,4 +59,26 @@ sim_plot_initprop <- function() {
     plot(testdat$yrs_LLfish,testdat$obs_LLfish_biom, typ="l", ylim=c(0,2500))
     lines(testdat$yrs_LLfish,OM_Fish.RPW[15:39,1])    
 
+    
+    #ssb
+    melted_ssb <- melt(ssb,varnames = c("Sex", "Age","Year", "Area","Sim"), na.rm=FALSE, value.name = "ssb")
+    b2 <-melted_ssb
+    b3<-b2%>%group_by(Year,Sim) %>% summarize(ssb=sum(ssb,na.rm=T))
+    b4<-b3
+    ggplot(b4)+geom_line(aes(x=Year,y=ssb,colour=Sim),alpha=0.5)+theme_bw(base_size=13)+
+      theme(legend.position="none")+ggtitle("ssb trajectories")
+    ggsave("ssb_tot_lines.png",width=8,height=5,dpi=325, path=dir.output)  
+    
+   
+    
+    
+    plot(ssb[], typ="l", ylim=c(0,1000))
+    lines(testdat$yrs_domLLsurv,OM_Surv.RPN[15:40,1])
+    
+    
+    
+    #catch
+    
+    
+    
     }

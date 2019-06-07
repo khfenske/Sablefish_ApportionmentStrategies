@@ -379,8 +379,7 @@ for(i in 1:n.sims) {
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
 #only building a single conditioning dat file instead of 1 for each sim since they should all be the same for this project (for now)
-    build_conditioning_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
-    #check that is is grabbing the right values
+    build_conditioning_datfile()  
 
 #=====================================================================================
     # Forward Simulation =============================================================

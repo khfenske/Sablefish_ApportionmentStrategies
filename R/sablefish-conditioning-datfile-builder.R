@@ -10,7 +10,7 @@ build_conditioning_datfile <- function() {
   dir.admb.single <- file.path(wd,"admb","Single_area")
   #use the PBSmodeling package to read the ADMB .dat file into the model and update it with new OM generated data
   #note that catch is in 1000 mt units when read in
-  testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/permanant_tem_single2015.dat") #should I read this in as global?
+  testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/permanant_tem_single2018.dat") #should I read this in as global?
   #head(testdat, 49)
   #names(testdat)
   
