@@ -437,10 +437,10 @@ for(i in 1:n.sims) {
       #Update Numbers and Biomass Matrix
       if(a==1) { #Age-1
         N[,y,a,m,i] <- 0.5*recruits.area[y-1,m,i] #multiplying by 0.5 to split evenly between sexes
-        B[,y,a,m,i] <- 0.5*recruits.area[y-1,m,i]*wa[,a]
-        # N[,y,a] <- rec[,y-1]/wa[,a]
-        # B[,y,a] <- rec[,y-1]
-        ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
+        #B[,y,a,m,i] <- 0.5*recruits.area[y-1,m,i]*wa[,a]
+        ## N[,y,a] <- rec[,y-1]/wa[,a]
+        ## B[,y,a] <- rec[,y-1]
+        #ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
         
         ## add movement for age 1 here ##
         
@@ -457,12 +457,12 @@ for(i in 1:n.sims) {
           
           #Update
           N[h,y,a,m,i] <- N[h,y-1,a-1,m,i]*surv[h,y-1,a-1,m,i] 
-          # B[h,y,a,i] <- B[h,y-1,a-1,i]*surv[h,y-1,a-1,i]
-          B[h,y,a,m,i] <- N[h,y,a,m,i]*wa[h,a]
-          ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
+          ## B[h,y,a,i] <- B[h,y-1,a-1,i]*surv[h,y-1,a-1,i]
+          #B[h,y,a,m,i] <- N[h,y,a,m,i]*wa[h,a]
+          #ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
           #Total Catch
-          C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
-          C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
+          #C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
+          #C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
           
           f <- 1
           for(f in 1:n.fish) {
@@ -474,7 +474,6 @@ for(i in 1:n.sims) {
             harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
           }#next gear
         }#next sex
-        ## add movement for ages 
       }
       
       if(a==n.age) {
@@ -490,13 +489,13 @@ for(i in 1:n.sims) {
           
           #Update
           N[h,y,a,m,i] <- N[h,y,a,m,i] + N[h,y-1,a,m,i]*surv[h,y-1,a,m,i] #New Entrants (calculated above), plus existing plus group occupants.
-          # B[h,y,a,i] <- B[h,y,a,i] + B[h,y-1,a,i]*surv[h,y-1,a,i] 
-          B[h,y,a,m,i] <- N[h,y,a,m,i] * wa[h,a]
-          ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
+          ## B[h,y,a,i] <- B[h,y,a,i] + B[h,y-1,a,i]*surv[h,y-1,a,i] 
+          #B[h,y,a,m,i] <- N[h,y,a,m,i] * wa[h,a]
+          #ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
           
           #Total Catch
-          C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number of halibut
-          C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
+          #C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number of halibut
+          #C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
           
           f <- 1
           for(f in 1:n.fish) {
@@ -508,12 +507,34 @@ for(i in 1:n.sims) {
             harvest.b[h,y-1,a,f,m,i] <- harvest.n[h,y-1,a,f,m,i] * wa[h,a]
           }#next gear
         }#next sex
-        #add movement for plus group here
       }# If plus age group
       
     }#next age  
     } #next area
+    #move all the ages between areas, and then calculate the derived quantities after movement:
+    for (h in 1:n.sex){ 
+      for (a in 1:n.age){
+        for (m in 1:n.area){
+          N_hold[h,y,m,a,i]<-N[h,y,a,m,i]  
+        }  
+        N_hold[h,y,,a,i]<-t(prob.move[,,a])%*%N_hold[h,y,,a,i]
+        for (m in 1:n.area){
+          N[h,y,a,m,i]<-N_hold[h,y,m,a,i]
+        } #close area
+      } #close age
+    } #close sex
     
+    #calculate all the derived quantities at once, after movement so that all N, B, ssb, C, and harvest reflect the moved population values
+    for (a in 1:n.age){
+      for (m in 1:n.area){
+        B[,y,a,m,i] <- N[,y,a,m,i] * wa[,a]
+        ssb[,a,y,m,i] <- ma[,a]*wa[,a]*N[,y,a,m,i]
+        for (h in 1:n.sex){ 
+          C.n[h,y,a-1,m,i] <- N[h,y,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
+          C.b[h,y,a-1,m,i] <- C.n[h,y,a-1,m,i] * wa[h,a-1]
+        } #close sex
+      }#close area
+    }#close age    
     ######Sample population for age comps, survey index, etc. 
     ##### Generate EM Data: ######
     m <- 1
