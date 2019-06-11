@@ -28,6 +28,7 @@ DATA_SECTION
   !! ad_comm::change_datafile_name("tem.ctl");    // Read in phases, penalties and priors from "tem.ctl"
   !! *(ad_comm::global_datafile) >>  model_name; 
   !! *(ad_comm::global_datafile) >>  data_file;   // identifying the data file name, using the name in row 2 of .ctl file
+  !! *(ad_comm::global_datafile) >>  unchanging_data; // indentifying the name of the data file that holds size comps and other data that's not being updated in simulations
   init_int    nareas                // number of areas in the MODEL 
   init_int    SrType                // 2=mean
   init_int    styr_rec_est
@@ -198,6 +199,8 @@ DATA_SECTION
   //init_vector   nsamples_srv2_age(1,nyrs_srv2_age)  // some measure of relative sample size for each age comp.
   //init_matrix   oac_srv2(1,nyrs_srv2_age,1,nages)   // the year by year age survey age comps
 
+  !! ad_comm::change_datafile_name(unchanging_data);    // Read in size comps, size-age, things that aren't being updated
+ 
 // Domestic LL fishery length composition data - sexes separate 1990-(endyr-1)
 // in this and in srv1 length comp below, there is an assumption that sample sizes can vary by area, but are the same between sexes for a given area.  
   init_int      nyrs_fish1_size                                // number of years of fish1ery size comps
@@ -1093,6 +1096,7 @@ GLOBALS_SECTION
  # include "admodel.h"          						// Include AD class definitions
   adstring model_name;
   adstring data_file;
+  adstring unchanging_data;
 
 REPORT_SECTION
 // Goes to routine that automatically creates input file for projection model

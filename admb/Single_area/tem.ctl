@@ -1,5 +1,6 @@
 Model_1_bsaiwgcgeg
 tem_single2018.dat
+fixed_data.dat
 1     #nareas
 3     #SRType 3=average, 2=Bholt, 1=Ricker  
 1930  #start year rec estimate [styr_rec_est]  or 1930?

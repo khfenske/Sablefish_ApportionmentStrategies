@@ -38,6 +38,7 @@ build_conditioning_datfile <- function() {
   
   
   
+
   #Write the new .dat file
   #L_1<-Sep
   #L_2<-"# Sablefish Model_1_single_area .dat file"
@@ -181,111 +182,9 @@ build_conditioning_datfile <- function() {
   
   USAC1<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9)
   
+
   
-  L_1<-"# Domestic LL/Fixed gear fishery length compositions"
-  L_2<-"#nyrs_LLfish_size"
-  L_3<-testdat$nyrs_LLfish_size
-  L_4<-"#yrs_LLfish_size"
-  L_5<-paste(as.vector(testdat$yrs_LLfish_size),collapse=" ")
-  L_6<-"#nsamples_LLfish_size"
-  L_7<-paste(as.vector(testdat$nsamples_LLfish_size),collapse=" ")
-  L_8<-"#osc_LLfish_m"
-  L_9<-paste(as.vector(testdat$osc_LLfish_m[1,]),collapse=" ")
-  for(y in 2:length(testdat$osc_LLfish_m[,1])){
-    L_add<-paste(as.vector(testdat$osc_LLfish_m[y,]),collapse=" ")
-    L_9<-c(L_9,L_add)}
-  L_10<-"#osc_LLfish_f"
-  L_11<-paste(as.vector(testdat$osc_LLfish_f[1,]),collapse=" ")
-  for(y in 2:length(testdat$osc_LLfish_f[,1])){
-    L_add<-paste(as.vector(testdat$osc_LLfish_f[y,]),collapse=" ")
-    L_11<-c(L_11,L_add)}
-  
-  FFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
-  
-  L_1<-"# U.S. Trawl gear fishery length compositions"
-  L_2<-"#nyrs_fish3_size"
-  L_3<-testdat$nyrs_fish3_size
-  L_4<-"#yrs_fish3_size"
-  L_5<-paste(as.vector(testdat$yrs_fish3_size),collapse=" ")
-  L_6<-"#nsamples_fish3_size"
-  L_7<-paste(as.vector(testdat$nsamples_fish3_size),collapse=" ")
-  L_8<-"#osc_fish3_m"
-  L_9<-paste(as.vector(testdat$osc_fish3_m[1,]),collapse=" ")
-  for(y in 2:length(testdat$osc_fish3_m[,1])){
-    L_add<-paste(as.vector(testdat$osc_fish3_m[y,]),collapse=" ")
-    L_9<-c(L_9,L_add)}
-  L_10<-"#osc_fish3_f"
-  L_11<-paste(as.vector(testdat$osc_fish3_f[1,]),collapse=" ")
-  for(y in 2:length(testdat$osc_fish3_f[,1])){
-    L_add<-paste(as.vector(testdat$osc_fish3_f[y,]),collapse=" ")
-    L_11<-c(L_11,L_add)}
-  
-  TFS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
-  
-  
-  L_1<-"# U.S. Domestic LL Survey Length Proportions"
-  L_2<-"#nyrs_srv1_size"
-  L_3<-testdat$nyrs_srv1_size
-  L_4<-"#yrs_srv1_size"
-  L_5<-paste(as.vector(testdat$yrs_srv1_size),collapse=" ")
-  L_6<-"#nsamples_srv1_size"
-  L_7<-paste(as.vector(testdat$nsamples_srv1_size),collapse=" ")
-  L_8<-"#osc_srv1_m"
-  L_9<-paste(as.vector(testdat$osc_srv1_m[1,]),collapse=" ")
-  for(y in 2:length(testdat$osc_srv1_m[,1])){
-    L_add<-paste(as.vector(testdat$osc_srv1_m[y,]),collapse=" ")
-    L_9<-c(L_9,L_add)}
-  L_10<-"#osc_srv1_f"
-  L_11<-paste(as.vector(testdat$osc_srv1_f[1,]),collapse=" ")
-  for(y in 2:length(testdat$osc_srv1_f[,1])){
-    L_add<-paste(as.vector(testdat$osc_srv1_f[y,]),collapse=" ")
-    L_11<-c(L_11,L_add)}
-  
-  USS<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
-  
-  
-  L_1<-"# US/Japanese coop LL survey length Composition"
-  L_2<-"#nyrs_srv2_size"
-  L_3<-testdat$nyrs_srv2_size
-  L_4<-"#yrs_srv2_size"
-  L_5<-paste(as.vector(testdat$yrs_srv2_size),collapse=" ")
-  L_6<-"#nsamples_srv2_size"
-  L_7<-paste(as.vector(testdat$nsamples_srv2_size),collapse=" ")
-  L_8<-"#osc_srv2_m"
-  L_9<-paste(as.vector(testdat$osc_srv2_m[1,]),collapse=" ")
-  for(y in 2:length(testdat$osc_srv2_m[,1])){
-    L_add<-paste(as.vector(testdat$osc_srv2_m[y,]),collapse=" ")
-    L_9<-c(L_9,L_add)}
-  L_10<-"#osc_srv2_f"
-  L_11<-paste(as.vector(testdat$osc_srv2_f[1,]),collapse=" ")
-  for(y in 2:length(testdat$osc_srv2_f[,1])){
-    L_add<-paste(as.vector(testdat$osc_srv2_f[y,]),collapse=" ")
-    L_11<-c(L_11,L_add)}
-  
-  JPLLSC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11)
-  
-  
-  
-  L_1<-"# Size-age transition matrices: proportion at size given age"
-  L_2<-"#Size.age.one.males"
-  L_3<-paste(as.vector(testdat$Size.age.one.males),collapse=" ")
-  L_4<-"#Size.age.one.Females"
-  L_5<-paste(as.vector(testdat$Size.age.one.Females),collapse=" ")
-  L_6<-"#Size.age.one.unsexed"
-  L_7<-paste(as.vector(testdat$Size.age.one.unsexed),collapse=" ")
-  L_8<-"#Size.age.2.males"
-  L_9<-paste(as.vector(testdat$Size.age.2.males),collapse=" ")
-  L_10<-"#size.age.2.females"
-  L_11<-paste(as.vector(testdat$size.age.2.females),collapse=" ")
-  L_12<-"#Age.age.transition.matrix"    
-  L_13<-paste(as.vector(testdat$Age.age.transition.matrix),collapse=" ")
-  L_14<-"#eof"
-  L_15<-paste(as.vector(testdat$eof),collapse=" ")
-  
-  SA<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10,L_11,L_12,L_13,L_14,L_15)
-  
-  
-  DAT<-c(MIPV,FC,LLA,LLA5,FB1,FB2,FAC,USAC1,FFS,TFS,USS,JPLLSC,SA)
+  DAT<-c(MIPV,FC,LLA,LLA5,FB1,FB2,FAC,USAC1)
   DAT_NAME<-paste(dir.admb.single,"/tem_single2018",".dat",sep="")
   write.table(DAT,file=DAT_NAME,quote=F,row.names=F,col.names=F)
   #somehow write the file and save to the right folder so we can call the new EM

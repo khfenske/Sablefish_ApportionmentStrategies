@@ -42,27 +42,20 @@ require(PBSmodelling)
 # Source Necessary Files =========================================
 source(file.path(dir.R,'extract-pars.R'))
 source(file.path(dir.R,'extract-catch.R'))
-
 source(file.path(dir.R,'calc-selectivity.R'))
 source(file.path(dir.R,'calc-init-age-prop.R'))
-
 source(file.path(dir.R,'create-sim-objects.R'))
 source(file.path(dir.R,'create-sim-recruitments.R')) #Simulate Recruitment across years and sims
 source(file.path(dir.R,'create-cond-catch.R')) #creates an array of catch by year,age,sex,area,fish 
 #the catch values in the actual catch spreadsheet are confidential, so dummy values are in place now.
-
 source(file.path(dir.R,'spatial-rec.R')) #Apportion Recruitment Among Regions
-
 source(file.path(dir.R,'convert-Fmort2catch.R')) #Calculate total catch from F
 source(file.path(dir.R,'estimate-Fmort4catch.R')) #Estimate F that provides for a given catch
-
 source(file.path(dir.R,'sample-biom-abund.R')) #sample biomass/numbers of OM population
 source(file.path(dir.R,'sample-age-comps.R')) #sample age comps of OM population
 source(file.path(dir.R,'aggregate-agcomps.R')) #sample age comps of OM population
-
 source(file.path(dir.R,'sablefish-conditioning-datfile-builder.R'))
 source(file.path(dir.R,'sablefish-datfile-builder.R'))
-
 source(file.path(dir.R,'read-movement-rates.R')) #Function to read in movement rates
 
         
@@ -105,10 +98,10 @@ selex$fish$Foreign <- calc_selectivity(type='fish', fleet='Foreign')
 
 #Calculate Vulnerability @ Age
 va <- array(dim=c(n.fish,n.area,n.sex,n.age), dimnames=list(fish,1:n.area,sexes,ages))
-i <- 1
-for(i in 1:n.fish) {
+  i <- 1
+  for(i in 1:n.fish) {
   va[i,,,] <- calc_selectivity(type='fish', fleet=fish[i])
-}
+  }
 
 
 # Create Simulation Objects =======================================
@@ -163,7 +156,6 @@ for(i in 1:n.sims) {
   for(m in 1:n.area) {
     for(a in 1:n.age) {
     N[,1,a,m,] <- Nstart * 0.5 * (Nprop.by.age[a]) #Nstart is in millions (check units), 0.5 is to divide equally between sexes 
-    #N (dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) 
     } #close age
   } #close area
 }#next i
@@ -201,10 +193,6 @@ for(i in 1:n.sims) {
         #cond.rec are values read in from an excel file in the extract-pars.R function - they are estimated 
           #recruitments for 1977-2018 from the single area EM
         N[,y,a,m,i] <- 0.5*(cond.rec$Recruitment[y-1]) #multiplying by 0.5 to split evenly between sexes, y-1 calls the first year of cond.rec list 
-        #B[,y,a,m,i] <- N[,y,a,m,i] * wa[,a]
-        ## N[,y,a] <- rec[,y-1]/wa[,a]
-        ## B[,y,a] <- rec[,y-1]
-        #ssb[,a,y,m,i] <- ma[,a]*wa[,a]*N[,y,a,m,i]
       } # close area
 
         
@@ -222,17 +210,10 @@ for(i in 1:n.sims) {
           
           #Update
           N[h,y,a,m,i] <- N[h,y-1,a-1,m,i]*surv[h,y-1,a-1,m,i] 
-          ## B[h,y,a,i] <- B[h,y-1,a-1,i]*surv[h,y-1,a-1,i]
-          #B[h,y,a,m,i] <- N[h,y,a,m,i]*wa[h,a]
-          #ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
-          #Total Catch (should this be y or y-1?)
-          #C.n[h,y,a-1,m,i] <- N[h,y,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
-          #C.b[h,y,a-1,m,i] <- C.n[h,y,a-1,m,i] * wa[h,a-1]
-          
+
           f <- 1
           for(f in 1:n.fish) {
             temp.F <- F.mort[f,y-1,m,i]*va[f,m,h,a-1]
-            # temp.Z <- temp.F + mx[h,a-1]
             temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a-1]) + mx[h,a-1]
             harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
             harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
@@ -256,18 +237,10 @@ for(i in 1:n.sims) {
           
           #Update
           N[h,y,a,m,i] <- N[h,y,a,m,i] + N[h,y-1,a,m,i]*surv[h,y-1,a,m,i] #New Entrants (calculated above), plus existing plus group occupants.
-          ## B[h,y,a,i] <- B[h,y,a,i] + B[h,y-1,a,i]*surv[h,y-1,a,i] 
-          #B[h,y,a,m,i] <- N[h,y,a,m,i] * wa[h,a]
-          #ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
-          
-          #Total Catch
-          #C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number of halibut
-          #C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
-          
+
           f <- 1
           for(f in 1:n.fish) {
             temp.F <- F.mort[f,y-1,m,i]*va[f,m,h,a]
-            # temp.Z <- temp.F + mx[h,a]
             temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a]) + mx[h,a]
             harvest.n[h,y-1,a,f,m,i] <- N[h,y-1,a,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z))
             harvest.b[h,y-1,a,f,m,i] <- harvest.n[h,y-1,a,f,m,i] * wa[h,a]
@@ -317,7 +290,6 @@ for(i in 1:n.sims) {
     m <- 1
     for(m in 1:n.area) {
       #write a function that makes it easy to specify (by area) the yield ratio
-      
       # sample longline survey RPN, 'current' year  -- check units
       Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i)) 
     } #next area m
@@ -401,6 +373,9 @@ for(i in 1:n.sims) {
 #only building a single conditioning dat file instead of 1 for each sim since they should all be the same for this project (for now)
     build_conditioning_datfile()  
 
+    
+    
+    
 #=====================================================================================
     # Forward Simulation =============================================================
     # Temporarily no movement, need to add that in in the future
@@ -410,7 +385,14 @@ for(i in 1:n.sims) {
 #recruit new cohort, F and M occur, movement occurs, sample the 
 #(moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle']
 # ...then start over at beginning with a new year
-
+    
+    #a function to call the EM (call this inside the loops below)
+    run.model <- function() {
+      setwd(dir.admb)      
+      system.time( # keeping track of time for run
+        invisible(shell(paste0(EM_name),wait=T)))
+      setwd("C:/Repositories/Sablefish_ApportionmentStrategies")    # return to original working directory
+    }
 #Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, trawl catches are placeholders, order is BS-AI-WG-CG-WY-EY/SEO
   for(y in 43:44) {  
     for(i in 1:n.sims){
@@ -430,9 +412,9 @@ for(i in 1:n.sims) {
     #for the first year (2018) of forward projections, specify the catch (TAC) apportioned to each area above and use it for year 44
     #for subsequent years, read in the apportioned catch (either via a function or here directly)
     ## some thing here read in apportionment output readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem.rep") 
+    
     #apportioned_C[y,f,,i]<- something
     
-    #if(y==44) { 
       for(m in 1:n.area) {
         for(f in 1:n.fish) {
         temp.Fmort <- estimate_Fmort4catch(catch=apportioned_C[y-1,f,m,i],
@@ -444,22 +426,6 @@ for(i in 1:n.sims) {
         } #close fish
       } #close area
 
-    #} else {
-
-      #take most recent (2018) assessment and outputted ABC apportionment and calculate F       
-      #for(m in 1:n.area) {
-        #for(f in 1:n.fish) {
-        #temp.Fmort <- estimate_Fmort4catch(catch=apportioned_C[y-1,f,m,i], #need to read in catch from the apportionment
-                     #temp.selex=va[f,m,,],
-                     #temp.N=N[,y-1,,m,i], 
-                     #wa=wa, mx=mx, 
-                     #bisection=FALSE)$Fmort
-        #F.mort[f,y-1,m,i] <- temp.Fmort
-        #}#close fish  
-     #} #close area
-    #} #close else
-    
-
     m <- 1
     for (m in 1:n.area) {
     a <- 1
@@ -467,13 +433,7 @@ for(i in 1:n.sims) {
       #Update Numbers and Biomass Matrix
       if(a==1) { #Age-1
         N[,y,a,m,i] <- 0.5*recruits.area[y,m,i] #multiplying by 0.5 to split evenly between sexes
-        #B[,y,a,m,i] <- 0.5*recruits.area[y-1,m,i]*wa[,a]
-        ## N[,y,a] <- rec[,y-1]/wa[,a]
-        ## B[,y,a] <- rec[,y-1]
-        #ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
-        
-        ## add movement for age 1 here ##
-        
+
       }else {
         h <- 1
         for(h in 1:n.sex) {
@@ -487,17 +447,10 @@ for(i in 1:n.sims) {
           
           #Update
           N[h,y,a,m,i] <- N[h,y-1,a-1,m,i]*surv[h,y-1,a-1,m,i] 
-          ## B[h,y,a,i] <- B[h,y-1,a-1,i]*surv[h,y-1,a-1,i]
-          #B[h,y,a,m,i] <- N[h,y,a,m,i]*wa[h,a]
-          #ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
-          #Total Catch
-          #C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
-          #C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
-          
+
           f <- 1
           for(f in 1:n.fish) {
             temp.F <- F.mort[f,y-1,m,i]*va[f,m,h,a-1]
-            # temp.Z <- temp.F + mx[h,a-1]
             temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a-1]) + mx[h,a-1]
             
             harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
@@ -519,18 +472,10 @@ for(i in 1:n.sims) {
           
           #Update
           N[h,y,a,m,i] <- N[h,y,a,m,i] + N[h,y-1,a,m,i]*surv[h,y-1,a,m,i] #New Entrants (calculated above), plus existing plus group occupants.
-          ## B[h,y,a,i] <- B[h,y,a,i] + B[h,y-1,a,i]*surv[h,y-1,a,i] 
-          #B[h,y,a,m,i] <- N[h,y,a,m,i] * wa[h,a]
-          #ssb[,,y,m,i] <- ma*wa*N[,y,,m,i] #ssb dims = n.sex, n.age, n.year, n.area, n.sims; N dims = n.sex, n.year, n.age, n.area, n.sims
-          
-          #Total Catch
-          #C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number of halibut
-          #C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
-          
+
           f <- 1
           for(f in 1:n.fish) {
             temp.F <- F.mort[f,y-1,m,i]*va[f,m,h,a]
-            # temp.Z <- temp.F + mx[h,a]
             temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a]) + mx[h,a]
             # 
             harvest.n[h,y-1,a,f,m,i] <- N[h,y-1,a,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z))
@@ -612,29 +557,23 @@ for(i in 1:n.sims) {
        
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
-        build_datfile(LLsurvAC_sampsize,LLfishAC_sampsize)  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
-
-        #calculate the moving average ratio between gear types (F ratio)    CODE THIS
+      build_datfile(LLsurvAC_sampsize,LLfishAC_sampsize)  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
+        
+    #Dana think about the code in the EM here between gear types for distibuting F across selectivities
+    #calculate the moving average ratio between gear types (F ratio)    CODE THIS
         
     #=============================================================
     #### Conduct Assessment #### 
     #Call ADMB Estimation Model
-    #add code here
-        #Dana think about the code in the EM here between gear types for distibuting F across selectivities
-    run.model <- function() {
-      setwd(dir.admb)      
-     
-      system.time( # keeping track of time for run
-        invisible(shell(paste0(EM_name),wait=T)))
-      
-      setwd("C:/Repositories/Sablefish_ApportionmentStrategies")    # return to original working directory
-      
-    }
-    #time.elapsed<-run.model()
+
+
+    time.elapsed<-run.model()
+    
     #=============================================================
     #### Determine SPR ####
     # extract SPR (read in a report file)
     # this will come out of my EM  CHECK IF THERE ARE CODE CHANGES IN THE EM ABOUT F RATIO
+    
     #=============================================================
     #### Set Harvest Limits & apply apportionment method we are testing ####
     # call the apportionment method here
@@ -652,7 +591,6 @@ for(i in 1:n.sims) {
     # rec[,y-1,i] <-  0.5 * beverton_holt_recruit(sum(ssb[,,y-1,i]), steep, bo=ro) * exp(rnorm(1,0,sigma_rec) - ((sigma_rec^2)/2))
 
   }#next y
-  
 }#next i
 
 
