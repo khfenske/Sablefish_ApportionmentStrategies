@@ -17,10 +17,12 @@ wd <- getwd() #Project Directory
 dir.data <- file.path(wd,"data")
 dir.figs <- file.path(wd,"figs")
 dir.output <- file.path(wd,"output")
-dir.admb <- file.path(wd,"admb")
+dir.admb <- file.path(wd,"admb/Single_area")
 dir.R <- file.path(wd,"R")
 dir.x <- file.path("C:/Repositories/hidden files with conf data") #change this path to whatever place you have 
 #the confidential catch data files stored. DO NOT LOAD TO GITHUB.
+
+EM_name <- "tem"
 
 # Call all packages and libraries once, up front ===================
 # for Run_Sim_data_plots.R
@@ -233,7 +235,7 @@ for(i in 1:n.sims) {
             # temp.Z <- temp.F + mx[h,a-1]
             temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a-1]) + mx[h,a-1]
             harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
-            harvest.b[h,y,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
+            harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
           }#next gear
           }#next sex
         } #close area
@@ -294,8 +296,8 @@ for(i in 1:n.sims) {
     B[,y,a,m,i] <- N[,y,a,m,i] * wa[,a]
     ssb[,a,y,m,i] <- ma[,a]*wa[,a]*N[,y,a,m,i]
       for (h in 1:n.sex){ 
-      C.n[h,y,a-1,m,i] <- N[h,y,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
-      C.b[h,y,a-1,m,i] <- C.n[h,y,a-1,m,i] * wa[h,a-1]
+      C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
+      C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
       } #close sex
       }#close area
     }#close age
@@ -311,17 +313,21 @@ i <- 1
 y <- 2 
 for(i in 1:n.sims) {
   ###first sample abundance and fishery indices for all years
-  for(y in 2:43) {
+  for(y in 15:43) {
     m <- 1
     for(m in 1:n.area) {
       #write a function that makes it easy to specify (by area) the yield ratio
       
       # sample longline survey RPN, 'current' year  -- check units
       Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i)) 
-      #need to create a more sophisticated seed higher in the code
-      #(we'd talked about concatonating 'sim # + year' for seed)
-      
-      # longline/fixed gear fishery CPUE/RPW  -- check units
+    } #next area m
+  } #close year 
+  
+  for(y in 15:42) {
+    m <- 1
+    for(m in 1:n.area) {
+      # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
+      #specify another comp sample size here
       Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
     } #next area m
   } #close year 
@@ -349,7 +355,8 @@ for(i in 1:n.sims) {
     for(m in 1:n.area) {
       h<-1
       for(h in 1:n.sex){
-        # longline survey age comps in numbers
+        # longline survey age comps in numbers, can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
+        #specify another comp sample size here
         sample_age_comps(N[h,y,,m,i]*selex$surv$USLongline[h,], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+135)) #true.props, Nsamp, cpar
         Surv.AC[h,y,,m,i] <- obs.comp
       } #next sex
@@ -358,7 +365,7 @@ for(i in 1:n.sims) {
   } #close year 
 
   y <- 2  
-  for(y in 2:43) {
+  for(y in 2:42) {
     m <- 1
     for(m in 1:n.area) {
     ######### aggregate OM data across age, sex and/or areas for EM and track over time
@@ -366,14 +373,27 @@ for(i in 1:n.sims) {
     #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
     OM_fixed_catch[y,i] <- sum(harvest.b[,y,,2,,i]) #2 - US fixed post-IFQ
     OM_trawl_catch[y,i] <- sum(harvest.b[,y,,3,,i]) #3 - US trawl
-    
-    #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
-    OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])
-    OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
-    
-
     } #next area m
-  } #close year
+  } #close year 
+  
+  y <- 15  
+  for(y in 15:42) {
+    m <- 1
+    for(m in 1:n.area) {
+      #sum RPW to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
+      OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i]) 
+    } #next area m
+  } #close year 
+  
+    y <- 15  
+    for(y in 15:43) {
+      m <- 1
+      for(m in 1:n.area) {
+      #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
+      OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i]) 
+      } #next area m
+    } #close year    
+
 }#next i sim 
 
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
@@ -391,7 +411,14 @@ for(i in 1:n.sims) {
 #(moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle']
 # ...then start over at beginning with a new year
 
-
+#Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, trawl catches are placeholders, order is BS-AI-WG-CG-WY-EY/SEO
+  for(y in 43:44) {  
+    for(i in 1:n.sims){
+    apportioned_C[y,1,,i] <- c(0,0,0,0,0,0) #change y back to 43 once the full loop with apportionment is up and running
+    apportioned_C[y,2,,i] <- c(1.501,2.03,1.659,5.246,1.765,3.179)
+    apportioned_C[y,3,,i] <- c(0.25,0.25,0.25,0.25,0.25,0.25) ## these are just placeholders!! for 2018
+    apportioned_C[y,4,,i] <- c(0,0,0,0,0,0)
+    }}
 
 area <- 1
 i <- 1
@@ -400,11 +427,15 @@ for(i in 1:n.sims) {
   y <- 44  
   for(y in 44:n.year) { #n.year
     # somewhere up here, set a bunch of seeds...
-    #for the first year (2018) of forward projections, specify the catch (TAC) apportioned to each area somehow
-    if(y==44) { 
+    #for the first year (2018) of forward projections, specify the catch (TAC) apportioned to each area above and use it for year 44
+    #for subsequent years, read in the apportioned catch (either via a function or here directly)
+    ## some thing here read in apportionment output readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem.rep") 
+    #apportioned_C[y,f,,i]<- something
+    
+    #if(y==44) { 
       for(m in 1:n.area) {
         for(f in 1:n.fish) {
-        temp.Fmort <- estimate_Fmort4catch(catch=1.0,#temp.catchnumbiom[y-1,f,m], 
+        temp.Fmort <- estimate_Fmort4catch(catch=apportioned_C[y-1,f,m,i],
                       temp.selex=va[f,m,,],
                       temp.N=N[,y-1,,m,i], 
                       wa=wa, mx=mx, 
@@ -413,21 +444,20 @@ for(i in 1:n.sims) {
         } #close fish
       } #close area
 
-    } else {
-      #read in a rep file
+    #} else {
 
       #take most recent (2018) assessment and outputted ABC apportionment and calculate F       
-      for(m in 1:n.area) {
-        for(f in 1:n.fish) {
-        temp.Fmort <- estimate_Fmort4catch(catch=1.0,#standin_catch[1,f,m], #need to read in catch from the apportionment
-                     temp.selex=va[f,m,,],
-                     temp.N=N[,y-1,,m,i], 
-                     wa=wa, mx=mx, 
-                     bisection=FALSE)$Fmort
-        F.mort[f,y-1,m,i] <- temp.Fmort
-        }#close fish  
-      } #close area
-    } #close else
+      #for(m in 1:n.area) {
+        #for(f in 1:n.fish) {
+        #temp.Fmort <- estimate_Fmort4catch(catch=apportioned_C[y-1,f,m,i], #need to read in catch from the apportionment
+                     #temp.selex=va[f,m,,],
+                     #temp.N=N[,y-1,,m,i], 
+                     #wa=wa, mx=mx, 
+                     #bisection=FALSE)$Fmort
+        #F.mort[f,y-1,m,i] <- temp.Fmort
+        #}#close fish  
+     #} #close area
+    #} #close else
     
 
     m <- 1
@@ -436,7 +466,7 @@ for(i in 1:n.sims) {
     for(a in 1:n.age) {
       #Update Numbers and Biomass Matrix
       if(a==1) { #Age-1
-        N[,y,a,m,i] <- 0.5*recruits.area[y-1,m,i] #multiplying by 0.5 to split evenly between sexes
+        N[,y,a,m,i] <- 0.5*recruits.area[y,m,i] #multiplying by 0.5 to split evenly between sexes
         #B[,y,a,m,i] <- 0.5*recruits.area[y-1,m,i]*wa[,a]
         ## N[,y,a] <- rec[,y-1]/wa[,a]
         ## B[,y,a] <- rec[,y-1]
@@ -448,7 +478,7 @@ for(i in 1:n.sims) {
         h <- 1
         for(h in 1:n.sex) {
           #Instantaneous Version
-          F.a[h,y-1,a-1,m,i] <- sum(F.mort[,y,m,i]*va[,m,h,a-1]) #va dim = n.fish,n.area,n.sex,n.age
+          F.a[h,y-1,a-1,m,i] <- sum(F.mort[,y-1,m,i]*va[,m,h,a-1]) #va dim = n.fish,n.area,n.sex,n.age
           Z.a[h,y-1,a-1,m,i] <- F.a[h,y-1,a-1,m,i] + mx[h,a-1]  #Natural mortality is NOT time-varying
           
           #Continuous
@@ -466,9 +496,9 @@ for(i in 1:n.sims) {
           
           f <- 1
           for(f in 1:n.fish) {
-            temp.F <- F.mort[f,y,m,i]*va[f,m,h,a-1]
+            temp.F <- F.mort[f,y-1,m,i]*va[f,m,h,a-1]
             # temp.Z <- temp.F + mx[h,a-1]
-            temp.Z <- sum(F.mort[,y,m,i]*va[,m,h,a-1]) + mx[h,a-1]
+            temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a-1]) + mx[h,a-1]
             
             harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
             harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
@@ -480,7 +510,7 @@ for(i in 1:n.sims) {
         h <- 1
         for(h in 1:n.sex) {
           #Fish in Plus Group
-          F.a[h,y-1,a,m,i] <- sum(F.mort[,y,m,i]*va[,m,h,a])
+          F.a[h,y-1,a,m,i] <- sum(F.mort[,y-1,m,i]*va[,m,h,a])
           Z.a[h,y-1,a,m,i] <- F.a[h,y-1,a,m,i] + mx[h,a]  #Natural mortality is NOT time-varying        
           
           #Continuous
@@ -499,9 +529,9 @@ for(i in 1:n.sims) {
           
           f <- 1
           for(f in 1:n.fish) {
-            temp.F <- F.mort[f,y,m,i]*va[f,m,h,a]
+            temp.F <- F.mort[f,y-1,m,i]*va[f,m,h,a]
             # temp.Z <- temp.F + mx[h,a]
-            temp.Z <- sum(F.mort[,y,m,i]*va[,m,h,a]) + mx[h,a]
+            temp.Z <- sum(F.mort[,y-1,m,i]*va[,m,h,a]) + mx[h,a]
             # 
             harvest.n[h,y-1,a,f,m,i] <- N[h,y-1,a,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z))
             harvest.b[h,y-1,a,f,m,i] <- harvest.n[h,y-1,a,f,m,i] * wa[h,a]
@@ -530,60 +560,77 @@ for(i in 1:n.sims) {
         B[,y,a,m,i] <- N[,y,a,m,i] * wa[,a]
         ssb[,a,y,m,i] <- ma[,a]*wa[,a]*N[,y,a,m,i]
         for (h in 1:n.sex){ 
-          C.n[h,y,a-1,m,i] <- N[h,y,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
-          C.b[h,y,a-1,m,i] <- C.n[h,y,a-1,m,i] * wa[h,a-1]
+          C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
+          C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
         } #close sex
       }#close area
-    }#close age    
+    }#close age 
+    # plus group age calcs for catch
+    for (m in 1:n.area){
+      for (h in 1:n.sex){ 
+        C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number 
+        C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
+      } #close sex
+    }#close area
+    
+    
     ######Sample population for age comps, survey index, etc. 
     ##### Generate EM Data: ######
     m <- 1
     for (m in 1:n.area) {
-        # observed catch (based on what for F?), 'current' year, for 6 areas then combine to 3 and to 1 
-          #write a function that makes it easy to specify (by area) the yield ratio
-      
+        #write a function that makes it easy to specify (by area) the yield ratio
         # longline survey RPN, 'current' year  -- check units
-        Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=0.2, type='lognorm', seed=12345) #need to create a more sophisticated seed higher in the code
-        #(we'd talked about concatonating 'sim # + year' for seed)
-      
+      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i))         #(we'd talked about concatonating 'sim # + year' for seed)
         # longline/fixed gear fishery CPUE/RPW  -- check units
-        Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=0.4, type='lognorm', seed=333)
-        
-        #for(h in 1:n.sex){
-        # longline/fixed gear fishery age comps in numbers (not proportions yet) 
-        #Fish.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) 
-        #OM_Fish.RPW.age[,y,,i] <- aggr_agcomp(Fish.AC[,y,,,i], cond_catch_at_age[y,,,]) #is harvest.n the right one to use?
-        
-        # longline survey age comps in numbers (not proportions yet) single sex
-        #Surv.AC[h,y,,m,i] <- sample_age_comps(N[h,y,,m,i], Nsamp=20, cpar=NULL) #true.props, Nsamp, cpar
-        #} #close sex
+      Fish.RPW[,y-1,,m,i] <- sample_biom_abund(B[,y-1,,m,i], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+
+      for(h in 1:n.sex){
+      # longline/fixed gear post-IFQ fishery age comps in numbers , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
+        #specify another comp sample size here
+      sample_age_comps(harvest.n[h,y-1,,2,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+134)) 
+      Fish.AC[h,y-1,,m,i] <- obs.comp
+      
+      # longline survey age comps in numbers (not proportions yet) single sex, can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
+      #specify another comp sample size here
+      sample_age_comps(N[h,y-1,,m,i]*selex$surv$USLongline[h,], Nsamp=LLsurvAC_sampsize, cpar=NULL, seed=c(y+i+135)) #true.props, Nsamp, cpar
+      Surv.AC[h,y-1,,m,i] <- obs.comp
+      } #close sex
     } #next area m
     
     ######### aggregate OM data across age, sex and/or areas for EM and track over time
     #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
         #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
-        OM_fixed_catch[y,i] <- sum(harvest.b[,y,,2,,i]) #2 - US fixed post-IFQ
-        OM_trawl_catch[y,i] <- sum(harvest.b[,y,,3,,i]) #3 - US trawl
-        
-    #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
+        OM_fixed_catch[y-1,i] <- sum(harvest.b[,y-1,,2,,i]) #2 - US fixed post-IFQ
+        OM_trawl_catch[y-1,i] <- sum(harvest.b[,y-1,,3,,i]) #3 - US trawl
+        #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
         OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])
-        OM_Fish.RPW[y,i] <- sum(Fish.RPW[,y,,,i])
-        
-    #call the function to aggregate age comps for fishery and survey across areas (weight by catch/harvest at age in each area, sum across areas, then spit out a vector or age comps)
-        #OM_Fish.RPW.age[,y,,i] <- aggr_agecomp(Fish.AC, harvest.num) #is harvest.n the right one to use?
-        #OM_Surv.RPN.age[,y,,i] <- aggr_agecomp(Surv.AC, harvest.num)
-    
+        OM_Fish.RPW[y-1,i] <- sum(Fish.RPW[,y-1,,,i])
+        #age comps have a year lag
+        OM_Surv.RPN.age[y-1,,i] <- aggr_agecomp(Surv.AC[,y-1,,,i], Surv.RPN[,y-1,,,i]) #aggregate comps by sex and area, weight by survey catch in area
+        OM_Fish.RPW.age[y-1,,i] <- aggr_agecomp(Fish.AC[,y-1,,,i], C.n[,y-1,,,i]) #aggregate comps by sex and area, weight by catch in area
+      
+       
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
-        #build_datfile()  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
-    
+        build_datfile(LLsurvAC_sampsize,LLfishAC_sampsize)  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
+
         #calculate the moving average ratio between gear types (F ratio)    CODE THIS
         
     #=============================================================
     #### Conduct Assessment #### 
-    #2) Call ADMB Model
+    #Call ADMB Estimation Model
     #add code here
         #Dana think about the code in the EM here between gear types for distibuting F across selectivities
+    run.model <- function() {
+      setwd(dir.admb)      
+     
+      system.time( # keeping track of time for run
+        invisible(shell(paste0(EM_name),wait=T)))
+      
+      setwd("C:/Repositories/Sablefish_ApportionmentStrategies")    # return to original working directory
+      
+    }
+    #time.elapsed<-run.model()
     #=============================================================
     #### Determine SPR ####
     # extract SPR (read in a report file)

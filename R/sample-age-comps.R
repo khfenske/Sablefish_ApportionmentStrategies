@@ -44,9 +44,10 @@ sample_age_comps <- function(true.props, Nsamp, cpar=NULL, seed=NULL) {
 #y=2
 #m=1
 #i=1
-#true.props = N[h,y,,m,i]
-#Nsamp = 100
+#true.props = harvest.n[h,y-1,,2,m,i]
+#Nsamp = LLfishAC_sampsize
 #cpar = NULL
 #seed=12
 
 #sample_age_comps(true.props,Nsamp,cpar=cpar, seed=12)
+#harvest.n[h,y-1,,2,m,i], Nsamp=LLfishAC_sampsize,

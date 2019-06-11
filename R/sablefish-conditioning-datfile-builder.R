@@ -17,15 +17,15 @@ build_conditioning_datfile <- function() {
   #add newly generated data from OM to the .dat file
   
   #domestic LL survey RPN (check units)
-  testdat$obs_domLLsurv_biom <- OM_Surv.RPN[-1,1] #RPN data from the conditioning OM
-  testdat$obs_domLLsurv_biom <- testdat$obs_domLLsurv_biom[1:42] #indicate the years of conditioning
+  testdat$obs_domLLsurv_biom <- OM_Surv.RPN[-c(1:14,44),1] #RPN data from the conditioning OM
+  #testdat$obs_domLLsurv_biom <- testdat$obs_domLLsurv_biom #fill in dat file with OM
   testdat$obs_domLLsurv_se <- 0.1*testdat$obs_domLLsurv_biom#temp fill in bogus values, need to decide if these are needed 
   testdat$obs_domLLsurv_lci <- testdat$obs_domLLsurv_biom-(2*testdat$obs_domLLsurv_se) #add a lower CI value
   testdat$obs_domLLsurv_uci <- testdat$obs_domLLsurv_biom+(2*testdat$obs_domLLsurv_se) #add an upper CI value
   
   #domestic LL fishery RPW (check units)
-  testdat$obs_LLfish_biom <- OM_Fish.RPW[-1,1] #RPW data from OM
-  testdat$obs_LLfish_biom <- testdat$obs_LLfish_biom[1:42] #conditioning years
+  testdat$obs_LLfish_biom <- OM_Fish.RPW[-c(1:14,43:44),1] #RPW data from OM
+  #testdat$obs_LLfish_biom <- testdat$obs_LLfish_biom #conditioning years
   testdat$obs_LLfish_se <- 0.1* testdat$obs_LLfish_biom #add a SE value
   testdat$obs_LLfish_lci <- testdat$obs_LLfish_biom-(2*testdat$obs_LLfish_se)#add a lower CI value
   testdat$obs_LLfish_uci <- testdat$obs_LLfish_biom+(2*testdat$obs_LLfish_se)#add an upper CI value
@@ -161,7 +161,7 @@ build_conditioning_datfile <- function() {
   L_9<-paste(as.vector(testdat$oac_LLfish_bsaiwgcgeg[1,]),collapse=" ") #this might need work...
   for(y in 2:length(testdat$oac_LLfish_bsaiwgcgeg[,1])){
     L_add<-paste(as.vector(testdat$oac_LLfish_bsaiwgcgeg[y,]),collapse=" ")
-    L_10<-c(L_9,L_add)}
+    L_9<-c(L_9,L_add)}
   
   FAC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10)
   
@@ -286,8 +286,8 @@ build_conditioning_datfile <- function() {
   
   
   DAT<-c(MIPV,FC,LLA,LLA5,FB1,FB2,FAC,USAC1,FFS,TFS,USS,JPLLSC,SA)
-  DAT_NAME<-paste(dir.admb.single,"/tem_single2015",".dat",sep="")
-  write.table(DAT,file=DAT_NAME,quote=F,,,,,row.names=F,col.names=F)
+  DAT_NAME<-paste(dir.admb.single,"/tem_single2018",".dat",sep="")
+  write.table(DAT,file=DAT_NAME,quote=F,row.names=F,col.names=F)
   #somehow write the file and save to the right folder so we can call the new EM
   #write.table(testdat, file="C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/updated_dat.csv") #eventually it'll need to overwrite the original
   

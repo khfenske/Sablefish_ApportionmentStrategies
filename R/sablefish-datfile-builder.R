@@ -1,16 +1,20 @@
 #' add new year of data to vectors, matrices, and arrays that are ready to compile into a .dat file that can be used for the single area EM
 #' 
+#' @param LLsurvAC_N is the longline survey age comp sample sizes, which are specified in the Run-Sablefish-Sim.R code as LLsurvAC_sampsize
+#' @param LLfishAC_N is the longline fishery age comp samples sizes
 #' @return 
 #' @export 
 
 #require(PBSmodelling) 
 #require(admb2R)
 
-build_datfile <- function() {
+build_datfile <- function(LLsurvAC_N,LLfishAC_N) {
   dir.admb.single <- file.path(wd,"admb","Single_area")
   #use the PBSmodeling package to read the ADMB .dat file into the model and update it with new OM generated data
   #note that catch is in 1000 mt units when read in
-  testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem_single2015.dat") #should I read this in as global?
+  testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem_single2018.dat") 
+  #testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/permanant_tem_single2018.dat") #should I read this in as global?
+  
   #head(testdat, 20)
   #names(testdat)
 
@@ -18,8 +22,8 @@ build_datfile <- function() {
   testdat$endyr <- testdat$endyr + 1 #advance one year on end year
   #catch
   testdat$n_yrs_catch <- testdat$n_yrs_catch + 1 #advance the number of years of catch data
-  testdat$fixed_catch[testdat$n_yrs_catch] <- OM_fixed_catch[y,i] #add newest fixed gear catch (make sure units are in 1000 mt)
-  testdat$trawl_catch[testdat$n_yrs_catch] <- OM_trawl_catch[y,i] #add newest trawl gear catch (make sure units are in 1000 mt)
+  testdat$fixed_catch[testdat$n_yrs_catch] <- sum(apportioned_C[y,2,,i]) #add newest fixed gear catch (make sure units are in 1000 mt)
+  testdat$trawl_catch[testdat$n_yrs_catch] <- sum(apportioned_C[y,3,,i]) #add newest trawl gear catch (make sure units are in 1000 mt)
 
   #domestic LL survey RPN (check units)
   testdat$nyrs_domLLsurv <- testdat$nyrs_domLLsurv + 1 #advance one year on number of years
@@ -31,23 +35,23 @@ build_datfile <- function() {
 
   #domestic LL fishery RPW (check units)
   testdat$nyrs_LLfish <- testdat$nyrs_LLfish + 1 #advance the number of years
-  testdat$yrs_LLfish[testdat$nyrs_LLfish] <- testdat$yrs_LLfish[testdat$nyrs_LLfish] + 1 #add a year to the sequence
-  testdat$obs_LLfish_biom[testdat$nyrs_LLfish] <- OM_Fish.RPW[y,i] #add newest RPW data from OM
+  testdat$yrs_LLfish[testdat$nyrs_LLfish] <- testdat$yrs_LLfish[testdat$nyrs_LLfish-1] + 1 #add a year to the sequence
+  testdat$obs_LLfish_biom[testdat$nyrs_LLfish] <- OM_Fish.RPW[y-1,i] #add newest RPW data from OM
   testdat$obs_LLfish_se[testdat$nyrs_LLfish] <- 0.1* testdat$obs_LLfish_biom[testdat$nyrs_LLfish] #add a SE value
   testdat$obs_LLfish_lci[testdat$nyrs_LLfish] <- testdat$obs_LLfish_biom[testdat$nyrs_LLfish]-(2*testdat$obs_LLfish_se[testdat$nyrs_LLfish])#add a lower CI value
   testdat$obs_LLfish_uci[testdat$nyrs_LLfish] <- testdat$obs_LLfish_biom[testdat$nyrs_LLfish]+(2*testdat$obs_LLfish_se[testdat$nyrs_LLfish])#add an upper CI value
   
   #domestic LL fishery age comps
-  #testdat$nyrs_LLfish_age <- testdat$nyrs_LLfish_age + 1 #advance the number of years
-  #testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] <- testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] + 1 #add a year to the sequence
-  #testdat$nsamples_LLfish_age_bsaiwgcgeg[testdat$nyrs_LLfish_age] <- INCOMPLETE  #add to number of samples
-  #testdat$oac_LLfish_bsaiwgcgeg[testdat$nyrs_LLfish_age,] <- OM_Fish.RPW.age[,,i] #add a row of age comps for year y (or y-1 if we want to maintain the lag)
-  
+  testdat$nyrs_LLfish_age <- testdat$nyrs_LLfish_age + 1 #advance the number of years
+  testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age] <- testdat$yrs_LLfish_age[testdat$nyrs_LLfish_age-1] + 1 #add a year to the sequence
+  testdat$nsamples_LLfish_age_bsaiwgcgeg[testdat$nyrs_LLfish_age] <- LLfishAC_N  #add to number of samples based on the value we read into the function 
+  testdat$oac_LLfish_bsaiwgcgeg <- rbind(testdat$oac_LLfish_bsaiwgcgeg,OM_Fish.RPW.age[y-1,,i])
+
   #domestic LL survey age comps
-  #testdat$nyrs_domLLsurv_age <- testdat$nyrs_domLLsurv_age + 1 #advance the number of years
-  #testdat$yrs_domLLsurv_age[testdat$nyrs_domLLsurv_age] <- testdat$yrs_domLLsurv_age[testdat$nyrs_domLLsurv_age] + 1 #add a year to the sequence
-  #testdat$nsamples_domLLsurv_age_bsaiwgcgeg[testdat$nyrs_domLLsurv_age] <- INCOMPLETE  #add to number of samples
-  #testdat$oac_LLsurv_bsaiwgcgeg[testdat$nyrs_domLLsurv_age,] <- OM_Surv.RPN.age[,,i] #add a row of age comps for year y (or y-1 if we want to maintain the lag)
+  testdat$nyrs_domLLsurv_age <- testdat$nyrs_domLLsurv_age + 1 #advance the number of years
+  testdat$yrs_domLLsurv_age[testdat$nyrs_domLLsurv_age] <- testdat$yrs_domLLsurv_age[testdat$nyrs_domLLsurv_age-1] + 1 #add a year to the sequence
+  testdat$nsamples_domLLsurv_age_bsaiwgcgeg[testdat$nyrs_domLLsurv_age] <- LLsurvAC_N  #add to number of samples
+  testdat$oac_domLLsurv_bsaiwgcgeg <- rbind(testdat$oac_domLLsurv_bsaiwgcgeg, OM_Surv.RPN.age[y-1,,i]) #add a row of age comps for year y (or y-1 if we want to maintain the lag)
 
   
   #Write the new .dat file
@@ -311,8 +315,8 @@ build_datfile <- function() {
     
       
     DAT<-c(MIPV,FC,LLA,LLA5,FB1,FB2,FAC,USAC1,FFS,TFS,USS,JPLLSC,SA)
-    DAT_NAME<-paste(dir.admb.single,"/tem_single2015",".dat",sep="")
-    write.table(DAT,file=DAT_NAME,quote=F,,,,,row.names=F,col.names=F)
+    DAT_NAME<-paste(dir.admb.single,"/tem_single2018",".dat",sep="")
+    write.table(DAT,file=DAT_NAME,quote=F,row.names=F,col.names=F)
   #somehow write the file and save to the right folder so we can call the new EM
   #write.table(testdat, file="C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/updated_dat.csv") #eventually it'll need to overwrite the original
   
