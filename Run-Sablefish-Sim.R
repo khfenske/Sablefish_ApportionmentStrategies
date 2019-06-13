@@ -19,7 +19,9 @@ dir.figs <- file.path(wd,"figs")
 dir.output <- file.path(wd,"output")
 dir.admb <- file.path(wd,"admb/Single_area")
 dir.R <- file.path(wd,"R")
-dir.x <- file.path("C:/Repositories/hidden files with conf data") #change this path to whatever place you have 
+dir.x <- file.path("C:/Repositories/hidden files with conf data") #this is for Kari's file paths, Curry and Dana, comment this out and 
+# then un-comment-out the following line to use the dummy file
+#dir.x <- dir.data #change this path to whatever place you have 
 #the confidential catch data files stored. DO NOT LOAD TO GITHUB.
 
 EM_name <- "tem"
@@ -61,7 +63,7 @@ source(file.path(dir.R,'read-movement-rates.R')) #Function to read in movement r
         
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
-extract_catch(input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
+extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 #confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
  
 # Read in Movement Rates =========================================
@@ -113,7 +115,7 @@ N_hold <- array(dim=c(n.sex, n.year, n.area, n.age, n.sims), dimnames=list(sexes
 # Simulate Annual Recruitments ====================================
 #setup_years <- 39 #number of years to run the loop setting up the initial population and building initial dat file
 create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL, 
-                        n.year=n.year, n.sims=n.sims, seed=101) #Creates rec object 
+                        n.year=n.year, n.sims=n.sims, seed=111) #Creates rec object 
 
 # divide annual recruitments into areas - the values for area.props are from the proportions of age-2 fish by area 
 #from the LL survey, average across all years.
@@ -121,7 +123,7 @@ create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL,
 rec.by.area.props <- c(0.14,0.07,0.14,0.43,0.14,0.09)
 for(i in 1:n.sims){
 for(y in 1:n.year){
-  recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=rec.by.area.props, ss=100, seed=1)      # sexes combined, recruitment in Numbers (I think)
+  recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=rec.by.area.props, ss=100, seed=1)/1000000      # sexes combined, recruitment in millions
 }}
 
 # ==================================================================================
@@ -274,6 +276,14 @@ for(i in 1:n.sims) {
       } #close sex
       }#close area
     }#close age
+    # plus group age calcs for catch
+    for (m in 1:n.area){
+      for (h in 1:n.sex){ 
+        C.n[h,y-1,30,m,i] <- N[h,y-1,30,m,i] * (F.a[h,y-1,30,m,i]/Z.a[h,y-1,30,m,i]) * (1-exp(-1*Z.a[h,y-1,30,m,i])) #Catch in number 
+        C.b[h,y-1,30,m,i] <- C.n[h,y-1,30,m,i] * wa[h,30]
+      } #close sex
+    }#close area
+    
   } #close year
 }#next i sim
 
@@ -391,6 +401,17 @@ for(i in 1:n.sims) {
       setwd(dir.admb)      
       system.time( # keeping track of time for run
         invisible(shell(paste0(EM_name),wait=T)))
+      #remove existing files
+      cor.name<-paste0(EM_name,".cor")
+      std.name<-paste0(EM_name,".std")
+      
+      if (file.exists(cor.name)) {
+        file.remove(cor.name)
+      }
+      if (file.exists(std.name)) {
+        file.remove(std.name)
+      }
+      
       setwd("C:/Repositories/Sablefish_ApportionmentStrategies")    # return to original working directory
     }
 #Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, trawl catches are placeholders, order is BS-AI-WG-CG-WY-EY/SEO
@@ -513,8 +534,8 @@ for(i in 1:n.sims) {
     # plus group age calcs for catch
     for (m in 1:n.area){
       for (h in 1:n.sex){ 
-        C.n[h,y-1,a,m,i] <- N[h,y-1,a,m,i] * (F.a[h,y-1,a,m,i]/Z.a[h,y-1,a,m,i]) * (1-exp(-1*Z.a[h,y-1,a,m,i])) #Catch in number 
-        C.b[h,y-1,a,m,i] <- C.n[h,y-1,a,m,i] * wa[h,a]
+        C.n[h,y-1,30,m,i] <- N[h,y-1,30,m,i] * (F.a[h,y-1,30,m,i]/Z.a[h,y-1,30,m,i]) * (1-exp(-1*Z.a[h,y-1,30,m,i])) #Catch in number 
+        C.b[h,y-1,30,m,i] <- C.n[h,y-1,30,m,i] * wa[h,30]
       } #close sex
     }#close area
     
@@ -557,7 +578,7 @@ for(i in 1:n.sims) {
        
     ## Build the data: read in a .dat file, advance #years, year counts, add data generated in current year to matrices/arrays  
     ## then generate the updated .dat file to be pushed to the EM
-      build_datfile(LLsurvAC_sampsize,LLfishAC_sampsize)  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
+      #build_datfile(LLsurvAC_sampsize,LLfishAC_sampsize)  #note this is mostly done, but needs testing/validation once the age comp sampling and aggregating code is done
         
     #Dana think about the code in the EM here between gear types for distibuting F across selectivities
     #calculate the moving average ratio between gear types (F ratio)    CODE THIS
@@ -567,7 +588,7 @@ for(i in 1:n.sims) {
     #Call ADMB Estimation Model
 
 
-    time.elapsed<-run.model()
+    #time.elapsed<-run.model()
     
     #=============================================================
     #### Determine SPR ####

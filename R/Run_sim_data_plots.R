@@ -22,7 +22,7 @@ require(dplyr) #these are also called in Run-Sablefish-Sim.R
 require(reshape2)
 require(tidyverse)
 require(ggplot2)
-
+require(PBSmodelling) 
 ##############################################
 #plot set up  (this section needs work - copied from KB's SPASAM code)
 ##############################################

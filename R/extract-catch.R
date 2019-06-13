@@ -13,15 +13,15 @@
 
 
 
-extract_catch <- function(input.file="catch_input_conditioning.xlsx") {
+extract_catch <- function(directory_path,input.file="catch_input_conditioning.xlsx") {
   #require(tidyverse)
   #require(readxl)
   #require(xlsx)
 
   # Define Workflow Paths ==============================================================
-  dir.x <- file.path("C:/Repositories/hidden files with conf data") #change this path to whatever place you have the confidential catch data files stored. DO NOT LOAD TO GITHUB.
+  #dir.x <- file.path("C:/Repositories/hidden files with conf data") #change this path to whatever place you have the confidential catch data files stored. DO NOT LOAD TO GITHUB.
  
-  cond.catch <<- read.xlsx(file=file.path(dir.x, input.file), sheetName='CatchConditioning')
+  cond.catch <<- read.xlsx(file=file.path(directory_path, input.file), sheetName='CatchConditioning')
   
   }
 
