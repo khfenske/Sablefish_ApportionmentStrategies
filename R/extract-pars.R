@@ -49,7 +49,24 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   Bstart <<- as.numeric(in.sim$Value[in.sim$Par=='Bstart'])
   Nstart <<- as.numeric(in.sim$Value[in.sim$Par=='Nstart'])
   n.sims <<- as.numeric(in.sim$Value[in.sim$Par=='n.sims'])
-
+  apport.opt <<- as.numeric(in.sim$Value[in.sim$Par=='apport.opt'])
+  current.props1 <<- as.numeric(in.sim$Value[in.sim$Par=='current.props1'])
+  current.props2 <<- as.numeric(in.sim$Value[in.sim$Par=='current.props2'])
+  current.props3 <<- as.numeric(in.sim$Value[in.sim$Par=='current.props3'])
+  current.props4 <<- as.numeric(in.sim$Value[in.sim$Par=='current.props4'])
+  current.props5 <<- as.numeric(in.sim$Value[in.sim$Par=='current.props5'])
+  current.props6 <<- as.numeric(in.sim$Value[in.sim$Par=='current.props6'])
+  equilib.props1 <<- as.numeric(in.sim$Value[in.sim$Par=='equilib.props1'])
+  equilib.props2 <<- as.numeric(in.sim$Value[in.sim$Par=='equilib.props2'])
+  equilib.props3 <<- as.numeric(in.sim$Value[in.sim$Par=='equilib.props3'])
+  equilib.props4 <<- as.numeric(in.sim$Value[in.sim$Par=='equilib.props4'])
+  equilib.props5 <<- as.numeric(in.sim$Value[in.sim$Par=='equilib.props5'])
+  equilib.props6 <<- as.numeric(in.sim$Value[in.sim$Par=='equilib.props6'])
+  FixedA1 <<- as.numeric(in.sim$Value[in.sim$Par=='FixedA1'])
+  FixedA2 <<- as.numeric(in.sim$Value[in.sim$Par=='FixedA2'])
+  A_L.mat <<- as.numeric(in.sim$Value[in.sim$Par=='A_L.mat'])
+  lucky.area <<- as.numeric(in.sim$Value[in.sim$Par=='lucky.area'])
+  
   # Extract: Growth Parameters ==============================================================
   in.growth <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Growth')
   linf <- as.numeric(in.growth[in.growth$Par=='linf',(2:3)])
@@ -97,11 +114,11 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   
   # Extract: Length Bins and Maturity @ Length ================================================
   #Length bins
-  in.lengths <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Length_Bins', header = FALSE)
+  in.lengths <- read.xlsx(file=file.path(dir.data, input.file), sheetName='Length_Bins', header=FALSE)
   len <<- as.vector(in.lengths[,1])
   # length.bins[1:n.length] <<- as.vector(in.lengths[,1]) #ERROR HERE!!!
   # lengths <<- lengths
-  if(length(len)!=n.length) { stop("Number of length bins in consistent with input bins")}
+  if(length(len)!=n.length) { stop("Number of length bins inconsistent with input bins")}
   
   # ml_par1 <- as.numeric(in.mature[in.mature$Par=='ml_par1',(2:3)]) #Location parameter
   # ml_par2 <- as.numeric(in.mature[in.mature$Par=='ml_par2',(2:3)]) #Scale parameter

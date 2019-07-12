@@ -4,11 +4,11 @@
 #' @export
 #'
 create_sim_objects <- function() {
-  lz  <<- matrix(1/n.sex,nrow=n.sex,ncol=n.age) #what are these??? need names/labels
+  lz  <<- matrix(1/n.sex,nrow=n.sex,ncol=n.age) 
   za  <<- matrix(0,nrow=n.sex,ncol=n.age)
   
   #Fishery
-  qa  <<- array(0,dim=c(n.sex,n.age,n.fish)) #what are these???
+  qa  <<- array(0,dim=c(n.sex,n.age,n.fish)) 
   pa  <<- array(0,dim=c(n.sex,n.age,n.fish))
   ra  <<- array(0,dim=c(n.sex,n.age,n.fish))
   dlz <<- array(0,dim=c(n.sex,n.age,n.fish))
@@ -31,7 +31,8 @@ create_sim_objects <- function() {
   OM_Fish.RPW <<- matrix(nrow=n.year, ncol=n.sims, dimnames=list(years,sims)) #matrix to hold all of the OM fishery RPW data, sumed across areas
   OM_Fish.RPW.age <<- array(dim=c(n.year, n.age, n.sims),dimnames=list(years, ages, sims)) #array to hold the OM fishery age comps, summed across areas
   OM_Surv.RPN.age <<- array(dim=c(n.year, n.age, n.sims),dimnames=list(years, ages, sims)) #array to hold the OM survey age comps, summed across areas
-  
+  ABC_TS <<- array(dim=c(n.year, n.area, n.sims),dimnames=list(years, areas, sims)) #array to hold the apportioned ABC time series
+
   #Total Instantaneous mortality
   Z.a <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) 
   F.a <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Age-specific Fishing mortality

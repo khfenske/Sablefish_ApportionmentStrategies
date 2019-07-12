@@ -102,6 +102,7 @@ DATA_SECTION
   init_number ph_ifq;
   init_number ph_srv2q;  
   init_number yieldratio;
+  init_int projyrs;
 
   !! cout << yieldratio << endl;
      !! ad_comm::change_datafile_name(data_file);    // Read data from the data file
@@ -549,8 +550,8 @@ INITIALIZATION_SECTION
 /// Population projection Hanselsiginelli
 //////////////////////////////////////////
 
-  matrix        N_proj_f(endyr+1,endyr+45,1,nages);  // 16 years of F numbers at age
-  matrix        N_proj_m(endyr+1,endyr+45,1,nages);
+  matrix        N_proj_f(endyr+1,endyr+projyrs,1,nages);  // 16 years of F numbers at age
+  matrix        N_proj_m(endyr+1,endyr+projyrs,1,nages);
   number        FABC_proj;  // after control rule F, need to make spatial
   vector        FABC_tot_proj_f(1,nages);  // ?
   vector        FABC_tot_proj_m(1,nages);
@@ -567,16 +568,16 @@ INITIALIZATION_SECTION
 
   vector        S_proj_f(1,nages);
   vector        S_proj_m(1,nages);
-  matrix        catage_proj_f(endyr+1,endyr+45,1,nages);
-  matrix        catage_proj_m(endyr+1,endyr+45,1,nages);
-  matrix        catage_proj_OFL_f(endyr+1,endyr+45,1,nages);
-  matrix        catage_proj_OFL_m(endyr+1,endyr+45,1,nages);
-  vector        pred_catch_proj_OFL_f(endyr+1,endyr+45);
-  vector        pred_catch_proj_OFL_m(endyr+1,endyr+45);
-  sdreport_vector        spawn_biom_proj(endyr+1,endyr+45);
-  sdreport_vector        tot_biom_proj(endyr+1,endyr+45);
-  vector        pred_catch_proj(endyr+1,endyr+45);
-  vector        pred_catch_proj_OFL(endyr+1,endyr+45);
+  matrix        catage_proj_f(endyr+1,endyr+projyrs,1,nages);
+  matrix        catage_proj_m(endyr+1,endyr+projyrs,1,nages);
+  matrix        catage_proj_OFL_f(endyr+1,endyr+projyrs,1,nages);
+  matrix        catage_proj_OFL_m(endyr+1,endyr+projyrs,1,nages);
+  vector        pred_catch_proj_OFL_f(endyr+1,endyr+projyrs);
+  vector        pred_catch_proj_OFL_m(endyr+1,endyr+projyrs);
+  sdreport_vector        spawn_biom_proj(endyr+1,endyr+projyrs);
+  sdreport_vector        tot_biom_proj(endyr+1,endyr+projyrs);
+  vector        pred_catch_proj(endyr+1,endyr+projyrs);
+  vector        pred_catch_proj_OFL(endyr+1,endyr+projyrs);
   number        stdev_rec;  
   number        FOFL;
   number        FABC;
@@ -988,7 +989,7 @@ FUNCTION Get_Population_Projection
    tot_biom_proj(endyr+1)=N_proj_f(endyr+1)*wt_f+N_proj_m(endyr+1)*wt_m;
 
   // reinstate yieldration because they don't always catch al the quota, and should be spatial because it's bsaiwg that doesn't
-  for (i=endyr+1;i<=endyr+45;i++)
+  for (i=endyr+1;i<=endyr+projyrs;i++)
   {
   // F ABC control rule
     if (spawn_biom_proj(i)/B40 > 1.) {
@@ -1022,7 +1023,7 @@ FUNCTION Get_Population_Projection
     pred_catch_proj_OFL(i)     =  (catage_proj_OFL_f(i)*wt_f+catage_proj_OFL_m(i)*wt_m)/yieldratio;
 
 //  Next year's abundance
-    if (i < endyr+45)
+    if (i < endyr+projyrs)
     {
     if(mceval_phase()) {
     stdev_rec = sqrt(norm2(value(log_rec_dev(1979,endyr-recage-1))-mean(value(log_rec_dev(1979,endyr-recage-1))))/(size_count(value(log_rec_dev(1979,endyr-recage)))-1));
@@ -1099,264 +1100,197 @@ GLOBALS_SECTION
   adstring unchanging_data;
 
 REPORT_SECTION
-// Goes to routine that automatically creates input file for projection model
-// output for R
   if(last_phase()) {
-  report << "# single area model output" << endl;
-  report << "model start year " << styr << endl;
-  report<<model_name<<endl;
-  report<<data_file<<endl;
-  report<<"Num_parameters_Estimated "<<initial_params::nvarcalc()<<endl;
-  report << "years"<< endl;
-  report << yy << endl;
+  //report out things needed to feed into apportionment script:
+  report << "$B40" << endl;
+  report << B40 << endl;
+  report << "$SBF40" << endl;
+  report << SBF40 << endl;
 
-  report << "pred_catch_fish1"<< endl << pred_catch_fish1<<endl;
-  report << "obs_catch_fish1"<< endl << obs_catch_fish1<<endl;
+  report << "$spawn_biom" << endl;
+  report << spawn_biom << endl;
+  report << "$Depletion"<< endl; 
+  report << Depletion << endl;
+  
+  report << "$ABC_proj" << endl;
+  report << pred_catch_proj << endl;
+
+  report << "$spawn_bio_projected" << endl; 
+  report << spawn_biom_proj << endl;
+
+  report << "$yrs_srv3" << endl;
+  report << yrs_srv3 << endl;
+  report << "$pred_srv3_biom" << endl;
+  report << pred_srv3 << endl;
+  report << "$obs_srv3_biom" << endl;
+  report << obs_srv3_biom <<endl;
+  report << "$yrs_srv5" << endl;
+  report << yrs_srv5 << endl;
+  report << "$pred_srv5_biom"<< endl;
+  report << pred_srv5 <<endl;
+  report << "$obs_srv5_biom" << endl;
+  report << obs_srv5_biom << endl;
+  }
+
+
+FUNCTION write_fullrep
+  ofstream fullrep("sable.rep");
+
+  if(last_phase()) {
+  fullrep << "$Pred_catch" << endl; 
+  fullrep << pred_catch <<endl;
+  fullrep << "$avgFmort" << endl; 
+  fullrep << log_avg_F_fish1 << endl;
+
+  fullrep << "$F35" << endl;
+  fullrep << F35 << endl;
+  fullrep << "$F40" << endl;
+  fullrep << F40 << endl;
+  fullrep << "$SBF35" << endl;
+  fullrep << SBF35 << endl;
+  fullrep << "$F_recruitment" << endl; 
+  fullrep << trans(natage_f)(1) << endl;
+  fullrep << "$M_recruitment" << endl; 
+  fullrep << trans(natage_m)(1) << endl;
+  fullrep << "$Spec_catch_proj" << endl;
+  fullrep << (catage_proj_f*wt_f+catage_proj_m*wt_m) << endl; 
+  
+  fullrep << "spawn_bio next year"<<endl<<spawn_biom_proj(endyr+1)<<endl;
+  fullrep <<" spawn_bio projected"<<endl<<spawn_biom_proj<<endl;
+  fullrep << "Specified_catch_projection"<<(catage_proj_f*wt_f+catage_proj_m*wt_m)<<endl<<"ABC projection: "<<pred_catch_proj<<endl;
+
+  //EM structure  
+  //fullrep << "single area model output" << endl;
+  //fullrep << "model_start_year" << endl;
+  //fullrep << $styr << endl;
+  //fullrep << "model_end_year" << endl;
+  //fullrep << $endyr << endl;  
+  fullrep << model_name << endl;
+  fullrep <<  data_file << endl;
+  fullrep << "Num_parameters_Estimated " << endl; 
+  fullrep << initial_params::nvarcalc() << endl;
+  fullrep << "years"<< endl;
+  fullrep << yy << endl;
+
+  //Estimated values
+  fullrep << "yrs_srv4" <<endl << yrs_srv4 <<endl;
+  fullrep << "pred_srv4_biom" <<endl << pred_srv4  <<endl;
+  fullrep << "obs_srv4_biom" << endl << obs_srv4_biom  <<endl;
+  
+  fullrep << "yrs_srv3" << endl << yrs_srv3  <<endl;
+  fullrep << "pred_srv3_biom" << endl << pred_srv3  <<endl;
+  fullrep << "obs_srv3_biom" << endl << obs_srv3_biom  <<endl;
+  
+  fullrep << "yrs_srv5" << endl << yrs_srv5  <<endl;
+  fullrep << "pred_srv5_biom"<< endl << pred_srv5  <<endl;
+  fullrep << "obs_srv5_biom" << endl << obs_srv5_biom  <<endl;
+
+  fullrep << "yrs_srv6" << endl << yrs_srv6  <<endl;
+  fullrep << "pred_srv6_biom"<< endl << pred_srv6  <<endl;
+  fullrep << "obs_srv6_biom" << endl << obs_srv6_biom  <<endl;
+
+  fullrep << "Fully_selected_F" << endl << Fmort_fish1*max(fish1_sel_f)+Fmort_fish3 << endl;
+  fullrep << "spawn_biom"<< endl << spawn_biom <<endl;
+  fullrep << "tot_biom"<< endl << tot_biom   <<endl;
+
+  fullrep << "pred_catch_fish1"<< endl << pred_catch_fish1<<endl;
+  fullrep << "obs_catch_fish1"<< endl << obs_catch_fish1<<endl;
  
-  report << "pred_catch_fish3"<< endl << pred_catch_fish3<<endl;
-  report << "obs_catch_fish3"<< endl << obs_catch_fish3<<endl;
+  fullrep << "pred_catch_fish3"<< endl << pred_catch_fish3<<endl;
+  fullrep << "obs_catch_fish3"<< endl << obs_catch_fish3<<endl;
+
+  fullrep << "fish1_sel_f"<< endl << fish1_sel_f <<endl;
+  fullrep << "fish1_sel_m"<< endl << fish1_sel_m <<endl;
+  fullrep << "fish2_sel"<< endl << fish2_sel <<endl;
+  fullrep << "fish3_sel_f"<< endl << fish3_sel_f <<endl;
+  fullrep << "fish3_sel_m"<< endl << fish3_sel_m  <<endl;
+  fullrep << "fish4_sel_f"<< endl << fish4_sel_f <<endl;
+  fullrep << "fish4_sel_m"<< endl << fish4_sel_m  <<endl;
+
+  fullrep << "srv1_sel_f"<< endl << srv1_sel_f <<endl;
+  fullrep << "srv1_sel_m"<< endl << srv1_sel_m  <<endl;
+  fullrep << "srv2_sel_f"<< endl << srv2_sel_f  <<endl;
+  fullrep << "srv2_sel_m"<< endl << srv2_sel_m  <<endl;
+  fullrep << "SigmaR: "<<sigr<< " Nat_Mort: "<<natmort<< endl;
+  fullrep <<"Spawning Per Recruit "<< " "<<SBF40<< endl;
+  fullrep << "Virgin SPR (SB0) "<<SB0 <<endl;
    
-  report << "Survival_Female" << endl;
-  for (i=styr;i<=endyr;i++) report << i<<" "<<S_f(i) <<endl; report <<endl ;
-
-  report << "Survival_Male" << endl;
-  for (i=styr;i<=endyr;i++) report << i<<" "<<S_m(i) <<endl; report <<endl ;
-
-  report << "Numbers_female" << endl;
-  for (i=styr;i<=endyr;i++) report << i<<" "<<natage_f(i) <<endl; report<<endl;
-
-  report << "Numbers_male" << endl;
-  for (i=styr;i<=endyr;i++) report << i<<" "<<natage_m(i) <<endl; report<<endl;
-
-  report << "ages" << endl << aa <<endl;
-  report << "fish1_sel_f"<< endl << fish1_sel_f <<endl;
-  report << "fish1_sel_m"<< endl << fish1_sel_m <<endl;
-  report << "fish2_sel"<< endl << fish2_sel <<endl;
-  report << "fish3_sel_f"<< endl << fish3_sel_f <<endl;
-  report << "fish3_sel_m"<< endl << fish3_sel_m  <<endl;
-  report << "fish4_sel_f"<< endl << fish4_sel_f <<endl;
-  report << "fish4_sel_m"<< endl << fish4_sel_m  <<endl;
-
-  report << "srv1_sel_f"<< endl << srv1_sel_f <<endl;
-  report << "srv1_sel_m"<< endl << srv1_sel_m  <<endl;
-  report << "srv2_sel_f"<< endl << srv2_sel_f  <<endl;
-  report << "srv2_sel_m"<< endl << srv2_sel_m  <<endl;
+  fullrep<<"log_mean_rec"<< endl << log_mean_rec<< endl;
+  fullrep<<"log_rec_dev" << endl << log_rec_dev << endl;
+  fullrep<<"pred_rec" << endl << pred_rec << endl;
   
-  report << "obs_fish1_age"<< endl << oac_fish1 << endl;
-  report << "pred_fish1_age"<< endl << eac_fish1 << endl; 
-
-  report << "obs_srv1_age"<< endl << oac_srv1 <<endl; 
-  report << "pred_srv1_age"<< endl << eac_srv1 <<endl; 
-  //report << "obs_srv2_age"<< endl << oac_srv2 <<endl; 
-  //report << "pred_srv2_age"<< endl << eac_srv2 <<endl; 
-
-  report << "obs_fish1_size_m"<<endl <<osc_fish1_m << endl;
-  report << "pred_fish1_size_m"<<endl <<esc_fish1_m <<endl;
-  report << "obs_fish1_size_f"<<endl <<osc_fish1_f << endl;
-  report << "pred_fish1_size_f"<<endl <<esc_fish1_f <<endl;
-
-  report << "obs_fish3_size_m"<<endl <<osc_fish3_m << endl;
-  report << "pred_fish3_size_m"<<endl <<esc_fish3_m <<endl;
-  report << "obs_fish3_size_f"<<endl <<osc_fish3_f << endl;
-  report << "pred_fish3_size_f"<<endl <<esc_fish3_f <<endl;
-
-  report << "obs_srv1_size_m"<< endl <<osc_srv1_m  << endl;
-  report << "pred_srv1_size_m"<<endl <<esc_srv1_m <<endl;
-  report << "obs_srv1_size_f"<<endl << osc_srv1_f << endl;
-  report << "pred_srv1_size_f"<<endl <<esc_srv1_f <<endl;
-
-  report << "obs_srv2_size_m"<< endl <<osc_srv2_m  << endl;
-  report << "pred_srv2_size_m"<<endl <<esc_srv2_m <<endl;
-  report << "obs_srv2_size_f"<<endl << osc_srv2_f << endl;
-  report << "pred_srv2_size_f"<<endl <<esc_srv2_f <<endl;
-
-  report << "yrs_srv3" << endl << yrs_srv3  <<endl;
-  report << "pred_srv3_biom" << endl << pred_srv3  <<endl;
-  report << "obs_srv3_biom" << endl << obs_srv3_biom  <<endl;
-
-  report << "yrs_srv4" <<endl << yrs_srv4 <<endl;
-  report << "pred_srv4_biom" <<endl << pred_srv4  <<endl;
-  report << "obs_srv4_biom" << endl << obs_srv4_biom  <<endl;
-
-  report << "yrs_srv5" << endl << yrs_srv5  <<endl;
-  report << "pred_srv5_biom"<< endl << pred_srv5  <<endl;
-  report << "obs_srv5_biom" << endl << obs_srv5_biom  <<endl;
-
-  report << "yrs_srv6" << endl << yrs_srv6  <<endl;
-  report << "pred_srv6_biom"<< endl << pred_srv6  <<endl;
-  report << "obs_srv6_biom" << endl << obs_srv6_biom  <<endl;
-
-  report << "Fully_selected_F" << endl << Fmort_fish1*max(fish1_sel_f)+Fmort_fish3 << endl;
-  report << "spawn_biom"<< endl << spawn_biom <<endl;
-  report << "tot_biom"<< endl << tot_biom   <<endl;
-
-  report << "F35" << endl << F35 << endl;
-  report << "F40" << endl << F40 << endl;
-  report << "B40" << endl << B40 << endl;
-
-  report << "SBF40" << endl << SBF40 << endl;
-  report << "SBF35" << endl << SBF35 << endl;
-
-  report<<"#Ratio of current SSB to B40 is"<<endl;
-  report<<(spawn_biom(endyr)+spawn_biom(endyr))/B40<<endl;
-
-  report << "Wts_n_Likelihoods" << endl;
-  report << "SSQ_catch likelihood" << endl << ssqcatch << endl;
-  report << "Surv_like" << endl;
-  report << "order: srv3,srv4,srv5,srv6," << surv_like << endl;
-  report << "Age_like" << endl;
-  report << "order: fish1a, srv1a,0, fish1s f/m, fish3s f/m, 0, srv1s f/m, srv2s f/m" << endl;
-  report <<  age_like << endl;
-
-  report << wt_rec_var <<" " << rec_like <<" " ; report << "Recruitment_Deviations_Likelihood" << endl;
-  report << wt_fmort_reg <<" "<<F_mort_regularity<<" " ; report << "Fishing_Mortality_Regularity_Penalty" << endl;
+  fullrep << "q_srv1" << q_srv1<<endl;
+  fullrep << "q_srv2" << q_srv2<<endl;
+  fullrep << "q_srv5" << q_srv5<<endl;
+  fullrep << "q_srv6" << q_srv6<<endl;
+  fullrep << "q_srv8" << q_srv8<<endl;
   
-  report << " "<<priors(1)  <<" " ; report << "priors sigr"     <<endl;
-  report << " "<<priors(2)  <<" " ; report << "priors q_srv1" <<endl;
-  report << " "<<priors(4)  <<" " ; report << "priors M"<<endl;
-  report << " "<<priors(7)  <<" " ; report << "priors q_srv2"<<endl;
-  report << " "<<priors(9)  <<" " ; report << "priors q_srv5"<<endl;
-  report << " "<<priors(10)  <<" " ; report << "priors q_srv6"<<endl;
-  report << " "<<priors(11)  <<" " ; report << "priors q_srv8"<<endl;
-  report<< sprpen << " "<<"Sprpen" <<endl;
-  report << " "<<obj_fun    <<" " ; report << "obj_fun"         <<endl;
-  report << " "<<Like       <<" " ; report << "data likelihood" <<endl;//(2*square(sigr))+ size_count(log_rec_dev)*log(sigr)<<endl;
+  //likelihoods
+  fullrep << "Wts_n_Likelihoods" << endl;
+  fullrep << "SSQ_catch likelihood" << endl << ssqcatch << endl;
+  fullrep << "Surv_like" << endl;
+  fullrep << "order: srv3,srv4,srv5,srv6," << surv_like << endl;
+  fullrep << "Age_like" << endl;
+  fullrep << "order: fish1a, srv1a,0, fish1s f/m, fish3s f/m, 0, srv1s f/m, srv2s f/m" << endl;
+  fullrep <<  age_like << endl;
+
+  fullrep << wt_rec_var <<" " << rec_like <<" " ; fullrep << "Recruitment_Deviations_Likelihood" << endl;
+  fullrep << wt_fmort_reg <<" "<<F_mort_regularity<<" " ; fullrep << "Fishing_Mortality_Regularity_Penalty" << endl;
   
-  report << "SigmaR: "<<sigr<< " Nat_Mort: "<<natmort<< endl;
-  report <<"Spawning Per Recruit "<< " "<<SBF40<< endl;
-  report << "Virgin SPR (SB0) "<<SB0 <<endl;
-   
-  report<<"log_mean_rec"<< endl << log_mean_rec<< endl;
-  report<<"log_rec_dev" << endl << log_rec_dev << endl;
-  report<<"pred_rec" << endl << pred_rec << endl;
-  
-  report << "q_srv1" << q_srv1<<endl;
-  report << "q_srv2" << q_srv2<<endl;
-  report << "q_srv5" << q_srv5<<endl;
-  report << "q_srv6" << q_srv6<<endl;
-  report << "q_srv8" << q_srv8<<endl;
-  
-   report<<"Some useful statistics if someone where looking at things for their comps"<<endl;  // will need to changes these when nareas != 2
-   report<<"Ratio of current SSB to B40 is"<<endl<<(spawn_biom(endyr)/B40)<<endl;
-  
-   report<<"Total female spawning biomass is"<<endl<<spawn_biom<<endl;
-   report<<"Pred_catch" << pred_catch <<endl;
-   report<<"avg F mort"<< log_avg_F_fish1 << endl;
-   report<<"Depletion"<< Depletion<< endl;
-  
-  report<<"F_recruitment"<<endl << trans(natage_f)(1)<<endl;
-  report<<"M_recruitment"<<endl << trans(natage_m)(1)<<endl;
+  fullrep << " "<<priors(1)  <<" " ; fullrep << "priors sigr"     <<endl;
+  fullrep << " "<<priors(2)  <<" " ; fullrep << "priors q_srv1" <<endl;
+  fullrep << " "<<priors(4)  <<" " ; fullrep << "priors M"<<endl;
+  fullrep << " "<<priors(7)  <<" " ; fullrep << "priors q_srv2"<<endl;
+  fullrep << " "<<priors(9)  <<" " ; fullrep << "priors q_srv5"<<endl;
+  fullrep << " "<<priors(10)  <<" " ; fullrep << "priors q_srv6"<<endl;
+  fullrep << " "<<priors(11)  <<" " ; fullrep << "priors q_srv8"<<endl;
+  fullrep << sprpen << " "<<"Sprpen" <<endl;
+  fullrep << " "<<obj_fun    <<" " ; fullrep << "obj_fun"         <<endl;
+  fullrep << " "<<Like       <<" " ; fullrep << "data likelihood" <<endl;//(2*square(sigr))+ size_count(log_rec_dev)*log(sigr)<<endl;
 
-   report << "spawn_bio_projected"<<endl<<spawn_biom_proj<<endl;
-   report << "Spec_catch_proj"<<endl<<(catage_proj_f*wt_f+catage_proj_m*wt_m)<<endl;   
-   report << "ABC_proj" << endl<<pred_catch_proj <<endl;
-  
-   report <<" spawn_bio next year"<<endl<<spawn_biom_proj(endyr+1)<<endl;
-   report <<" spawn_bio projected"<<endl<<spawn_biom_proj<<endl;
-   report << "Specified_catch_projection"<<(catage_proj_f*wt_f+catage_proj_m*wt_m)<<endl<<"ABC projection: "<<pred_catch_proj<<endl;
+  //fullrep << "Survival_Female" << endl;
+  //for (i=styr;i<=endyr;i++) fullrep << i<<" "<<S_f(i) <<endl; //fullrep <<endl ;
 
+  //fullrep << "Survival_Male" << endl;
+  //for (i=styr;i<=endyr;i++) fullrep << i<<" "<<S_m(i) <<endl; 
+  //fullrep <<endl ;
 
-  report << "Obs_P_fish1_age"<<aa <<endl;
-  for (i=1;i<=nyrs_fish1_age;i++) report << yrs_fish1_age(i)<<" "<<oac_fish1(i) 
-      <<" eff_N "<<(1-eac_fish1(i))*eac_fish1(i)/norm2(oac_fish1(i)-eac_fish1(i))  <<" N "<<nsamples_fish1_age(i)
-      <<" SDNR "<< sdnr(eac_fish1(i),oac_fish1(i),wt_fish1_age*double(nsamples_fish1_age(i)))<<endl; report<<endl;
-  report << "Pred_P_fish1_age"<<aa <<endl;
-  for (i=1;i<=nyrs_fish1_age;i++) report << yrs_fish1_age(i)<<" "<<eac_fish1(i) <<endl; report<<endl;
+  //fullrep << "Numbers_female" << endl;
+  //for (i=styr;i<=endyr;i++) fullrep << i<<" "<<natage_f(i) <<endl; // fullrep<<endl;
 
-  report << "Obs_P_fish1_size Female"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_fish1_size;i++) report << yrs_fish1_size(i)<<" "<<osc_fish1_f(i) 
-      <<" eff_N "<<(1-esc_fish1_f(i))*esc_fish1_f(i)/norm2(osc_fish1_f(i)-esc_fish1_f(i))  <<" N "<<nsamples_fish1_size(i)
-      <<" SDNR "<< sdnr(esc_fish1_f(i),osc_fish1_f(i),wt_fish1_size*double(nsamples_fish1_size(i)))<<endl; report<<endl;
-  report << "Pred_P_fish1_size female"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_fish1_size;i++) report << yrs_fish1_size(i)<<" "<<esc_fish1_f(i) <<endl; report<<endl;
+  //fullrep << "Numbers_male" << endl;
+  //for (i=styr;i<=endyr;i++) fullrep << i<<" "<<natage_m(i) <<endl; // fullrep<<endl;
 
-    report << "Obs_P_fish1_size Male"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_fish1_size;i++) report << yrs_fish1_size(i)<<" "<<osc_fish1_m(i) 
-      <<" eff_N "<<(1-esc_fish1_m(i))*esc_fish1_m(i)/norm2(osc_fish1_m(i)-esc_fish1_m(i))  <<" N "<<nsamples_fish1_size(i)
-      <<" SDNR "<< sdnr(esc_fish1_m(i),osc_fish1_m(i),wt_fish1_size*double(nsamples_fish1_size(i)))<<endl; report<<endl;
-  report << "Pred_P_fish1_size males"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_fish1_size;i++) report << yrs_fish1_size(i)<<" "<<esc_fish1_m(i) <<endl; report<<endl;
+  //fullrep << "ages" << endl << aa <<endl;
 
-   report << "Obs_P_fish3_size Males"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_fish3_size;i++) report << yrs_fish3_size(i)<<" "<<osc_fish3_m(i) 
-      <<" eff_N "<<(1-esc_fish3_m(i))*esc_fish3_m(i)/norm2(osc_fish3_m(i)-esc_fish3_m(i))  <<" N "<<nsamples_fish3_size(i)
-      <<" SDNR "<< sdnr(esc_fish3_m(i),osc_fish3_m(i),wt_fish3_size*double(nsamples_fish3_size(i)))<<endl; report<<endl;
-  report << "Pred_P_fish3_size males"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_fish3_size;i++) report << yrs_fish3_size(i)<<" "<<esc_fish3_m(i) <<endl; report<<endl;
+  //fullrep << "obs_fish1_age"<< endl << oac_fish1 << endl;
+  //fullrep << "pred_fish1_age"<< endl << eac_fish1 << endl; 
 
-  report << "Obs_P_fish3_size Female"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_fish3_size;i++) report << yrs_fish3_size(i)<<" "<<osc_fish3_f(i) 
-      <<" eff_N "<<(1-esc_fish3_f(i))*esc_fish3_f(i)/norm2(osc_fish3_f(i)-esc_fish3_f(i))  <<" N "<<nsamples_fish3_size(i)
-      <<" SDNR "<< sdnr(esc_fish3_f(i),osc_fish3_f(i),wt_fish3_size*double(nsamples_fish3_size(i)))<<endl; report<<endl;
-  report << "Pred_P_fish3_size female"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_fish3_size;i++) report << yrs_fish3_size(i)<<" "<<esc_fish3_f(i) <<endl; report<<endl;
+  //fullrep << "obs_srv1_age"<< endl << oac_srv1 <<endl; 
+  //fullrep << "pred_srv1_age"<< endl << eac_srv1 <<endl; 
+  //fullrep << "obs_srv2_age"<< endl << oac_srv2 <<endl; 
+  //fullrep << "pred_srv2_age"<< endl << eac_srv2 <<endl; 
 
-  report << "Obs_P_srv1_age"<<aa <<endl;
-  for (i=1;i<=nyrs_srv1_age;i++) report << yrs_srv1_age(i)<<" "<<oac_srv1(i) 
-      <<" eff_N "<<(1-eac_srv1(i))*eac_srv1(i)/norm2(oac_srv1(i)-eac_srv1(i)) <<" N "<<nsamples_srv1_age(i)
-      <<" SDNR "<< sdnr(eac_srv1(i),oac_srv1(i),wt_srv1_age*double(nsamples_srv1_age(i)))<<endl; report<<endl;
-  report << "Pred_P_srv1_age"<<aa <<endl;
-  for (i=1;i<=nyrs_srv1_age;i++) report << yrs_srv1_age(i)<<" "<<eac_srv1(i) <<endl; report<<endl;
+  //fullrep << "obs_fish1_size_m"<<endl <<osc_fish1_m << endl;
+  //fullrep << "pred_fish1_size_m"<<endl <<esc_fish1_m <<endl;
+  //fullrep << "obs_fish1_size_f"<<endl <<osc_fish1_f << endl;
+  //fullrep << "pred_fish1_size_f"<<endl <<esc_fish1_f <<endl;
 
-  report << "Obs_P_srv1_size females"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_srv1_size;i++) report << yrs_srv1_size(i)<<" "<<osc_srv1_f(i) 
-      <<" eff_N "<<(1-esc_srv1_f(i))*esc_srv1_f(i)/norm2(osc_srv1_f(i)-esc_srv1_f(i)) <<" N "<<nsamples_srv1_size(i)
-      <<" SDNR "<< sdnr(esc_srv1_f(i),osc_srv1_f(i),wt_srv1_size*double(nsamples_srv1_size(i)))<<endl; report<<endl;
-  report << "Pred_P_srv1_size females"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_srv1_size;i++) report << yrs_srv1_size(i)<<" "<<esc_srv1_f(i) <<endl; report<<endl;
+  //fullrep << "obs_fish3_size_m"<<endl <<osc_fish3_m << endl;
+  //fullrep << "pred_fish3_size_m"<<endl <<esc_fish3_m <<endl;
+  //fullrep << "obs_fish3_size_f"<<endl <<osc_fish3_f << endl;
+  //fullrep << "pred_fish3_size_f"<<endl <<esc_fish3_f <<endl;
 
-    report << "Obs_P_srv1_size Males"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_srv1_size;i++) report << yrs_srv1_size(i)<<" "<<osc_srv1_m(i) 
-      <<" eff_N "<<(1-esc_srv1_m(i))*esc_srv1_m(i)/norm2(osc_srv1_m(i)-esc_srv1_m(i)) <<" N "<<nsamples_srv1_size(i)
-      <<" SDNR "<< sdnr(esc_srv1_m(i),osc_srv1_m(i),wt_srv1_size*double(nsamples_srv1_size(i)))<<endl; report<<endl;
-  report << "Pred_P_srv1_size males"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_srv1_size;i++) report << yrs_srv1_size(i)<<" "<<esc_srv1_m(i) <<endl; report<<endl;
+  //fullrep << "obs_srv1_size_m"<< endl <<osc_srv1_m  << endl;
+  //fullrep << "pred_srv1_size_m"<<endl <<esc_srv1_m <<endl;
+  //fullrep << "obs_srv1_size_f"<<endl << osc_srv1_f << endl;
+  //fullrep << "pred_srv1_size_f"<<endl <<esc_srv1_f <<endl;
 
-  report << "Obs_P_srv2_size females"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_srv2_size;i++) report << yrs_srv2_size(i)<<" "<<osc_srv2_f(i) 
-      <<" eff_N "<<(1-esc_srv2_f(i))*esc_srv2_f(i)/norm2(osc_srv2_f(i)-esc_srv2_f(i)) <<" N "<<nsamples_srv2_size(i)
-      <<" SDNR "<< sdnr(esc_srv2_f(i),osc_srv2_f(i),wt_srv2_size*double(nsamples_srv2_size(i)))<<endl; report<<endl;
-  report << "Pred_P_srv2_size females"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_srv2_size;i++) report << yrs_srv2_size(i)<<" "<<esc_srv2_f(i) <<endl; report<<endl;
-
-    report << "Obs_P_srv2_size Males"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_srv2_size;i++) report << yrs_srv2_size(i)<<" "<<osc_srv2_m(i) 
-      <<" eff_N "<<(1-esc_srv2_m(i))*esc_srv2_m(i)/norm2(osc_srv2_m(i)-esc_srv2_m(i)) <<" N "<<nsamples_srv2_size(i)
-      <<" SDNR "<< sdnr(esc_srv2_m(i),osc_srv2_m(i),wt_srv2_size*double(nsamples_srv2_size(i)))<<endl; report<<endl;
-  report << "Pred_P_srv2_size Males"<<len_bin_labels <<endl;
-  for (i=1;i<=nyrs_srv2_size;i++) report << yrs_srv2_size(i)<<" "<<esc_srv2_m(i) <<endl; report<<endl;
-
-  report << endl;
-  report << "meanSDNR_fish1age" << endl;  
-    for (i=1;i<=nyrs_fish1_age;i++) { report << sdnr(eac_fish1(i),oac_fish1(i),wt_fish1_age*double(nsamples_fish1_age(i)))<<endl; }
-
-  report << "meanSDNR_Ffish1size" << endl;  
-    for (i=1;i<=nyrs_fish1_size;i++) { report << sdnr(esc_fish1_f(i),osc_fish1_f(i),wt_fish1_size*double(nsamples_fish1_size(i))) <<endl; }
-
-  report << "meanSDNR_Mfish1size" << endl;  
-    for (i=1;i<=nyrs_fish1_size;i++) { report << sdnr(esc_fish1_m(i),osc_fish1_m(i),wt_fish1_size*double(nsamples_fish1_size(i))) <<endl; }
-
-  report << "meanSDNR_Mfish3size" << endl;  
-    for (i=1;i<=nyrs_fish3_size;i++) { report << sdnr(esc_fish3_m(i),osc_fish3_m(i),wt_fish3_size*double(nsamples_fish3_size(i))) <<endl; }
-
-  report << "meanSDNR_Ffish3size" << endl;  
-    for (i=1;i<=nyrs_fish3_size;i++) { report << sdnr(esc_fish3_f(i),osc_fish3_f(i),wt_fish3_size*double(nsamples_fish3_size(i))) <<endl; }
-
-  report << "meanSDNR_srv1age" << endl;  
-    for (i=1;i<=nyrs_srv1_age;i++) { report << sdnr(eac_srv1(i),oac_srv1(i),wt_srv1_age*double(nsamples_srv1_age(i))) <<endl; }
-
-  report << "meanSDNR_Fsrv1size" << endl;  
-    for (i=1;i<=nyrs_srv1_size;i++) { report << sdnr(esc_srv1_f(i),osc_srv1_f(i),wt_srv1_size*double(nsamples_srv1_size(i))) <<endl; }
-
-  report << "meanSDNR_Msrv1size" << endl;  
-    for (i=1;i<=nyrs_srv1_size;i++) { report << sdnr(esc_srv1_m(i),osc_srv1_m(i),wt_srv1_size*double(nsamples_srv1_size(i))) <<endl; }
-
-  report << "meanSDNR_Fsrv2size" << endl;  
-    for (i=1;i<=nyrs_srv2_size;i++) { report << sdnr(esc_srv2_f(i),osc_srv2_f(i),wt_srv2_size*double(nsamples_srv2_size(i))) <<endl; }
-
-  report << "meanSDNR_Msrv2size" << endl;  
-    for (i=1;i<=nyrs_srv2_size;i++) { report << sdnr(esc_srv2_m(i),osc_srv2_m(i),wt_srv2_size*double(nsamples_srv2_size(i))) <<endl; }
-   }
+  //fullrep << "obs_srv2_size_m"<< endl <<osc_srv2_m  << endl;
+  //fullrep << "pred_srv2_size_m"<<endl <<esc_srv2_m <<endl;
+  //fullrep << "obs_srv2_size_f"<<endl << osc_srv2_f << endl;
+  //fullrep << "pred_srv2_size_f"<<endl <<esc_srv2_f <<endl;
+  }
 
 FUNCTION double sdnr(const dvar_vector& pred,const dvector& obs,double m)
   RETURN_ARRAYS_INCREMENT();
@@ -1378,3 +1312,4 @@ TOP_OF_MAIN_SECTION
   arrmblsize=1500000;
 
 FINAL_SECTION
+  write_fullrep();

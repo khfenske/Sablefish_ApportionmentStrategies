@@ -73,3 +73,4 @@ fixed_data.dat
 1    # ph_ifq;
 1   # ph_srv2q;
 1 # yield ratio - calculated in dat file maker R
+1 #projection num of years

@@ -219,3 +219,4 @@ build_datfile <- function(LLsurvAC_N,LLfishAC_N) {
   #write.table(testdat, file="C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/updated_dat.csv") #eventually it'll need to overwrite the original
   
 } #close function
+str(testdat)

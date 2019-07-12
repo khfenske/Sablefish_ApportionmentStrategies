@@ -8,18 +8,30 @@
 #' @return Vector proportional age comps combined over n.area and weighted by catch for a single year & sim and gear
 
 
-aggr_agecomp <- function(input.comps, harvest.num) {
+aggr_agecomp <- function(input.comps, harvest.num, ACtype) { #ACtype 1 is fishery FOR CONDITIONING PERIOD, ACtype 2 is survey and fishery for forward projecting period
 
   #sum sampled age comps (in numbers) across sexes for each area
   input.comps2 <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages)) #=c(n.age, n.area), dimnames=list(years,ages,areas,sims))
-  input.comps2[,] <- input.comps[1,,] + input.comps[2,,]
+  for (m in 1:n.area) {
+    for (a in 1:n.age) {
+  input.comps2[m,a] <- sum(input.comps[,a,m]) }}
+  
   #add zeros if needed
   input.comps2[is.na(input.comps2)] <- 0
 
-  #sum harvest in number across sexes for each area
-  sum.harvest <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages))
-  sum.harvest[,] <- harvest.num[1,,] + harvest.num[2,,]
-  
+  #sum harvest/survey in number across sexes for each area
+  if (ACtype==1){
+    sum.harvest <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages))
+    for (m in 1:n.area) {
+    for (a in 1:n.age) {
+    sum.harvest[m,a] <- sum(harvest.num[m,,a]) }}
+  }  
+  if (ACtype==2){
+    sum.harvest <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages))
+    for (m in 1:n.area) {
+    for (a in 1:n.age) {
+    sum.harvest[m,a] <- sum(harvest.num[,a,m]) }} 
+  }  
   #calculate catch/harvest proportions by area for each age
   harvest.prop <- matrix(data=NA, nrow=n.area, ncol=n.age, dimnames=list(areas,ages))
   a <- 1
@@ -49,10 +61,18 @@ aggr_agecomp <- function(input.comps, harvest.num) {
 
 #for testing
 #input.comps <- array(dim=c(n.sex, n.age, n.area), dimnames=list(sexes,ages,areas))
-#input.comps[,,] <- c(seq(from=1, to=360,by=1))
+#harvest.num <- array(dim=c(n.sex, n.age, n.area), dimnames=list(sexes, ages, areas))  #Harvest (number) by gear type
+
+#    for(m in 1:n.area){
+#    for(a in 1:n.age){ 
+#    for(h in 1:n.sex){  
+#      input.comps[h,a,m] <- Surv.AC[h,42,a,m,1]
+#      harvest.num[h,a,m] <- Surv.RPN[h,42,a,m,1]
+#    }
+#  }
+#}
 #num.areas=6
 
-#harvest.num <- array(dim=c(n.sex, n.age, n.area), dimnames=list(sexes, ages, areas))  #Harvest (number) by gear type
-#harvest.num[,,] <- c(seq(from=1, to=360, by=1))
-
-
+#plot(Surv.AC[1,42,,2,1]~ages,typ="l",ylim=c(0,1.5))
+#lines(input.comps[1,,2]~ages,typ="p")
+#lines(input.comps2[2,]~ages,typ="p",col="red")
