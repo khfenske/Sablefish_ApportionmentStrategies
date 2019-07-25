@@ -62,6 +62,7 @@ source(file.path(dir.R,'sablefish-conditioning-datfile-builder.R'))
 source(file.path(dir.R,'sablefish-datfile-builder.R'))
 source(file.path(dir.R,'read-movement-rates.R')) #Function to read in movement rates
 
+source(file.path(dir.R,'copy-admb-sim.R')) #Function to read in movement rates
         
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
@@ -318,9 +319,18 @@ for(i in 1:n.sims) {
 
     ##### Sample the conditioning period population/data: ######
     #since this section is deterministic, all the sampling can be done at the end, not within the main loop.
+
+# CURRY: Need to create sim-specific directories.. See Comment below
 i <- 1
 y <- 2 
 for(i in 1:n.sims) {
+  # Create Sim-specific Directory
+  dir.temp <- file.path(dir.admb, i)
+  dir.create(dir.temp)
+  
+  # Copy Necessary Components into sim-specific directory
+  copy_admb_sim(dir.from=dir.admb, dir.to=dir.temp)
+  
   ###first sample abundance and fishery indices for all years
   for(y in 15:43) {
     m <- 1
@@ -442,7 +452,8 @@ for(i in 1:n.sims) {
     
     #a function to call the EM (call this inside the loops below)
     run.model <- function() {
-      setwd(dir.admb)  
+      # setwd(dir.admb)
+      setwd(dir.temp) # Temporary simulation-specific working directory
       
       # system.time( # keeping track of time for run
       #   invisible(shell(paste0(EM_name),wait=T)))
@@ -820,6 +831,8 @@ for(i in 1:n.sims) {
       
     }#next age  
     } #next area
+    
+    
     #move all the ages between areas, and then calculate the derived quantities after movement:
     for (h in 1:n.sex){ 
       for (a in 1:n.age){
