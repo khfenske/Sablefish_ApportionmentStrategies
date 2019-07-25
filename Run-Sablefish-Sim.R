@@ -320,16 +320,9 @@ for(i in 1:n.sims) {
     ##### Sample the conditioning period population/data: ######
     #since this section is deterministic, all the sampling can be done at the end, not within the main loop.
 
-# CURRY: Need to create sim-specific directories.. See Comment below
 i <- 1
 y <- 2 
 for(i in 1:n.sims) {
-  # Create Sim-specific Directory
-  dir.temp <- file.path(dir.admb, i)
-  dir.create(dir.temp)
-  
-  # Copy Necessary Components into sim-specific directory
-  copy_admb_sim(dir.from=dir.admb, dir.to=dir.temp)
   
   ###first sample abundance and fishery indices for all years
   for(y in 15:43) {
@@ -754,6 +747,14 @@ area <- 1
 i <- 1
 for(i in 1:n.sims) {
   print(paste('Sim:',i,'of',n.sims))
+  
+  # Create Sim-specific Directory
+  dir.temp <- file.path(dir.admb, i)
+  dir.create(dir.temp)
+  
+  # Copy Necessary Components into sim-specific directory
+  copy_admb_sim(dir.from=dir.admb, dir.to=dir.temp)
+  
   y <- 44  
   for(y in 44:n.year) { #n.year
     # somewhere up here, set a bunch of seeds...
