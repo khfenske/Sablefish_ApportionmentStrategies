@@ -453,12 +453,12 @@ for(i in 1:n.sims) {
       # setwd(dir.admb)
       setwd(dir.temp) # Temporary simulation-specific working directory
       
-      # system.time( # keeping track of time for run
-      #   invisible(shell(paste0(EM_name),wait=T)))
+       system.time( # keeping track of time for run
+         invisible(shell(paste0(EM_name," -nox -nohess"),wait=T)))
       
       # Need to update for MAC (Curry is needy)
       require(R2admb)
-      system.time(R2admb::run_admb(EM_name, verbose=TRUE))
+     # system.time(R2admb::run_admb(EM_name, verbose=TRUE))
       
       #remove existing files
       cor.name<-paste0(EM_name,".cor")
@@ -941,47 +941,47 @@ for(i in 1:n.sims) {
     #### Set Harvest Limits & apply apportionment method we are testing ####
     # call the apportionment method here
     if (apport.opt==1) {
-      ABC_TS[y,,i] <- equal_apportionment(get_ABC$ABC_proj,n.area) 
+      ABC_TS[y,,i] <- equal_apportionment(get_ABC$ABC_proj[1],n.area) 
     }
       
     if (apport.opt==2) {
-      ABC_TS[y,,i] <- fixed_apportionment(get_ABC$ABC_proj,n.area,current.props)
+      ABC_TS[y,,i] <- fixed_apportionment(get_ABC$ABC_proj[1],n.area,current.props)
     }
       
     if (apport.opt==3) {
-      ABC_TS[y,,i] <- equilib_apportionment(get_ABC$ABC_proj,n.area,equilib.props)
+      ABC_TS[y,,i] <- equilib_apportionment(get_ABC$ABC_proj[1],n.area,equilib.props)
     } 
 
     if (apport.opt==4) {
-      ABC_TS[y,,i] <- NPFMC_apportionment(get_ABC$ABC_proj,n.area,Fish.RPW[,,,,i],Surv.RPN[,,,,i])
+      ABC_TS[y,,i] <- NPFMC_apportionment(get_ABC$ABC_proj[1],n.area,Fish.RPW[,,,,i],Surv.RPN[,,,,i])
     } 
 
     if (apport.opt==5) {
-      ABC_TS[y,,i] <- expsurvwt_apportionment(get_ABC$ABC_proj,n.area,Surv.RPN[,,,,i]) #verify this is the right biom
+      ABC_TS[y,,i] <- expsurvwt_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,,,,i]) #verify this is the right biom
     }
    
     if (apport.opt==6) {
-      ABC_TS[y,,i] <- expfishwt_apportionment(get_ABC$ABC_proj,n.area,Fish.RPW[,,,,i]) #verify this is the right biom
+      ABC_TS[y,,i] <- expfishwt_apportionment(get_ABC$ABC_proj[1],n.area,Fish.RPW[,,,,i]) #verify this is the right biom
     }      
   
     if (apport.opt==7) {
-      ABC_TS[y,,i] <- nonexp_apportionment(get_ABC$ABC_proj,n.area,Fish.RPW[,,,,i],Surv.RPN[,,,,i]) #verify this is the right biom
+      ABC_TS[y,,i] <- nonexp_apportionment(get_ABC$ABC_proj[1],n.area,Fish.RPW[,,,,i],Surv.RPN[,,,,i]) #verify this is the right biom
     }      
 
     if (apport.opt==8) {
-      ABC_TS[y,,i] <- partfixed_apportionment(get_ABC$ABC_proj,n.area,Fish.RPW[,,,,i],Surv.RPN[,,,,i],FixedA1,FixedA2) #verify this is the right biom
+      ABC_TS[y,,i] <- partfixed_apportionment(get_ABC$ABC_proj[1],n.area,Fish.RPW[,,,,i],Surv.RPN[,,,,i],FixedA1,FixedA2) #verify this is the right biom
     } 
 
     if (apport.opt==9) {
-      ABC_TS[y,,i] <- agebased_apportionment(get_ABC$ABC_proj,n.area,N[,y,,,i],A_L.mat) #L50_mat is the row corresponding to the age/length at 50% maturity
+      ABC_TS[y,,i] <- agebased_apportionment(get_ABC$ABC_proj[1],n.area,N[,y,,,i],A_L.mat) #L50_mat is the row corresponding to the age/length at 50% maturity
     } 
 
     #if (apport.opt==10) { #this needs editing
-     #ABC_TS[y,,i] <- random.effect(get_ABC$ABC_proj,n.area,lucky.area) #L50_mat is the row corresponding to the age/length at 50% maturity
+     #ABC_TS[y,,i] <- random.effect(get_ABC$ABC_proj[1],n.area,lucky.area) #L50_mat is the row corresponding to the age/length at 50% maturity
     #} 
       
     if (apport.opt==11) {
-      ABC_TS[y,,i] <- all2one_apportionment(get_ABC$ABC_proj,n.area,lucky.area) #L50_mat is the row corresponding to the age/length at 50% maturity
+      ABC_TS[y,,i] <- all2one_apportionment(get_ABC$ABC_proj[1],n.area,lucky.area) #L50_mat is the row corresponding to the age/length at 50% maturity
     } 
       
     #ABC_TS[y,m,i] #need to call last year's apportionment (given where this is in the code)
