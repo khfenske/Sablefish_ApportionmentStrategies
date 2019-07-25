@@ -145,7 +145,7 @@ sim_plot_initpop <- function() {
              84.6328623,80.147036,86.599641,79.9309313,77.8211843,67.23660782,
              64.6833935,68.2611382,208.8285434,225.8192621,212.4078021)
   (mgmtN) #59 years  
-  plot(mgmtN~mgmt_rep_years, ylim=c(0,300),typ="l",lwd=3,col="red")
+  plot(mgmtN~mgmt_rep_years, ylim=c(0,250),typ="l",lwd=3,col="red")
   lines(simN_sum[2:43]~OMyears,typ="l",lwd=3,col="black")
   
   
