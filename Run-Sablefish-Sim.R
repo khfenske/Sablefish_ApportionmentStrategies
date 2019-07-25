@@ -65,8 +65,10 @@ source(file.path(dir.R,'read-movement-rates.R')) #Function to read in movement r
 source(file.path(dir.R,'copy-admb-sim.R')) #Function to read in movement rates
 
 # Compile ADMB Code ==============================================
-R2admb::compile_admb(file.path(dir.admb,"tem"))
-        
+setwd(dir.admb)
+R2admb::compile_admb("tem", verbose=TRUE, admb_errors="warn")
+setwd(wd)
+
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
@@ -456,7 +458,6 @@ for(i in 1:n.sims) {
       
       # Need to update for MAC (Curry is needy)
       require(R2admb)
-      # R2admb::compile_admb(EM_name)  #NOTE: Curry has this recompiling each time, we will only need to do once, but this is to ensure it runs on his OS
       system.time(R2admb::run_admb(EM_name, verbose=TRUE))
       
       #remove existing files
