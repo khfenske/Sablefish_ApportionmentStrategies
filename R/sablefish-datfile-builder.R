@@ -10,8 +10,10 @@ build_datfile <- function(LLsurvAC_N,LLfishAC_N) {
   dir.admb.single <- file.path(wd,"admb","Single_area")
   #use the PBSmodeling package to read the ADMB .dat file into the model and update it with new OM generated data
   #note that catch is in 1000 mt units when read in
-  testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem_single2018.dat") 
+  # testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem_single2018.dat") 
 
+  testdat <- readList(file.path(dir.admb.single,"tem_single2018.dat"))
+  
   #add newly generated data from OM to the .dat file
   testdat$endyr <- testdat$endyr + 1 #advance one year on end year
   #catch
@@ -199,7 +201,7 @@ build_datfile <- function(LLsurvAC_N,LLfishAC_N) {
     L_8<-"#oac_domLLsurv_bsaiwgcgeg"
     L_9<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[1,]),collapse=" ") #this might need work...
     for(y in 2:length(testdat$oac_domLLsurv_bsaiwgcgeg[,1])){
-      L_add<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[y,]),collapse=" ")
+      L_add<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[y,]),collapse=" ") #ERROR HERE
       L_9<-c(L_9,L_add)}
     
     USAC1<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9)
