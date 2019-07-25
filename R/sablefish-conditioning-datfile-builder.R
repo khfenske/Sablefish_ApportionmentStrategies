@@ -34,7 +34,7 @@ build_conditioning_datfile <- function() {
   testdat$oac_LLfish_bsaiwgcgeg <- OM_Fish.RPW.age[24:42,,1] #replace EM comps with conditioning comps
   
   #domestic LL survey age comps
-  testdat$oac_LLsurv_bsaiwgcgeg <- OM_Surv.RPN.age[21:42,,1] #replace EM comps with conditioning comps
+  testdat$oac_domLLsurv_bsaiwgcgeg <- OM_Surv.RPN.age[21:42,,1] #replace EM comps with conditioning comps
   
   
   
@@ -164,7 +164,7 @@ build_conditioning_datfile <- function() {
     L_add<-paste(as.vector(testdat$oac_LLfish_bsaiwgcgeg[y,]),collapse=" ")
     L_9<-c(L_9,L_add)}
   
-  FAC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9,L_10)
+  FAC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9)
   
   
   L_1<-"# Domestic LL survey Age Compositions"
@@ -186,8 +186,8 @@ build_conditioning_datfile <- function() {
   
   DAT<-c(MIPV,FC,LLA,LLA5,FB1,FB2,FAC,USAC1)
   DAT_NAME<-paste(dir.admb.single,"/tem_single2018",".dat",sep="")
+  #writeList(x=DAT,fname=DAT_NAME)
+  #write.list(DAT,filename=DAT_NAME)
   write.table(DAT,file=DAT_NAME,quote=F,row.names=F,col.names=F)
-  #somehow write the file and save to the right folder so we can call the new EM
-  #write.table(testdat, file="C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/updated_dat.csv") #eventually it'll need to overwrite the original
-  
+
 } #close function

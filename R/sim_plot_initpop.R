@@ -33,7 +33,7 @@ sim_plot_initpop <- function() {
   mgmt_rep$SpBiom #1960-2018
   ssb_fsum <- apply(ssb[1,1:30,2:43,,1],2,sum) #1977-2018
   
-  plot(ssb_fsum~mgmt_rep_years[18:59],typ="l",lwd=3,col="black",ylim=c(0,1500))
+  plot(ssb_fsum~mgmt_rep_years[18:59],typ="l",lwd=3,col="black",ylim=c(0,300))
   lines(mgmt_rep$SpBiom[18:59]~mgmt_rep_years[18:59],lwd=3,col="red")
 
   melted_ssb <- melt(ssb,varnames = c("Sex", "Age","Year", "Area","Sim"), na.rm=FALSE, value.name = "ssb")
@@ -50,13 +50,14 @@ sim_plot_initpop <- function() {
   C.b_sum<-vector(length=n.year) 
   OM_sumcatch <- vector(length=n.year)
   for (y in 2:43){
-    C.b_sum[y] <- sum(C.b[,y,,,1])
-    OM_sumcatch[y] <- OM_fixed_catch[y,1]+OM_trawl_catch[y,1]
+    C.b_sum[y] <- sum(C.b[,y,,,1]) #catch in biomass summed across sexes, ages, areas
+    OM_sumcatch[y] <- OM_fixed_catch[y,1]+OM_trawl_catch[y,1] #harvest in biomass summed across sexes, ages, areas and gears
   }
 
-  plot(mgmtCatch~mgmt_rep_years,typ="l",col="red",lwd=3)
-  lines(C.b_sum[2:43]~OMyears,lwd=3)
-  lines(OM_sumcatch[1:42]~OMyears, col="blue",lwd=3)
+  plot(mgmtCatch~mgmt_rep_years,typ="l",col="red",lwd=3) #mgmt catch
+  lines(C.b_sum[2:43]~OMyears,lwd=3) #sim catch 
+  lines(OM_sumcatch[2:43]~OMyears, col="blue",lwd=3)#sim harvest
+  
   
   #recruitment
   #mgmt_rep_recruitment <- mgmt_rep$Numbers_Females[,1] + mgmt_rep$Numbers_Males[,1]
@@ -68,8 +69,10 @@ sim_plot_initpop <- function() {
   recruits.area #recruits for the forward projecting period
   sim_rec <- apply(recruits.area,c(1),sum)
   cond.rec$Recruitment #recruits for the conditioning period
+  mean_sim <- mean(mgmt_rep_recruitment[18:58])
+  mean_mgmt <- mean(sim_rec)
   
-  plot(sim_rec~c(1976:(1975+length(years))),xlim=c(1960,2020),typ="l",lwd=3,col="black")
+  plot(sim_rec~c(1976:(1975+length(years))),xlim=c(1960,2020),typ="l",lwd=3,col="blue")
   lines(mgmt_rep_recruitment~mgmt_rep_years,typ="l",lwd=3,col="red")  
   lines(cond.rec$Recruitment~OMyears,lty=3,lwd=3,col="black")
 
@@ -90,11 +93,11 @@ sim_plot_initpop <- function() {
                               484.066574150728, 385.215796739882, 494.334197637078,
                               561.460234787346, 611.493838991725)
   #the sim 1 survey vs the mgmt model observed survey values
-  plot(mgmt_rep_SurveyN~c(15:43),ylim=c(0,2500),typ="l",lwd=3,col="red")
-  lines(OM_Surv.RPN[15:43,1]~rpn_years, lwd=3,col="black")
+  plot(mgmt_rep_SurveyN~c(15:43),ylim=c(0,1000),typ="l",lwd=3,col="red") #management model
+  lines(OM_Surv.RPN[15:43,1]~rpn_years, lwd=3,col="black") #simulated values
   #the sim 2 survey vs the mgmt model observed survey values
-  plot(mgmt_rep_SurveyN~c(15:43),ylim=c(0,2500),typ="l",lwd=3,col="red")
-  lines(OM_Surv.RPN[15:43,2]~rpn_years, lwd=3,col="black")  
+  plot(mgmt_rep_SurveyN~c(15:43),ylim=c(0,1000),typ="l",lwd=3,col="red") #management model
+  lines(OM_Surv.RPN[15:43,2]~rpn_years, lwd=3,col="black")#simulated values
   
   #indices - fishery index vs the mgmt observed fishery values
   OM_Fish.RPW
@@ -111,10 +114,10 @@ sim_plot_initpop <- function() {
                             656.339331262708, 656.427863349683)
   #the sim 1 survey vs the mgmt model observed survey values
   plot(mgmt_rep_FishBiomass~c(15:42),ylim=c(0,2500),typ="l",lwd=3,col="red")
-  lines(OM_Surv.RPN[15:43,1]~rpn_years, lwd=3,col="black")
+  lines(OM_Fish.RPW[15:42,1]~rpn_years, lwd=3,col="black")
   #the sim 2 survey vs the mgmt model observed survey values
   plot(mgmt_rep_FishBiomass~c(15:42),ylim=c(0,2500),typ="l",lwd=3,col="red")
-  lines(OM_Surv.RPN[15:43,2]~rpn_years, lwd=3,col="black")  
+  lines(OM_Fish.RPW[15:43,2]~rpn_years, lwd=3,col="black")  
   
   
   
@@ -142,7 +145,7 @@ sim_plot_initpop <- function() {
              84.6328623,80.147036,86.599641,79.9309313,77.8211843,67.23660782,
              64.6833935,68.2611382,208.8285434,225.8192621,212.4078021)
   (mgmtN) #59 years  
-  plot(mgmtN~mgmt_rep_years, ylim=c(0,1500),typ="l",lwd=3,col="red")
+  plot(mgmtN~mgmt_rep_years, ylim=c(0,300),typ="l",lwd=3,col="red")
   lines(simN_sum[2:43]~OMyears,typ="l",lwd=3,col="black")
   
   
@@ -199,6 +202,8 @@ sim_plot_initpop <- function() {
       legend("topright",legend=c(f,m))
       }}}
 
+  
+  
   ###below here needs work...##
   #biomass B plots
   melted_Binit <- melt(B, varnames = c("Sex", "Year","Age", "Area","Sim"), na.rm=FALSE, value.name = "Biomass")

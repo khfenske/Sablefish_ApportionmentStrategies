@@ -51,7 +51,7 @@ aggr_agecomp <- function(input.comps, harvest.num, ACtype) { #ACtype 1 is fisher
   
   #calculate proportions at age for the single area
   comp.prop <- as.vector(NA)
-  comp.prop <- prop.table(sum.comps)
+  comp.prop <- round(prop.table(sum.comps),4)
   
   #output and close function
   return(comp.prop)

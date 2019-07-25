@@ -127,6 +127,22 @@ for(y in 1:n.year){
   recruits.area[y,,i] <- spatial_rec(rec[i,y],area.props=rec.by.area.props, ss=100, seed=1)/1000000      # sexes combined, recruitment in millions
 }}
 
+#get catchability into a different format 
+catchability$fishery
+q_fish <- matrix(data=NA, nrow=n.fish, ncol=n.area)
+for(m in 1:n.area){
+  q_fish[1,m] <- catchability$fishery$value[m]
+  q_fish[2,m] <- catchability$fishery$value[m+6]
+  q_fish[3,m] <- catchability$fishery$value[m+12]
+  q_fish[4,m] <- catchability$fishery$value[m+18]
+}
+ 
+catchability$survey
+q_surv <- matrix(data=NA, nrow=2, ncol=n.area)
+for(m in 1:n.area){
+  q_surv[1,m] <- catchability$survey$value[m]
+  q_surv[2,m] <- catchability$survey$value[m+6]
+}
 # ==================================================================================
 # Initialize Population - Conditioning the simulations (year 1, or 1976) ===========
 N.by.area.props <- as.vector(c(0.123525838,0.138168043,0.112731838,0.401168634,0.102462464,0.121943183)) #mean proportion 
@@ -145,10 +161,10 @@ temp.catchnumbiom <- array(data=NA, dim=c(43,n.fish,n.area),dimnames=list(1:43,f
 temp.catchnumbiom <- apply(cond_catch_at_age,1:3,sum)
 
 ### set up N samples and sigmas for sampling
-LLsurvRPNsigma <- 0.2
-LLfishRPWsigma <- 0.4
-LLsurvAC_sampsize <- 20
-LLfishAC_sampsize <- 20
+LLsurvRPNsigma <- 1 #0.2
+LLfishRPWsigma <- 1 #0.4
+LLsurvAC_sampsize <- 200
+LLfishAC_sampsize <- 200
 
 ##### Condition year 1 (aka 1976):
 # since we track numbers in this model, I will initialize things in numbers instead of biomass
@@ -274,7 +290,11 @@ for(i in 1:n.sims) {
       for (h in 1:n.sex){ 
       C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
       C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
-      } #close sex
+        #for(f in 1:n.fish) {
+          #harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
+          #harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]
+          #} #close gear
+        } #close sex
       }#close area
     }#close age
     # plus group age calcs for catch
@@ -282,6 +302,10 @@ for(i in 1:n.sims) {
       for (h in 1:n.sex){ 
         C.n[h,y-1,30,m,i] <- N[h,y-1,30,m,i] * (F.a[h,y-1,30,m,i]/Z.a[h,y-1,30,m,i]) * (1-exp(-1*Z.a[h,y-1,30,m,i])) #Catch in number 
         C.b[h,y-1,30,m,i] <- C.n[h,y-1,30,m,i] * wa[h,30]
+        #for(f in 1:n.fish) {
+          #harvest.n[h,y-1,30,f,m,i] <- N[h,y-1,30,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z))
+          #harvest.b[h,y-1,30,f,m,i] <- harvest.n[h,y-1,30,f,m,i] * wa[h,30]
+        #} #close gear
       } #close sex
     }#close area
     
@@ -302,8 +326,11 @@ for(i in 1:n.sims) {
     for(m in 1:n.area) {
       #write a function that makes it easy to specify (by area) the yield ratio
       # sample longline survey RPN, 'current' year  -- check units
-      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i)) 
-    } #next area m
+      # is the *selectivity needed here? Or is it already incorporated into the N calcs via F?
+      #Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*selex$surv$USLongline[h,]*q_surv[1,m],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i)) 
+      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*q_surv[1,m],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i)) #*selex$surv$USLongline[h,]*q_surv[1,m]
+      
+          } #next area m
   } #close year 
   
   for(y in 15:42) {
@@ -311,7 +338,7 @@ for(i in 1:n.sims) {
     for(m in 1:n.area) {
       # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
       #specify another comp sample size here
-      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[2,m], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
     } #next area m
   } #close year 
   
@@ -349,19 +376,31 @@ for(i in 1:n.sims) {
       OM_Surv.RPN.age[y,,i] <- aggr_agecomp(Surv.AC[,y,,,i], Surv.RPN[,y,,,i],2)
     } #next area m
   } #close year 
-
+  
+    ######### aggregate OM data across age, sex and/or areas for EM and track over time
+    #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
+    #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
+  y <- 2  
+  for(y in 2:20) {
+    m <- 1
+    for(m in 1:n.area) {
+      OM_fixed_catch[y,i] <- sum(harvest.b[,y,,1,,i]) #2 - US fixed pre-IFQ 
+    } #next area m
+  } #close year 
+  y <- 21  
+  for(y in 21:42) {
+    m <- 1
+    for(m in 1:n.area) {
+    OM_fixed_catch[y,i] <- sum(harvest.b[,y,,2,,i]) #2 - US fixed post-IFQ
+    } #next area m
+  } #close year 
   y <- 2  
   for(y in 2:42) {
     m <- 1
     for(m in 1:n.area) {
-    ######### aggregate OM data across age, sex and/or areas for EM and track over time
-    #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
-    #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
-    OM_fixed_catch[y,i] <- sum(harvest.b[,y,,2,,i]) #2 - US fixed post-IFQ
-    OM_trawl_catch[y,i] <- sum(harvest.b[,y,,3,,i]) #3 - US trawl
+      OM_trawl_catch[y,i] <- sum(harvest.b[,y,,3,,i]) #3 - US trawl
     } #next area m
-  } #close year 
-  
+  } #close year   
   y <- 15  
   for(y in 15:42) {
     m <- 1
@@ -419,13 +458,13 @@ for(i in 1:n.sims) {
       setwd("C:/Repositories/Sablefish_ApportionmentStrategies")    # return to original working directory
     }
 #Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, trawl catches are placeholders, order is BS-AI-WG-CG-WY-EY/SEO
-  #for(y in 43:44) {  
+  for(y in 43:44) {  
     for(i in 1:n.sims){
-    apportioned_C[43,1,,i] <- c(0,0,0,0,0,0) #change y back to 43 once the full loop with apportionment is up and running
-    apportioned_C[43,2,,i] <- c(1.501,2.03,1.659,5.246,1.765,3.179)
-    apportioned_C[43,3,,i] <- c(0.25,0.25,0.25,0.25,0.25,0.25) ## these are just placeholders!! for 2018
-    apportioned_C[43,4,,i] <- c(0,0,0,0,0,0)
-    }#}
+    apportioned_C[y,1,,i] <- c(0,0,0,0,0,0) 
+    apportioned_C[y,2,,i] <- c(1.501,2.03,1.659,5.246,1.765,3.179)
+    apportioned_C[y,3,,i] <- c(0.25,0.25,0.25,0.25,0.25,0.25) ## these are just placeholders!! for 2018
+    apportioned_C[y,4,,i] <- c(0,0,0,0,0,0)
+    }}
 
 #temp place for the apportionment functions (maybe get them into a separate function for simpler code)
     #apport.opt = 1: equal to all areas
@@ -793,6 +832,10 @@ for(i in 1:n.sims) {
         for (h in 1:n.sex){ 
           C.n[h,y-1,a-1,m,i] <- N[h,y-1,a-1,m,i] * (F.a[h,y-1,a-1,m,i]/Z.a[h,y-1,a-1,m,i]) * (1-exp(-1*Z.a[h,y-1,a-1,m,i])) #Catch in number 
           C.b[h,y-1,a-1,m,i] <- C.n[h,y-1,a-1,m,i] * wa[h,a-1]
+          #for (f in 1:n.fish){
+            #harvest.n[h,y-1,a-1,f,m,i] <- N[h,y-1,a-1,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
+            #harvest.b[h,y-1,a-1,f,m,i] <- harvest.n[h,y-1,a-1,f,m,i] * wa[h,a-1]          
+          #} #close gear
         } #close sex
       }#close area
     }#close age 
@@ -801,6 +844,10 @@ for(i in 1:n.sims) {
       for (h in 1:n.sex){ 
         C.n[h,y-1,30,m,i] <- N[h,y-1,30,m,i] * (F.a[h,y-1,30,m,i]/Z.a[h,y-1,30,m,i]) * (1-exp(-1*Z.a[h,y-1,30,m,i])) #Catch in number 
         C.b[h,y-1,30,m,i] <- C.n[h,y-1,30,m,i] * wa[h,30]
+        #for (f in 1:n.fish){
+          #harvest.n[h,y-1,30,f,m,i] <- N[h,y-1,30,m,i] * (temp.F/temp.Z) * (1-exp(-1*temp.Z)) #this is fleet specific catch, catch is fleets combined
+          #harvest.b[h,y-1,30,f,m,i] <- harvest.n[h,y-1,30,f,m,i] * wa[h,30]          
+        #} #close gear
       } #close sex
     }#close area
     
@@ -811,14 +858,15 @@ for(i in 1:n.sims) {
     for (m in 1:n.area) {
         #write a function that makes it easy to specify (by area) the yield ratio
         # longline survey RPN, 'current' year  -- check units
-      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*selex$surv$USLongline[h,],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i))         #(we'd talked about concatonating 'sim # + year' for seed)
-        # longline/fixed gear fishery CPUE/RPW  -- check units
-      Fish.RPW[,y-1,,m,i] <- sample_biom_abund(B[,y-1,,m,i], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+      #Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*selex$surv$USLongline[h,],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i))         #(we'd talked about concatonating 'sim # + year' for seed)
+      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]**q_surv[1,m],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i))         #(we'd talked about concatonating 'sim # + year' for seed)
+                    # longline/fixed gear fishery CPUE/RPW  -- check units
+      Fish.RPW[,y-1,,m,i] <- sample_biom_abund(B[,y-1,,m,i]*q_fish[1,m], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
 
       for(h in 1:n.sex){
       # longline/fixed gear post-IFQ fishery age comps in numbers , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
         #specify another comp sample size here
-      sample_age_comps(harvest.n[h,y-1,,2,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+134)) 
+      sample_age_comps(harvest.n[h,y-1,,2,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+134)) #does this need to include selectivity?
       Fish.AC[h,y-1,,m,i] <- obs.comp
       
       # longline survey age comps in numbers (not proportions yet) single sex, can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
