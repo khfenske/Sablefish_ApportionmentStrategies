@@ -41,6 +41,7 @@ require(xlsx)
 require(gtools) 
 #for .dat file building
 require(PBSmodelling)
+require(R2admb)
         
 # Source Necessary Files =========================================
 source(file.path(dir.R,'extract-pars.R'))
@@ -441,9 +442,16 @@ for(i in 1:n.sims) {
     
     #a function to call the EM (call this inside the loops below)
     run.model <- function() {
-      setwd(dir.admb)      
-      system.time( # keeping track of time for run
-        invisible(shell(paste0(EM_name),wait=T)))
+      setwd(dir.admb)  
+      
+      # system.time( # keeping track of time for run
+      #   invisible(shell(paste0(EM_name),wait=T)))
+      
+      # Need to update for MAC (Curry is needy)
+      require(R2admb)
+      R2admb::compile_admb(EM_name)  #NOTE: Curry has this recompiling each time, we will only need to do once, but this is to ensure it runs on his OS
+      system.time(R2admb::run_admb(EM_name))
+      
       #remove existing files
       cor.name<-paste0(EM_name,".cor")
       std.name<-paste0(EM_name,".std")
