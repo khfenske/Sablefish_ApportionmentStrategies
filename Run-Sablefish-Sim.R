@@ -973,6 +973,16 @@ for(i in 1:n.sims) {
     apportioned_C[y,2,6,i] <- ABC_TS[y,6,i]*0.95 #post IFQ fishery, giving 95% of ABC to fixed gear
     apportioned_C[y,3,6,i] <- ABC_TS[y,6,i]*0.05 #trawl fishery, giving 5% of ABC to trawl
    
+    
+    # Accumulate things we want to track from the .rep file(s) and for use in the performance_metrics.R function
+    #max_grads <- get_ABC$#(how to get this?)
+    obj_fun_vals <- get_ABC$obj_fun
+    spr_penalty <- get_ABC$SPRpen
+    data_likelihood <- get_ABC$datalikelihood
+
+ 
+    
+    
     ### side notes:
     # No Recruitment relationship  Can we change this so it reads in a rec value from a separate file which draws N simulations * N years worth of rec values all 
     # at once so the same recruitment can be applied to single and spatial models? Could make it so that if SSB is 0, 0 rec is used instead so we 

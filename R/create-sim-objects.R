@@ -65,6 +65,14 @@ create_sim_objects <- function() {
   # longline survey length comps, 'current' year
   #Fxsurv.LC <<- array(dim=c(n.sex, n.year, n.length, n.area, n.sims), dimnames=list(sexes,years,len,areas,sims))
   
+  #output tracking from EM
+  max_grads <<- matrix(NA,nrow=n.year,ncol=n.sims)
+  obj_fun_vals <<- matrix(NA,nrow=n.year,ncol=n.sims)
+  spr_penalty <<- matrix(NA,nrow=n.year,ncol=n.sims)
+  data_likelihood <<- matrix(NA,nrow=n.year,ncol=n.sims)
+  #index_likelihood <<- array(dim=c(2,n.year,n.sims))
+  #age_likelihood <<- array(dim=c(2,n.year,n.sims))
+  
   #Return section  #what does this section do?
    #out <- NULL
    #ut$lz <- lz
@@ -90,5 +98,4 @@ create_sim_objects <- function() {
   
 }
 
-#testing_file <- create_sim_objects()  #why doesn't this work?
-#write.csv(testing_file, "testing_file.csv")
+#performance_metrics #call the function here to look at output from the sims/years

@@ -1130,6 +1130,14 @@ REPORT_SECTION
   report << pred_srv5 <<endl;
   report << "$obs_srv5_biom" << endl;
   report << obs_srv5_biom << endl;
+  report << "$Num_parameters_Estimated" << endl; 
+  report << initial_params::nvarcalc() << endl;
+  report << "$SPRpen" << endl;
+  report << sprpen << endl;
+  report << "$obj_fun" << endl;
+  report << obj_fun << endl; 
+  report << "$datalikelihood" << endl;
+  report << Like << endl; 
   }
 
 
@@ -1167,8 +1175,7 @@ FUNCTION write_fullrep
   //fullrep << $endyr << endl;  
   fullrep << model_name << endl;
   fullrep <<  data_file << endl;
-  fullrep << "Num_parameters_Estimated " << endl; 
-  fullrep << initial_params::nvarcalc() << endl;
+
   fullrep << "years"<< endl;
   fullrep << yy << endl;
 

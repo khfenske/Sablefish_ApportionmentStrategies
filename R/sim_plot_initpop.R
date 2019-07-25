@@ -168,7 +168,7 @@ sim_plot_initpop <- function() {
   par(mfrow=c(3,3))
   for(i in 1:n.sims){
     for(y in 1:length(OM_Fish.RPW.age[,1,i])) {
-      plot(OM_Fish.RPW.age[y,,i]~ages,ann=FALSE, typ="l", lty=1, col="red" , lwd=2, ylim=c(0,0.33))
+      plot(OM_Fish.RPW.age[y,,i]~ages,ann=FALSE, typ="l", lty=1, col="black" , lwd=2, ylim=c(0,0.33))
       #lines(B77$obs_fish1_age_1[i,]~B77$ages, typ="p", pch=16)
       legend("topright",legend=c(y))
     }}
