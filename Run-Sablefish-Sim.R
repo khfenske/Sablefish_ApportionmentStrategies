@@ -63,6 +63,9 @@ source(file.path(dir.R,'sablefish-datfile-builder.R'))
 source(file.path(dir.R,'read-movement-rates.R')) #Function to read in movement rates
 
 source(file.path(dir.R,'copy-admb-sim.R')) #Function to read in movement rates
+
+# Compile ADMB Code ==============================================
+R2admb::compile_admb(file.path(dir.admb,"tem"))
         
 # Extract Parameters =============================================
 extract_pars(input.file="Sablefish_Input.xlsx")
@@ -453,8 +456,8 @@ for(i in 1:n.sims) {
       
       # Need to update for MAC (Curry is needy)
       require(R2admb)
-      R2admb::compile_admb(EM_name)  #NOTE: Curry has this recompiling each time, we will only need to do once, but this is to ensure it runs on his OS
-      system.time(R2admb::run_admb(EM_name))
+      # R2admb::compile_admb(EM_name)  #NOTE: Curry has this recompiling each time, we will only need to do once, but this is to ensure it runs on his OS
+      system.time(R2admb::run_admb(EM_name, verbose=TRUE))
       
       #remove existing files
       cor.name<-paste0(EM_name,".cor")
@@ -742,6 +745,7 @@ for(i in 1:n.sims) {
     
     #apport.opt = 14: non exponential (5-year average) length-based
     #skip for now    
+    
     
 area <- 1
 i <- 1
