@@ -19,9 +19,9 @@ dir.figs <- file.path(wd,"figs")
 dir.output <- file.path(wd,"output")
 dir.admb <- file.path(wd,"admb/Single_area")
 dir.R <- file.path(wd,"R")
-dir.x <- file.path("C:/Repositories/hidden files with conf data") #this is for Kari's file paths, Curry and Dana, comment this out and 
+#dir.x <- file.path("C:/Repositories/hidden files with conf data") #this is for Kari's file paths, Curry and Dana, comment this out and 
 # then un-comment-out the following line to use the dummy file
-#dir.x <- dir.data #change this path to whatever place you have 
+dir.x <- dir.data #change this path to whatever place you have 
 #the confidential catch data files stored. DO NOT LOAD TO GITHUB.
 
 EM_name <- "tem"
@@ -455,7 +455,8 @@ for(i in 1:n.sims) {
         file.remove(std.name)
       }
       
-      setwd("C:/Repositories/Sablefish_ApportionmentStrategies")    # return to original working directory
+      # setwd("C:/Repositories/Sablefish_ApportionmentStrategies")    # return to original working directory
+      setwd(wd)
     }
 #Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, trawl catches are placeholders, order is BS-AI-WG-CG-WY-EY/SEO
   for(y in 43:44) {  
