@@ -4,7 +4,7 @@ fixed_data.dat
 1     #nareas
 3     #SRType 3=average, 2=Bholt, 1=Ricker  
 1930  #start year rec estimate [styr_rec_est]  or 1930?
-2017  #end year rec est [endyr_rec_est]
+2017  #end year rec est [endyr_rec_est]  ##DON"T NEEED BECAUSE ITS TURNED OFF
 2     #rec likelihood type [rec_like_type]  ONLY 2 IS FUNCTIONAL
 
 2#3     #phase F - phase for fishing mortality deviations
@@ -73,4 +73,4 @@ fixed_data.dat
 1    # ph_ifq;
 1   # ph_srv2q;
 1 # yield ratio - calculated in dat file maker R
-1 #projection num of years
+2 #projection num of years
