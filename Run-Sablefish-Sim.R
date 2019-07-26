@@ -453,12 +453,12 @@ for(i in 1:n.sims) {
       # setwd(dir.admb)
       setwd(dir.temp) # Temporary simulation-specific working directory
       
-       system.time( # keeping track of time for run
-         invisible(shell(paste0(EM_name," -nox -nohess"),wait=T)))
+      # system.time( # keeping track of time for run
+      #   invisible(shell(paste0(EM_name," -nox -nohess"),wait=T)))
       
       # Need to update for MAC (Curry is needy)
       require(R2admb)
-     # system.time(R2admb::run_admb(EM_name, verbose=TRUE))
+      system.time(R2admb::run_admb(EM_name, verbose=TRUE))
       
       #remove existing files
       cor.name<-paste0(EM_name,".cor")
