@@ -7,7 +7,8 @@
 
 
 build_datfile <- function(LLsurvAC_N,LLfishAC_N) {
-  dir.admb.single <- file.path(wd,"admb","Single_area")
+  # dir.admb.single <- file.path(wd,"admb","Single_area")
+  dir.admb.single <- dir.temp
   #use the PBSmodeling package to read the ADMB .dat file into the model and update it with new OM generated data
   #note that catch is in 1000 mt units when read in
   # testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem_single2018.dat") 
