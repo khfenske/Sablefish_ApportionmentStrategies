@@ -486,7 +486,7 @@ model_parameters::model_parameters(int sz,int argc,char * argv[]) :
   #ifndef NO_AD_INITIALIZE
     S_m_mid.initialize();
   #endif
-  log_rec_dev.allocate(styr-nages+2,endyr_rec_est,-10,10,ph_recdev,"log_rec_dev");
+  log_rec_dev.allocate(styr-nages+2,endyr-1,-10,10,ph_recdev,"log_rec_dev");
   natage_f.allocate(styr,endyr,1,nages,"natage_f");
   #ifndef NO_AD_INITIALIZE
     natage_f.initialize();
@@ -815,7 +815,7 @@ void model_parameters::userfunction(void)
      Get_Dependent_Vars();								// Solve for dependent variables like total bio, recruitment etc.
      compute_spr_rates();									// Compute f40 etc.
      Get_Population_Projection();  }       
-     Evaluate_Objective_Function();				// Minimize objective function value
+     Evaluate_Objective_Function();				// Minimize objective function value }
     if (mceval_phase())									// For outputting MCMC simulations in text format 
     {
      evalout<<log_mean_rec<<" "<<sigr<<" "<<q_srv1<<" "<<q_srv2<<" "<<q_srv5<<" "<<q_srv6<<" "<<q_srv8<<" "<<F40<<" "<<B40<<" "<<natmort<<" "<<obj_fun<<" "<<tot_biom<<" "<<spawn_biom<<" "<<pred_rec<<" "<<spawn_biom_proj<<" "<<pred_catch_proj<<" "<<pred_srv3<<" "<<pred_srv5<<" "<<endl; 
@@ -1208,16 +1208,16 @@ void model_parameters::Get_Population_Projection(void)
        }
     pred_catch_proj(i)     = (catage_proj_f(i)*wt_f+catage_proj_m(i)*wt_m)/yieldratio;
     pred_catch_proj_OFL(i)     =  (catage_proj_OFL_f(i)*wt_f+catage_proj_OFL_m(i)*wt_m)/yieldratio;
-    if (i < endyr+projyrs)
-    {
+   if (i < endyr+projyrs)
+   {
     if(mceval_phase()) {
     stdev_rec = sqrt(norm2(value(log_rec_dev(1979,endyr-recage-1))-mean(value(log_rec_dev(1979,endyr-recage-1))))/(size_count(value(log_rec_dev(1979,endyr-recage)))-1));
      k=round(value(spawn_biom(endyr)*10000))+i;
     k=k+i;
-     N_proj_f(i+1,1)= mfexp(value(log(mean(value(pred_rec(1979,endyr-recage-1))))-square(stdev_rec)/2+stdev_rec*randn(k+l)))/2;
-     N_proj_m(i+1,1)= mfexp(value(log(mean(value(pred_rec(1979,endyr-recage-1))))-square(stdev_rec)/2+stdev_rec*randn(k+l)))/2; }
-    else {  N_proj_f(i+1,1)= mfexp(value(log(mean(pred_rec(1979,endyr-recage-1)))))/2;
-            N_proj_m(i+1,1)= mfexp(value(log(mean(pred_rec(1979,endyr-recage-1)))))/2; }
+     N_proj_f(i+1,1)= mfexp(value(log(mean(value(pred_rec(1979,endyr-recage))))-square(stdev_rec)/2+stdev_rec*randn(k+l)))/2;
+     N_proj_m(i+1,1)= mfexp(value(log(mean(value(pred_rec(1979,endyr-recage))))-square(stdev_rec)/2+stdev_rec*randn(k+l)))/2; }
+    else {  N_proj_f(i+1,1)= mfexp(value(log(mean(pred_rec(1979,endyr-recage)))))/2;
+            N_proj_m(i+1,1)= mfexp(value(log(mean(pred_rec(1979,endyr-recage)))))/2; }
       for (j=1; j<nages-1;j++) {
         N_proj_f(i+1,j+1) = N_proj_f(i,j)  * mfexp(-yieldratio*FABC_tot_proj_f(j)-value(natmort));;
         N_proj_m(i+1,j+1) = N_proj_m(i,j)  * mfexp(-yieldratio*FABC_tot_proj_m(j)-value(natmort)); }
@@ -1225,9 +1225,9 @@ void model_parameters::Get_Population_Projection(void)
         N_proj_m(i+1,nages) = N_proj_m(i,nages-1)* mfexp(-yieldratio*FABC_tot_proj_m(nages-1)-value(natmort))+ N_proj_m(i,nages)   * mfexp(-yieldratio*FABC_tot_proj_m(nages)-value(natmort));
        spawn_biom_proj(i+1)        = elem_prod(N_proj_f(i+1),pow(mfexp(-yieldratio*FABC_tot_proj_f-value(natmort)),spawn_fract)) * wt_mature;  // Right way
        tot_biom_proj(i+1)=N_proj_f(i+1)*wt_f+N_proj_m(i+1)*wt_m;
-        }
+        }  
      }
-     if (spawn_biom_proj(endyr+1)/B40 > 1.) {
+      if (spawn_biom_proj(endyr+1)/B40 > 1.) {
       FABC = value(F40);
       FOFL = value(F35); 
       FABC2 = value(F40);
@@ -1305,6 +1305,14 @@ void model_parameters::report(const dvector& gradients)
   report << pred_srv5 <<endl;
   report << "$obs_srv5_biom" << endl;
   report << obs_srv5_biom << endl;
+  report << "$Num_parameters_Estimated" << endl; 
+  report << initial_params::nvarcalc() << endl;
+  report << "$SPRpen" << endl;
+  report << sprpen << endl;
+  report << "$obj_fun" << endl;
+  report << obj_fun << endl; 
+  report << "$datalikelihood" << endl;
+  report << Like << endl; 
   }
 }
 
@@ -1340,8 +1348,6 @@ void model_parameters::write_fullrep(void)
   //fullrep << $endyr << endl;  
   fullrep << model_name << endl;
   fullrep <<  data_file << endl;
-  fullrep << "Num_parameters_Estimated " << endl; 
-  fullrep << initial_params::nvarcalc() << endl;
   fullrep << "years"<< endl;
   fullrep << yy << endl;
   //Estimated values

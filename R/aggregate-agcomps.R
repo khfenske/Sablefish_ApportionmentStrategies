@@ -51,7 +51,7 @@ aggr_agecomp <- function(input.comps, harvest.num, ACtype) { #ACtype 1 is fisher
   
   #calculate proportions at age for the single area
   comp.prop <- as.vector(NA)
-  comp.prop <- round(prop.table(sum.comps),4)
+  comp.prop <- round(prop.table(sum.comps),3) #attempting more than 3 decimal places seems to cause a read-in error in the datfile builder code
   
   #output and close function
   return(comp.prop)

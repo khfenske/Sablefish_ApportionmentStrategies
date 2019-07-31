@@ -10,22 +10,19 @@ build_conditioning_datfile <- function() {
   dir.admb.single <- file.path(wd,"admb","Single_area")
   #use the PBSmodeling package to read the ADMB .dat file into the model and update it with new OM generated data
   #note that catch is in 1000 mt units when read in
-  # testdat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/permanant_tem_single2018.dat") #should I read this in as global?
   testdat <- readList(file.path(dir.admb.single,"permanant_tem_single2018.dat"))
-  #head(testdat, 49)
-  #names(testdat)
-  
+ 
   #add newly generated data from OM to the .dat file
   
   #domestic LL survey RPN (check units)
-  testdat$obs_domLLsurv_biom <- OM_Surv.RPN[-c(1:14,44),1] #RPN data from the conditioning OM
+  testdat$obs_domLLsurv_biom <- OM_Surv.RPN[-c(1:14,44:n.year),1] #RPN data from the conditioning OM
   #testdat$obs_domLLsurv_biom <- testdat$obs_domLLsurv_biom #fill in dat file with OM
   testdat$obs_domLLsurv_se <- 0.1*testdat$obs_domLLsurv_biom#temp fill in bogus values, need to decide if these are needed 
   testdat$obs_domLLsurv_lci <- testdat$obs_domLLsurv_biom-(2*testdat$obs_domLLsurv_se) #add a lower CI value
   testdat$obs_domLLsurv_uci <- testdat$obs_domLLsurv_biom+(2*testdat$obs_domLLsurv_se) #add an upper CI value
   
   #domestic LL fishery RPW (check units)
-  testdat$obs_LLfish_biom <- OM_Fish.RPW[-c(1:14,43:44),1] #RPW data from OM
+  testdat$obs_LLfish_biom <- OM_Fish.RPW[-c(1:14,43:n.year),1] #RPW data from OM
   #testdat$obs_LLfish_biom <- testdat$obs_LLfish_biom #conditioning years
   testdat$obs_LLfish_se <- 0.1* testdat$obs_LLfish_biom #add a SE value
   testdat$obs_LLfish_lci <- testdat$obs_LLfish_biom-(2*testdat$obs_LLfish_se)#add a lower CI value
@@ -161,8 +158,8 @@ build_conditioning_datfile <- function() {
   L_7<-paste(as.vector(testdat$nsamples_LLfish_age_bsaiwgcgeg),collapse=" ")
   L_8<-"#oac_LLfish_bsaiwgcgeg"
   L_9<-paste(as.vector(testdat$oac_LLfish_bsaiwgcgeg[1,]),collapse=" ") #this might need work...
-  for(y in 2:length(testdat$oac_LLfish_bsaiwgcgeg[,1])){
-    L_add<-paste(as.vector(testdat$oac_LLfish_bsaiwgcgeg[y,]),collapse=" ")
+  for(r in 2:length(testdat$oac_LLfish_bsaiwgcgeg[,1])){
+    L_add<-paste(as.vector(testdat$oac_LLfish_bsaiwgcgeg[r,]),collapse=" ")
     L_9<-c(L_9,L_add)}
   
   FAC<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9)
@@ -177,8 +174,8 @@ build_conditioning_datfile <- function() {
   L_7<-paste(as.vector(testdat$nsamples_domLLsurv_age_bsaiwgcgeg),collapse=" ")
   L_8<-"#oac_domLLsurv_bsaiwgcgeg"
   L_9<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[1,]),collapse=" ") #this might need work...
-  for(y in 2:length(testdat$oac_domLLsurv_bsaiwgcgeg[,1])){
-    L_add<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[y,]),collapse=" ")
+  for(r in 2:length(testdat$oac_domLLsurv_bsaiwgcgeg[,1])){
+    L_add<-paste(as.vector(testdat$oac_domLLsurv_bsaiwgcgeg[r,]),collapse=" ")
     L_9<-c(L_9,L_add)}
   
   USAC1<-c(L_1,L_2,L_3,L_4,L_5,L_6,L_7,L_8,L_9)

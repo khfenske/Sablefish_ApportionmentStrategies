@@ -13,8 +13,7 @@ copy_admb_sim <- function(dir.from=dir.admb, dir.to=dir.temp) {
   # Control File
   file.copy(from=file.path(dir.from,"tem.ctl"), to=file.path(dir.to,"tem.ctl"),overwrite=T)
   # Dat File
-  # Dat File
   file.copy(from=file.path(dir.from,"fixed_data.dat"), to=file.path(dir.to,"fixed_data.dat"))
   file.copy(from=file.path(dir.from,"tem_single2018.dat"), to=file.path(dir.to,"tem_single2018.dat"),overwrite=T)
-  file.copy(from=file.path(dir.from,"permanant_tem_single2018.dat"), to=file.path(dir.to,"permanant_tem_single2018.dat")) # Not really necessary
+  #file.copy(from=file.path(dir.from,"permanant_tem_single2018.dat"), to=file.path(dir.to,"permanant_tem_single2018.dat")) # Not really necessary
 }
