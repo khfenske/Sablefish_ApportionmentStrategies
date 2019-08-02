@@ -202,6 +202,152 @@ sim_plot_initpop <- function() {
       legend("topright",legend=c(f,m))
       }}}
 
+  #selectivity
+  dim(va)
+  #fishery by area
+  par(mfrow=c(2,2))
+  for(m in 1:n.area){
+    for(f in 1:n.fish){
+  plot(va[f,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[f,m,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Area",m,"Fishery",fish[f]))
+    }
+  }
+ #fishery by fleet
+  par(mfrow=c(3,2))
+    for(f in 1:n.fish){  
+      for(m in 1:n.area){
+      plot(va[f,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+      lines(va[f,m,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+      title(paste("Area",m,"Fishery",fish[f]))
+    }
+  }  
+  #fishery all on one 
+  par(mfrow=c(4,2))
+  plot(va[1,1,2,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[1,2,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[1,3,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[1,4,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[1,5,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[1,6,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Fishery",fish[1],"Males"))
+  
+  plot(va[1,1,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[1,2,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[1,3,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[1,4,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[1,5,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[1,6,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Fishery",fish[1],"Females"))
+  
+  plot(va[2,1,2,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[2,2,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[2,3,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[2,4,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[2,5,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[2,6,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Fishery",fish[2],"Males"))
+  
+  plot(va[2,1,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[2,2,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[2,3,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[2,4,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[2,5,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[2,6,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Fishery",fish[2],"Females"))
+  
+  plot(va[3,1,2,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[3,2,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[3,3,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[3,4,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[3,5,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[3,6,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Fishery",fish[3],"Males"))
+  
+  plot(va[3,1,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[3,2,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[3,3,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[3,4,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[3,5,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[3,6,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Fishery",fish[3],"Females"))  
+
+  plot(va[4,1,2,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[4,2,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[4,3,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[4,4,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[4,5,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[4,6,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Fishery",fish[4],"Males"))
+  
+  plot(va[4,1,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+  lines(va[4,2,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[4,3,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[4,4,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[4,5,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  lines(va[4,6,1,]~ages,typ="l",col="blue",lwd=3,lty=3)
+  title(paste("Fishery",fish[4],"Females")) 
+  
+  #survey by area
+  par(mfrow=c(3,4))
+  for(m in 1:n.area){
+    for(f in 1:n.surv){
+      plot(va_surv[f,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+      lines(va_surv[f,m,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+      title(paste("Area",m,"Survey",surv[f]))
+    }
+  }
+  #survey by fleet
+  par(mfrow=c(3,2))
+  for(f in 1:n.surv){  
+    for(m in 1:n.area){
+      plot(va_surv[f,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+      lines(va_surv[f,m,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+      title(paste("Area",m,"Survey",surv[f]))
+    }
+  }  
+  
+  
+  #selectivty OM vs Mgmt EM
+  #by fleet for fishery
+  #US fixed gear pre IFQ
+  par(mfrow=c(3,2))
+  for(m in 1:n.area){
+    plot(va[1,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+    lines(va[1,m,2,]~ages,typ="l",col="black",lwd=3,lty=3)
+    lines(mgmt_rep$Fishery_sel1Females~ages,typ="l",col="red",lwd=3,lty=1)
+    lines(mgmt_rep$Fishery_sel1Males~ages,typ="l",col="red",lwd=3,lty=3)
+    title(paste("Area",m,"Fishery",fish[1]))
+  }
+  
+  #US fixed gear pre IFQ
+  par(mfrow=c(3,2))
+  for(m in 1:n.area){
+    plot(va[2,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+    lines(va[2,m,2,]~ages,typ="l",col="black",lwd=3,lty=3)
+    lines(mgmt_rep$Fishery_sel4_f~ages,typ="l",col="red",lwd=3,lty=1)
+    lines(mgmt_rep$Fishery_sel4_m~ages,typ="l",col="red",lwd=3,lty=3)
+    title(paste("Area",m,"Fishery",fish[2]))
+  }  
+
+  #US fixed gear pre IFQ
+  par(mfrow=c(3,2))
+  for(m in 1:n.area){
+    plot(va[3,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+    lines(va[3,m,2,]~ages,typ="l",col="black",lwd=3,lty=3)
+    lines(mgmt_rep$Fishery_sel3~ages,typ="l",col="red",lwd=3,lty=1)
+    title(paste("Area",m,"Fishery",fish[3]))
+  }    
+  
+  #US fixed gear foreign
+  par(mfrow=c(3,2))
+  for(m in 1:n.area){
+    plot(va[4,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+    lines(va[4,m,2,]~ages,typ="l",col="black",lwd=3,lty=3)
+    lines(mgmt_rep$Fishery_sel2~ages,typ="l",col="red",lwd=3,lty=1)
+    title(paste("Area",m,"Fishery",fish[4]))
+  } 
+  
   
   
   ###below here needs work...##

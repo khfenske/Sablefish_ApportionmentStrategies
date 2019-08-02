@@ -13,8 +13,9 @@
 
 
 
-extract_pars <- function(input.file="Sablefish_Input.xlsx") {
-  #require(tidyverse)
+#extract_pars <- function(input.file="Sablefish_Input_matchMGMTqselex.xlsx") {
+ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
+    #require(tidyverse)
   #require(readxl)
   #require(xlsx)
   
@@ -167,12 +168,12 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
 
   # Selectivity: Survey ==========================================================================
   in.selex.surv <<- read.xlsx(file=file.path(dir.data, input.file), sheetName='SurveySelectivity')
+  selex.surv <<- list()  
   
   #Record Type and Number
   surv <<- unique(in.selex.surv$Fleet)
   n.surv <<- length(surv)
-  
-  selex.surv <<- list()
+
   #US Longline
   selex.surv$USLongline$a50[1:2] <<- as.numeric(in.selex.surv[in.selex.surv$Fleet=='USLongline' & in.selex.surv$Par=='a50',(3:4)])
   selex.surv$USLongline$delta[1:2] <<- as.numeric(in.selex.surv[in.selex.surv$Fleet=='USLongline' & in.selex.surv$Par=='delta',(3:4)])
