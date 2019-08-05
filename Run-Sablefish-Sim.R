@@ -75,36 +75,32 @@ extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separat
 #confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
  
 # Read in Movement Rates =========================================
-#prob.move <- read_movement_rates(input.file="Sablefish_Input.xlsx")
+move.type = 1 #1 is base movement, 2 is no movement, all move
 
-#prob.move is for testing to make sure I have movement code right.
-prob.move <- array(data=NA, dim=c(n.area,n.area,n.age), dimnames=list(areas,areas,ages))
-for (m in 1:n.age) {
+if (move.type==1) {
+  prob.move <- read_movement_rates(input.file="Sablefish_Input.xlsx")
+  }
+if (move.type==2) {
+  prob.move <- array(data=NA, dim=c(n.area,n.area,n.age), dimnames=list(areas,areas,ages))
+  for (m in 1:n.age) {
   prob.move[1,,m] <- c(1,0,0,0,0,0)
   prob.move[2,,m] <- c(0,1,0,0,0,0)
   prob.move[3,,m] <- c(0,0,1,0,0,0)
   prob.move[4,,m] <- c(0,0,0,1,0,0)
   prob.move[5,,m] <- c(0,0,0,0,1,0)
   prob.move[6,,m] <- c(0,0,0,0,0,1)
-}
-#prob.move <- array(data=NA, dim=c(n.area,n.area,n.age), dimnames=list(areas,areas,ages))
-#for (m in 1:n.age) {
-#  prob.move[1,,m] <- c(0,1/5,1/5,1/5,1/5,1/5)
-#  prob.move[2,,m] <- c(1/5,0,1/5,1/5,1/5,1/5)
-#  prob.move[3,,m] <- c(1/5,1/5,0,1/5,1/5,1/5)
-#  prob.move[4,,m] <- c(1/5,1/5,1/5,0,1/5,1/5)
-#  prob.move[5,,m] <- c(1/5,1/5,1/5,1/5,0,1/5)
-#  prob.move[6,,m] <- c(1/5,1/5,1/5,1/5,1/5,0)
-#}
-#prob.move <- array(data=NA, dim=c(n.area,n.area,n.age), dimnames=list(areas,areas,ages))
-#for (m in 1:n.age) {
-#  prob.move[1,,m] <- c(1,0,0,0,0,0)
-#  prob.move[2,,m] <- c(0,1,0,0,0,0)
-#  prob.move[3,,m] <- c(0,0,1,0,0,0)
-#  prob.move[4,,m] <- c(0,0,0,1,0,0)
-#  prob.move[5,,m] <- c(0,0,0,0,1,0)
-#  prob.move[6,,m] <- c(0,0,0,0,0,1)
-#}
+  }}
+if (move.type==3) {
+  prob.move <- array(data=NA, dim=c(n.area,n.area,n.age), dimnames=list(areas,areas,ages))
+  for (m in 1:n.age) {
+  prob.move[1,,m] <- c(1/6,1/6,1/6,1/6,1/6,1/6)
+  prob.move[2,,m] <- c(1/6,1/6,1/6,1/6,1/6,1/6)
+  prob.move[3,,m] <- c(1/6,1/6,1/6,1/6,1/6,1/6)
+  prob.move[4,,m] <- c(1/6,1/6,1/6,1/6,1/6,1/6)
+  prob.move[5,,m] <- c(1/6,1/6,1/6,1/6,1/6,1/6)
+  prob.move[6,,m] <- c(1/6,1/6,1/6,1/6,1/6,1/6)
+  }}
+
 # Calculate Selectivity ==========================================
 
 selex <- list() #Selectivity List
