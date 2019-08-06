@@ -4,7 +4,7 @@
 
 
 sim_plot_initpop <- function() {
-  require(PBSmodelling) #can evenutually remove this
+  #require(PBSmodelling) #can evenutually remove this
 
   
   # Define Workflow Paths ==============================================================
@@ -101,7 +101,7 @@ sim_plot_initpop <- function() {
   
   #indices - fishery index vs the mgmt observed fishery values
   OM_Fish.RPW
-  rpn_years <- c(15:42)
+  rpw_years <- c(15:42)
   #temporary specify these since I can't read them in
   mgmt_rep_FishBiomass <- c(1200.559703, 1065.846303, 907.7053904, 903.693265,
                             822.1961692, 1243.377135, 1200.869005, 1341.139079,
@@ -114,10 +114,10 @@ sim_plot_initpop <- function() {
                             656.339331262708, 656.427863349683)
   #the sim 1 survey vs the mgmt model observed survey values
   plot(mgmt_rep_FishBiomass~c(15:42),ylim=c(0,2500),typ="l",lwd=3,col="red")
-  lines(OM_Fish.RPW[15:42,1]~rpn_years, lwd=3,col="black")
+  lines(OM_Fish.RPW[15:42,1]~rpw_years, lwd=3,col="black")
   #the sim 2 survey vs the mgmt model observed survey values
   plot(mgmt_rep_FishBiomass~c(15:42),ylim=c(0,2500),typ="l",lwd=3,col="red")
-  lines(OM_Fish.RPW[15:43,2]~rpn_years, lwd=3,col="black")  
+  lines(OM_Fish.RPW[15:42,2]~rpw_years, lwd=3,col="black")  
   
   
   
@@ -290,21 +290,21 @@ sim_plot_initpop <- function() {
   
   #survey by area
   par(mfrow=c(3,4))
-  for(m in 1:n.area){
+  #for(m in 1:n.area){
     for(f in 1:n.surv){
-      plot(va_surv[f,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
-      lines(va_surv[f,m,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
-      title(paste("Area",m,"Survey",surv[f]))
-    }
+      plot(va_surv[f,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+      lines(va_surv[f,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+      title(paste("Area","Survey",surv[f]))
+    #}
   }
   #survey by fleet
   par(mfrow=c(3,2))
   for(f in 1:n.surv){  
-    for(m in 1:n.area){
-      plot(va_surv[f,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
-      lines(va_surv[f,m,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
-      title(paste("Area",m,"Survey",surv[f]))
-    }
+    #for(m in 1:n.area){
+      plot(va_surv[f,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+      lines(va_surv[f,2,]~ages,typ="l",col="blue",lwd=3,lty=3)
+      title(paste("Area","Survey",surv[f]))
+    #}
   }  
   
   
@@ -316,21 +316,21 @@ sim_plot_initpop <- function() {
     plot(va[1,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
     lines(va[1,m,2,]~ages,typ="l",col="black",lwd=3,lty=3)
     lines(mgmt_rep$Fishery_sel1Females~ages,typ="l",col="red",lwd=3,lty=1)
-    lines(mgmt_rep$Fishery_sel1Males~ages,typ="l",col="red",lwd=3,lty=3)
+    lines(mgmt_rep$Fishery_sel1Males~ages,typ="l",col="orange",lwd=3,lty=3)
     title(paste("Area",m,"Fishery",fish[1]))
   }
   
-  #US fixed gear pre IFQ
+  #US fixed gear post IFQ
   par(mfrow=c(3,2))
   for(m in 1:n.area){
     plot(va[2,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
     lines(va[2,m,2,]~ages,typ="l",col="black",lwd=3,lty=3)
     lines(mgmt_rep$Fishery_sel4_f~ages,typ="l",col="red",lwd=3,lty=1)
-    lines(mgmt_rep$Fishery_sel4_m~ages,typ="l",col="red",lwd=3,lty=3)
+    lines(mgmt_rep$Fishery_sel4_m~ages,typ="l",col="orange",lwd=3,lty=3)
     title(paste("Area",m,"Fishery",fish[2]))
   }  
 
-  #US fixed gear pre IFQ
+  #US trawl fish
   par(mfrow=c(3,2))
   for(m in 1:n.area){
     plot(va[3,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
@@ -348,28 +348,20 @@ sim_plot_initpop <- function() {
     title(paste("Area",m,"Fishery",fish[4]))
   } 
   
+  #US ll survey
+  par(mfrow=c(1,1))
+      plot(va_surv[1,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+      lines(va_surv[1,2,]~ages,typ="l",col="black",lwd=3,lty=3)
+      lines(mgmt_rep$Survey_sel1Female~ages,typ="l",col="red",lwd=3,lty=1)
+      lines(mgmt_rep$Survey_sel1male~ages,typ="l",col="orange",lwd=3,lty=3)
+      title(paste("Area","Survey","US LL"))
   
+  #USJP ll coop survey
+  par(mfrow=c(1,1))
+    plot(va_surv[2,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1))
+    lines(va_surv[2,2,]~ages,typ="l",col="black",lwd=3,lty=3)
+    lines(mgmt_rep$Survey_sel2Female~ages,typ="l",col="red",lwd=3,lty=1)
+    lines(mgmt_rep$Survey_sel2male~ages,typ="l",col="orange",lwd=3,lty=3)
+    title(paste("Area","Survey", "USJP coop"))
   
-  ###below here needs work...##
-  #biomass B plots
-  melted_Binit <- melt(B, varnames = c("Sex", "Year","Age", "Area","Sim"), na.rm=FALSE, value.name = "Biomass")
-  b2 <- melted_Binit
-  
-  b3<-b2%>%group_by(Year,Sim) %>% summarize(Biomass=sum(Biomass,na.rm=T))
-  b4<-b3
-  ggplot(b4)+geom_line(aes(x=Year,y=Biomass,colour=Sim),alpha=0.5)+theme_bw(base_size=13)+
-    theme(legend.position="none")+ggtitle("Total Biomass trajectories")
-  ggsave("Biomass_tot_lines.png",width=8,height=5,dpi=325, path=dir.output)  
-  
-  #compare EMdata to condition output
-  #survey RPN
-  plot(testdat$yrs_domLLsurv,testdat$obs_domLLsurv_biom, typ="l", ylim=c(0,1000))
-  lines(testdat$yrs_domLLsurv,OM_Surv.RPN[15:40,1])
-  
-  #fishery RPW
-  plot(testdat$yrs_LLfish,testdat$obs_LLfish_biom, typ="l", ylim=c(0,2500))
-  lines(testdat$yrs_LLfish,OM_Fish.RPW[15:39,1])    
-  
-  
-    
-    }
+      }

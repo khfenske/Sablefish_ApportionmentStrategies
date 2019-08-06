@@ -1,27 +1,27 @@
 Model_1
 tem_2018_na_wh.dat
-3
+3		#sr type
 1930
 2017
-2
-2
-2
-3
-2
-2
-2
-3
-0
-0
-1
+2		#rec_like type
+2		#fish1 sel opt
+2		#fish2 sel opt
+3		#fish3 sel opt
+2		#fish4 sel opt
+2		#srv1 sel opt
+2		#srv2 sel opt
+3		#srv7 sel opt
+0		#Age that fishery selectivity stops estimating
+0		#Age that survey selectivity stops estimating
+1		#phase F mort devs
 2
 4
 1
 1
-0.1
-0.1
+0.1		#prior mean M
+0.1		#CM for M
 3
-2
+2		
 0.1
 -6
 1.2

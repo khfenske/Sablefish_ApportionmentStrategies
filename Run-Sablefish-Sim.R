@@ -70,7 +70,8 @@ source(file.path(dir.R,'copy-admb-sim.R')) #Function to copy files to the new si
 #setwd(wd)
 
 # Extract Parameters =============================================
-extract_pars(input.file="Sablefish_Input.xlsx")
+extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
+#extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 #confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
  
@@ -123,10 +124,10 @@ va <- array(dim=c(n.fish,n.area,n.sex,n.age), dimnames=list(fish,1:n.area,sexes,
   va[i,,,] <- calc_selectivity(type='fish', fleet=fish[i])
   }
 
-va_surv <- array(dim=c(n.surv,n.area,n.sex,n.age), dimnames=list(surv,1:n.area,sexes,ages))
+va_surv <- array(dim=c(n.surv,n.sex,n.age), dimnames=list(surv,sexes,ages))
   i <- 1
   for(i in 1:n.surv) {
-    va_surv[i,,,] <- calc_selectivity(type='surv', fleet=surv[i])
+    va_surv[i,,] <- calc_selectivity(type='surv', fleet=surv[i])
   }
 # Create Simulation Objects =======================================
 #NOTE: Currently calculates data for n areas, where n is defined in the input spreadsheet (n.areas)  
@@ -182,8 +183,8 @@ temp.catchnumbiom <- array(data=NA, dim=c(43,n.fish,n.area),dimnames=list(1:43,f
 temp.catchnumbiom <- apply(cond_catch_at_age,1:3,sum)
 
 ### set up N samples and sigmas for sampling
-LLsurvRPNsigma <- 1 #0.2
-LLfishRPWsigma <- 1 #0.4
+LLsurvRPNsigma <- 0.2
+LLfishRPWsigma <- 0.4
 LLsurvAC_sampsize <- 200
 LLfishAC_sampsize <- 200
 
@@ -433,7 +434,7 @@ for(i in 1:n.sims) {
     ## then generate the updated .dat file to be pushed to the EM
     #only building a single conditioning dat file instead of 1 for each sim since they should all be the same for this project (for now)
     build_conditioning_datfile()  
-
+    #sim_plot_initpop()
     
     
     

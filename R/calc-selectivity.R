@@ -26,7 +26,15 @@ calc_selectivity <- function(type=NULL, fleet=NULL) {
   
   ### TESTING ###
   # type <- 'fish'
+  # type <- 'surv'
   # fleet <- 'USTrawl'
+  # fleet <- 'USLongline'
+  # fleet <- 'USJPLL'
+  # fleet <- 'USfixed_preIFQ'
+  # fleet <- 'USfixed_postIFQ'
+  # fleet <- 'Foreign'
+  
+  
   ###############
   
   # Check Inputs ========================================
