@@ -32,16 +32,16 @@ sim_plot_initpop <- function() {
   #spawning biomass
   mgmt_rep$SpBiom #1960-2018
   ssb_fsum <- apply(ssb[1,1:30,2:43,,1],2,sum) #1977-2018
-  
+  par(mfrow=c(1,1))
   plot(ssb_fsum~mgmt_rep_years[18:59],typ="l",lwd=3,col="black",ylim=c(0,300))
   lines(mgmt_rep$SpBiom[18:59]~mgmt_rep_years[18:59],lwd=3,col="red")
 
-  melted_ssb <- melt(ssb,varnames = c("Sex", "Age","Year", "Area","Sim"), na.rm=FALSE, value.name = "ssb")
-  b2 <-melted_ssb
-  b3<-b2%>%group_by(Year,Sim) %>% summarize(ssb=sum(ssb,na.rm=T))
-  b4<-b3
-  ggplot(b4)+geom_line(aes(x=Year,y=ssb,colour=Sim),alpha=0.5)+theme_bw(base_size=13)+
-    theme(legend.position="none")+ggtitle("ssb trajectories")
+  #melted_ssb <- melt(ssb,varnames = c("Sex", "Age","Year", "Area","Sim"), na.rm=FALSE, value.name = "ssb")
+  #b2 <-melted_ssb
+  #b3<-b2%>%group_by(Year,Sim) %>% summarize(ssb=sum(ssb,na.rm=T))
+  #b4<-b3
+  #ggplot(b4)+geom_line(aes(x=Year,y=ssb,colour=Sim),alpha=0.5)+theme_bw(base_size=13)+
+    #theme(legend.position="none")+ggtitle("ssb trajectories")
   #ggsave("ssb_tot_lines.png",width=8,height=5,dpi=325, path=dir.output)  
   
   

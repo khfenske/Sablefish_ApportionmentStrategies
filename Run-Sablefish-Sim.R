@@ -70,8 +70,8 @@ source(file.path(dir.R,'copy-admb-sim.R')) #Function to copy files to the new si
 #setwd(wd)
 
 # Extract Parameters =============================================
-extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
-#extract_pars(input.file="Sablefish_Input.xlsx")
+#extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
+extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 #confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
  
@@ -341,7 +341,7 @@ for(i in 1:n.sims) {
       # sample longline survey RPN, 'current' year  -- check units
       # is the *selectivity needed here? Or is it already incorporated into the N calcs via F?
       #Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*selex$surv$USLongline[h,]*q_surv[1,m],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i)) 
-      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*q_surv[1,m],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i)) #*selex$surv$USLongline[h,]*q_surv[1,m]
+      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*q_surv[1,m]*selex$surv$USLongline,sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i+222)) #*selex$surv$USLongline[h,]*q_surv[1,m]
           } #next area m
   } #close year 
   
@@ -350,7 +350,7 @@ for(i in 1:n.sims) {
     for(m in 1:n.area) {
       # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
       #specify another comp sample size here
-      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[2,m], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[2,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
     } #next area m
   } #close year 
   
@@ -363,7 +363,7 @@ for(i in 1:n.sims) {
       h<-1
       for(h in 1:n.sex){
         # longline/fixed gear post-IFQ fishery age comps in numbers 
-        sample_age_comps(harvest.n[h,y,,2,m,i], Nsamp=LLsurvAC_sampsize, cpar=1, seed=c(y+i+134)) 
+        sample_age_comps(harvest.n[h,y,,2,m,i]*selex$fish$USfixed_postIFQ[m,h,], Nsamp=LLsurvAC_sampsize, cpar=1, seed=c(y+i+134)) 
         Fish.AC[h,y,,m,i] <- obs.comp
       } #next sex
     OM_Fish.RPW.age[y,,i] <- aggr_agecomp(Fish.AC[,y,,,i], cond_catch_at_age[y,2,,,],1) #aggregate comps by sex and area, weight by catch in area
@@ -379,7 +379,7 @@ for(i in 1:n.sims) {
       for(h in 1:n.sex){
         # longline survey age comps in numbers, can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
         #specify another comp sample size here
-        sample_age_comps(N[h,y,,m,i]*selex$surv$USLongline[h,], Nsamp=LLfishAC_sampsize, cpar=1, seed=NULL) #true.props, Nsamp, cpar
+        sample_age_comps(N[h,y,,m,i]*selex$surv$USLongline[h,], Nsamp=LLfishAC_sampsize, cpar=1, seed=y+i+76) #true.props, Nsamp, cpar
         Surv.AC[h,y,,m,i] <- obs.comp
       } #next sex
       OM_Surv.RPN.age[y,,i] <- aggr_agecomp(Surv.AC[,y,,,i], Surv.RPN[,y,,,i],2)
@@ -746,7 +746,7 @@ for(i in 1:n.sims) {
     
 #try(    
 area <- 1
-i <- 1
+i <- 2
 for(i in 1:n.sims) {
   print(paste('Sim:',i,'of',n.sims))
   
@@ -765,7 +765,7 @@ for(i in 1:n.sims) {
     #for subsequent years, use the EM output for ABC, which is generated at the end of this code chunk
       for(m in 1:n.area) {
         for(f in 1:n.fish) {
-        temp.Fmort <- estimate_Fmort4catch(catch=apportioned_C[y-1,f,m,i],
+        temp.Fmort <- estimate_Fmort4catch(catch=0.5*apportioned_C[y-1,f,m,i],
                       temp.selex=va[f,m,,],
                       temp.N=N[,y-1,,m,i], 
                       wa=wa, mx=mx, 
@@ -870,14 +870,14 @@ for(i in 1:n.sims) {
         #write a function that makes it easy to specify (by area) the yield ratio
         # longline survey RPN, 'current' year  -- check units
       #Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*selex$surv$USLongline[h,],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i))         #(we'd talked about concatonating 'sim # + year' for seed)
-      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]**q_surv[1,m],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i))         #(we'd talked about concatonating 'sim # + year' for seed)
+      Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*q_surv[1,m]*selex$surv$USLongline,sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i+546))         #(we'd talked about concatonating 'sim # + year' for seed)
                     # longline/fixed gear fishery CPUE/RPW  -- check units
-      Fish.RPW[,y-1,,m,i] <- sample_biom_abund(B[,y-1,,m,i]*q_fish[1,m], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+      Fish.RPW[,y-1,,m,i] <- sample_biom_abund(B[,y-1,,m,i]*q_fish[1,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
 
       for(h in 1:n.sex){
       # longline/fixed gear post-IFQ fishery age comps in numbers , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
         #specify another comp sample size here
-      sample_age_comps(harvest.n[h,y-1,,2,m,i], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+134)) #does this need to include selectivity?
+      sample_age_comps(harvest.n[h,y-1,,2,m,i]*selex$fish$USfixed_postIFQ[m,h,], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+134)) #does this need to include selectivity?
       Fish.AC[h,y-1,,m,i] <- obs.comp
       
       # longline survey age comps in numbers (not proportions yet) single sex, can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
@@ -920,6 +920,7 @@ for(i in 1:n.sims) {
     #=============================================================
     #### Set Harvest Limits & apply apportionment method we are testing ####
     # call the apportionment method here
+    if (y<n.year){
     if (apport.opt==1) {
       ABC_TS[y+1,,i] <- equal_apportionment(get_ABC$ABC_proj[1],n.area) 
     }
@@ -980,7 +981,7 @@ for(i in 1:n.sims) {
     apportioned_C[y+1,3,6,i] <- ABC_TS[y+1,6,i]*0.05 #trawl fishery, giving 5% of ABC to trawl
    
     apportioned_C[is.na(apportioned_C)] <- 0 
-    
+    }
     # Accumulate things we want to track from the .rep file(s) and for use in the performance_metrics.R function
     #max_grads <- get_ABC$#(how to get this?)
     #obj_fun_vals <- get_ABC$obj_fun
