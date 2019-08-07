@@ -1138,6 +1138,16 @@ REPORT_SECTION
   report << obj_fun << endl; 
   report << "$datalikelihood" << endl;
   report << Like << endl; 
+
+  report << "$age.likelihood_surv" << endl;
+  report << age_like(1) << endl
+  report << "$age.likelihood_fish" << endl;
+  report << age_like(2) << endl;
+  report << "$index.likelihood_surv" << endl;
+  report << surv_like(3) << endl;
+  report << "index.likelihood_fish" << endl;
+  report << surv_like(5) << endl;
+
   }
 
 
