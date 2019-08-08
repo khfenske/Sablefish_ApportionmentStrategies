@@ -1102,34 +1102,6 @@ GLOBALS_SECTION
 REPORT_SECTION
   if(last_phase()) {
   //report out things needed to feed into apportionment script:
-  report << "$B40" << endl;
-  report << B40 << endl;
-  report << "$SBF40" << endl;
-  report << SBF40 << endl;
-
-  report << "$spawn_biom" << endl;
-  report << spawn_biom << endl;
-  report << "$Depletion"<< endl; 
-  report << Depletion << endl;
-  
-  report << "$ABC_proj" << endl;
-  report << pred_catch_proj << endl;
-
-  report << "$spawn_bio_projected" << endl; 
-  report << spawn_biom_proj << endl;
-
-  report << "$yrs_srv3" << endl;
-  report << yrs_srv3 << endl;
-  report << "$pred_srv3_biom" << endl;
-  report << pred_srv3 << endl;
-  report << "$obs_srv3_biom" << endl;
-  report << obs_srv3_biom <<endl;
-  report << "$yrs_srv5" << endl;
-  report << yrs_srv5 << endl;
-  report << "$pred_srv5_biom"<< endl;
-  report << pred_srv5 <<endl;
-  report << "$obs_srv5_biom" << endl;
-  report << obs_srv5_biom << endl;
   report << "$Num_parameters_Estimated" << endl; 
   report << initial_params::nvarcalc() << endl;
   report << "$SPRpen" << endl;
@@ -1147,6 +1119,72 @@ REPORT_SECTION
   report << surv_like(3) << endl;
   report << "index.likelihood_fish" << endl;
   report << surv_like(5) << endl;
+ 
+  report << "$ABC_proj" << endl;
+  report << pred_catch_proj << endl;
+  report << "$B40" << endl;
+  report << B40 << endl;
+  report << "$SBF40" << endl;
+  report << SBF40 << endl;
+  report << "$SBF35" << endl;
+  report << SBF35 << endl;
+  report << "$SBF0" << endl;
+  report << SBF0 << endl;
+  report << "$Depletion"<< endl; 
+  report << Depletion << endl;
+
+  report << "$spawn_biom" << endl;
+  report << spawn_biom << endl;
+
+  report << "$yrs_srv3" << endl;
+  report << yrs_srv3 << endl;
+  report << "$pred_srv3_biom" << endl;
+  report << pred_srv3 << endl;
+  report << "$obs_srv3_biom" << endl;
+  report << obs_srv3_biom <<endl;
+  report << "$yrs_srv5" << endl;
+  report << yrs_srv5 << endl;
+  report << "$pred_srv5_biom"<< endl;
+  report << pred_srv5 <<endl;
+  report << "$obs_srv5_biom" << endl;
+  report << obs_srv5_biom << endl;
+
+  report << "$predrecruitment" << endl;
+  report << pred_rec << endl;
+  report << "$pred_catch_fixed.biom" << endl;
+  report << pred_catch_fish1 << endl;
+  report << "$pred_catch_trawl.biom" << endl;
+  report << pred_catch_fish3 << endl;
+
+  report << "$fish1_sel_f" << endl; 
+  report << fish1_sel_f << endl;
+  report << "$fish1_sel_m" << endl;
+  report << fish1_sel_m << endl;
+  report << "$fish4_sel_f" << endl;
+  report << fish4_sel_f << endl;
+  report << "$fish4_sel_m" << endl; 
+  report << fish4_sel_m  << endl;  
+
+  report << "$fish3_sel_f" << endl;
+  report << fish3_sel_f <<endl;
+  report << "$fish3_sel_m" << endl; 
+  report << fish3_sel_m << endl;
+
+  report << "$srv1_sel_f" << endl; 
+  report << srv1_sel_f << endl;
+  report << "$srv1_sel_m" << endl;
+  report << srv1_sel_m  << endl;
+
+  report << "$q_srv1" << endl; 
+  report << q_srv1 << endl;
+  report << "$q_srv2" << endl; 
+  report << q_srv2 << endl;
+  report << "$q_srv5" << endl; 
+  report << q_srv5 << endl;
+  report << "$q_srv6" << endl; 
+  report << q_srv6 << endl;
+  report << "$q_srv8" << endl;
+  report << q_srv8 << endl;
 
   }
 
