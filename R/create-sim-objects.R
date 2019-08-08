@@ -70,8 +70,8 @@ create_sim_objects <- function() {
   obj_fun_vals <<- matrix(NA,nrow=n.year,ncol=n.sims)
   spr_penalty <<- matrix(NA,nrow=n.year,ncol=n.sims)
   data_likelihood <<- matrix(NA,nrow=n.year,ncol=n.sims)
-  #index_likelihood <<- array(dim=c(2,n.year,n.sims))
-  age_likelihood <<- array(dim=c(2,n.year,n.sims)) #2 because there's fishery and survey age comps
+  index_likelihood <<- array(dim=c(2,n.year,n.sims))
+  age_likelihood <<- array(dim=c(2,n.year,n.sims)) #2 because there's fishery (row 1) and survey (row 2) age comps
   ABC_projection <<- matrix(NA,nrow=n.year,ncol=n.sims)
   SSB_projection <<- matrix(NA,nrow=n.year,ncol=n.sims)  
   EM_B40 <<- matrix(NA,nrow=n.year,ncol=n.sims)
@@ -80,10 +80,10 @@ create_sim_objects <- function() {
   EM_SBF40 <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_SBF35 <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_SBF0 <<- matrix(NA,nrow=n.year,ncol=n.sims)
-  EM_depletion1 <<- matrix(NA,nrow=n.year,ncol=n.sims) #spawning biomass in endyr/spawning biomass in startyr
+  EM_depletion1 <<- matrix(NA,nrow=n.year,ncol=n.sims) #spawning biomass in endyr/spawning biomass in startyr output from .rep file
   EM_depletion2 <<- matrix(NA,nrow=n.year,ncol=n.sims) #spawning biomass in endyr/B40
   
-  EM_spbiom <<-  array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims)) #Spawning biomass predicted for y+1
+  EM_spbiom <<-  array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims)) #Spawning biomass estimates from EM
   EM_pred.srvRPN <<-  array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims))#US LL survey RPN
   EM_pred.fishRPW <<- array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims))#US LL fishery RPW
 
@@ -91,12 +91,12 @@ create_sim_objects <- function() {
   EM_predcatch_fixedgear <<- array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims))
   EM_predcatch_trawlgear <<- array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims))
 
-  EM_pred.sel.preifqfish <<- array(dim=c(n.year,n.age, n.sims), dimnames=list(years, ages, sims))
-  EM_pred.sel.postifqfish <<- array(dim=c(n.year,n.age, n.sims), dimnames=list(years, ages, sims))
-  EM_pred.sel.trawlfish <<- array(dim=c(n.year,n.age, n.sims), dimnames=list(years, ages, sims))
-  EM_pred.sel.forfish <<- array(dim=c(n.year,n.age, n.sims), dimnames=list(years, ages, sims))
-  EM_pred.sel.LLsurv <<- array(dim=c(n.year,n.age, n.sims), dimnames=list(years, ages, sims))
-  EM_pred.sel.USJPsurv <<- array(dim=c(n.year,n.age, n.sims), dimnames=list(years, ages, sims))
+  EM_pred.sel.preifqfish <<- array(dim=c(n.year,n.age, n.sex,n.sims), dimnames=list(years,  ages, sexes, sims))
+  EM_pred.sel.postifqfish <<- array(dim=c(n.year, n.age, n.sex, n.sims), dimnames=list(years, ages, sexes, sims))
+  EM_pred.sel.trawlfish <<- array(dim=c(n.year,n.age, n.sex, n.sims), dimnames=list(years, ages, sexes, sims))
+  #EM_pred.sel.forfish <<- array(dim=c(n.year, n.age, n.sex, n.sims), dimnames=list(years, ages, sexes, sims))
+  EM_pred.sel.LLsurv <<- array(dim=c(n.year, n.age, n.sex, n.sims), dimnames=list(years, ages, sexes, sims))
+  #EM_pred.sel.USJPsurv <<- array(dim=c(n.year,n.age, n.sex, n.sims), dimnames=list(years, ages, sexes, sims))
   EM_q.LLsurv <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_q.USJPsurv <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_q.preifqfish <<- matrix(NA,nrow=n.year,ncol=n.sims)
@@ -107,7 +107,7 @@ create_sim_objects <- function() {
   #EM_predAC.surv <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))
   #EM_predAC.fish <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))
   #EM_natage
-  #EM_totbiomass <<- array(dim=c(n.sex, n.year,n.age, n.sims), dimnames=list(sexes,years, ages, sims))
+  EM_totbiomass <<- array(dim=c(n.year,n.year, n.sims), dimnames=list(years, years, sims))
   #EM_F.a <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Age-specific Fishing mortality
   
   

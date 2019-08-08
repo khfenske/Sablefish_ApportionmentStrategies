@@ -1111,14 +1111,14 @@ REPORT_SECTION
   report << "$datalikelihood" << endl;
   report << Like << endl; 
 
-  report << "$age.likelihood_surv" << endl;
-  report << age_like(1) << endl;
   report << "$age.likelihood_fish" << endl;
+  report << age_like(1) << endl;
+  report << "$age.likelihood_surv" << endl;
   report << age_like(2) << endl;
   report << "$index.likelihood_surv" << endl;
-  report << surv_like(3) << endl;
-  report << "index.likelihood_fish" << endl;
-  report << surv_like(5) << endl;
+  report << surv_like(1) << endl;
+  report << "$index.likelihood_fish" << endl;
+  report << surv_like(4) << endl;
  
   report << "$ABC_proj" << endl;
   report << pred_catch_proj << endl;
@@ -1186,6 +1186,8 @@ REPORT_SECTION
   report << "$q_srv8" << endl;
   report << q_srv8 << endl;
 
+  report << "$tot_biom" << endl;
+  report << tot_biom << endl;
   }
 
 
