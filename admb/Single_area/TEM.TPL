@@ -1112,7 +1112,7 @@ REPORT_SECTION
   report << Like << endl; 
 
   report << "$age.likelihood_surv" << endl;
-  report << age_like(1) << endl
+  report << age_like(1) << endl;
   report << "$age.likelihood_fish" << endl;
   report << age_like(2) << endl;
   report << "$index.likelihood_surv" << endl;
@@ -1128,8 +1128,8 @@ REPORT_SECTION
   report << SBF40 << endl;
   report << "$SBF35" << endl;
   report << SBF35 << endl;
-  report << "$SBF0" << endl;
-  report << SBF0 << endl;
+ // report << "$SBF0" << endl;
+ // report << SBF0 << endl;
   report << "$Depletion"<< endl; 
   report << Depletion << endl;
 

@@ -1,3 +1,9 @@
+#ifdef DEBUG
+  #ifndef __SUNPRO_C
+    #include <cfenv>
+    #include <cstdlib>
+  #endif
+#endif
  # include "admodel.h"          						// Include AD class definitions
   adstring model_name;
   adstring data_file;
@@ -1281,18 +1287,36 @@ void model_parameters::report(const dvector& gradients)
   }
   if(last_phase()) {
   //report out things needed to feed into apportionment script:
+  report << "$Num_parameters_Estimated" << endl; 
+  report << initial_params::nvarcalc() << endl;
+  report << "$SPRpen" << endl;
+  report << sprpen << endl;
+  report << "$obj_fun" << endl;
+  report << obj_fun << endl; 
+  report << "$datalikelihood" << endl;
+  report << Like << endl; 
+  report << "$age.likelihood_surv" << endl;
+  report << age_like(1) << endl;
+  report << "$age.likelihood_fish" << endl;
+  report << age_like(2) << endl;
+  report << "$index.likelihood_surv" << endl;
+  report << surv_like(3) << endl;
+  report << "index.likelihood_fish" << endl;
+  report << surv_like(5) << endl;
+  report << "$ABC_proj" << endl;
+  report << pred_catch_proj << endl;
   report << "$B40" << endl;
   report << B40 << endl;
   report << "$SBF40" << endl;
   report << SBF40 << endl;
-  report << "$spawn_biom" << endl;
-  report << spawn_biom << endl;
+  report << "$SBF35" << endl;
+  report << SBF35 << endl;
+ // report << "$SBF0" << endl;
+ // report << SBF0 << endl;
   report << "$Depletion"<< endl; 
   report << Depletion << endl;
-  report << "$ABC_proj" << endl;
-  report << pred_catch_proj << endl;
-  report << "$spawn_bio_projected" << endl; 
-  report << spawn_biom_proj << endl;
+  report << "$spawn_biom" << endl;
+  report << spawn_biom << endl;
   report << "$yrs_srv3" << endl;
   report << yrs_srv3 << endl;
   report << "$pred_srv3_biom" << endl;
@@ -1305,14 +1329,38 @@ void model_parameters::report(const dvector& gradients)
   report << pred_srv5 <<endl;
   report << "$obs_srv5_biom" << endl;
   report << obs_srv5_biom << endl;
-  report << "$Num_parameters_Estimated" << endl; 
-  report << initial_params::nvarcalc() << endl;
-  report << "$SPRpen" << endl;
-  report << sprpen << endl;
-  report << "$obj_fun" << endl;
-  report << obj_fun << endl; 
-  report << "$datalikelihood" << endl;
-  report << Like << endl; 
+  report << "$predrecruitment" << endl;
+  report << pred_rec << endl;
+  report << "$pred_catch_fixed.biom" << endl;
+  report << pred_catch_fish1 << endl;
+  report << "$pred_catch_trawl.biom" << endl;
+  report << pred_catch_fish3 << endl;
+  report << "$fish1_sel_f" << endl; 
+  report << fish1_sel_f << endl;
+  report << "$fish1_sel_m" << endl;
+  report << fish1_sel_m << endl;
+  report << "$fish4_sel_f" << endl;
+  report << fish4_sel_f << endl;
+  report << "$fish4_sel_m" << endl; 
+  report << fish4_sel_m  << endl;  
+  report << "$fish3_sel_f" << endl;
+  report << fish3_sel_f <<endl;
+  report << "$fish3_sel_m" << endl; 
+  report << fish3_sel_m << endl;
+  report << "$srv1_sel_f" << endl; 
+  report << srv1_sel_f << endl;
+  report << "$srv1_sel_m" << endl;
+  report << srv1_sel_m  << endl;
+  report << "$q_srv1" << endl; 
+  report << q_srv1 << endl;
+  report << "$q_srv2" << endl; 
+  report << q_srv2 << endl;
+  report << "$q_srv5" << endl; 
+  report << q_srv5 << endl;
+  report << "$q_srv6" << endl; 
+  report << q_srv6 << endl;
+  report << "$q_srv8" << endl;
+  report << q_srv8 << endl;
   }
 }
 
@@ -1511,12 +1559,31 @@ int main(int argc,char * argv[])
   //arrmblsize=390000;
   arrmblsize=1500000;
     gradient_structure::set_NO_DERIVATIVES();
+#ifdef DEBUG
+  #ifndef __SUNPRO_C
+std::feclearexcept(FE_ALL_EXCEPT);
+  #endif
+#endif
     gradient_structure::set_YES_SAVE_VARIABLES_VALUES();
     if (!arrmblsize) arrmblsize=15000000;
     model_parameters mp(arrmblsize,argc,argv);
     mp.iprint=10;
     mp.preliminary_calculations();
     mp.computations(argc,argv);
+#ifdef DEBUG
+  #ifndef __SUNPRO_C
+bool failedtest = false;
+if (std::fetestexcept(FE_DIVBYZERO))
+  { cerr << "Error: Detected division by zero." << endl; failedtest = true; }
+if (std::fetestexcept(FE_INVALID))
+  { cerr << "Error: Detected invalid argument." << endl; failedtest = true; }
+if (std::fetestexcept(FE_OVERFLOW))
+  { cerr << "Error: Detected overflow." << endl; failedtest = true; }
+if (std::fetestexcept(FE_UNDERFLOW))
+  { cerr << "Error: Detected underflow." << endl; }
+if (failedtest) { std::abort(); } 
+  #endif
+#endif
     return 0;
 }
 
