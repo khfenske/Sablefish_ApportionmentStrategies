@@ -341,7 +341,7 @@ for(y in forproj.styr:n.year) {
   for(n in 15:n.year){
     EMmed_matrix[y,n] <- median(EM_pred.srvRPN[y,n,],na.rm=TRUE) #median pred EM surv RPN for each year, across sims
   }}
-for(j in 1:60){
+for(j in 1:n.year){
 EMmed_med[j] <- median(EMmed_matrix[,j],na.rm=TRUE)
 }
 #calc medians across sims for OM
@@ -351,6 +351,7 @@ for(n in 15:n.year){
 }
 
 #Plot EM & OM RPN, includes retrospective:
+par(mfrow=c(1,1))
 plot(EM_pred.srvRPN[forproj.styr,,1]~c(1:n.year),typ="l",ylim=c(0,2000),ylab="Survey RPN",xlab="Year",xlim=c(15,60))
 for(y in forproj.styr:n.year){
 for(i in 1:n.sims){
@@ -487,7 +488,7 @@ for(y in forproj.styr:n.year) {
   for(n in 15:n.year){
     EMmed_matrix[y,n] <- median(EM_predrec[y,n,],na.rm=TRUE) #median pred EM surv RPN for each year, across sims
   }}
-for(j in 1:60){
+for(j in 1:n.year){
   EMmed_med[j] <- median(EMmed_matrix[,j],na.rm=TRUE)
 }
 #calc medians across sims for OM
@@ -570,7 +571,7 @@ for(y in forproj.styr:n.year) {
     EMmed_matrix[y,n] <- median(EM_spbiom[y,n,],na.rm=TRUE) #median pred EM fishery RPN for each year, across sims
     EMmean_matrix[y,n] <- mean(EM_spbiom[y,n,],na.rm=TRUE)
     }}
-for(j in 1:60){
+for(j in 1:n.year){
   EMmed_med[j] <- median(EMmed_matrix[,j],na.rm=TRUE)
   EMmean_mean[j] <- mean(EMmean_matrix[,j],na.rm=TRUE)
 }
@@ -581,7 +582,7 @@ for(y in forproj.styr:n.year) {
   for(n in 1:n.year){
     EM_sd_matrix[y,n] <- sd(EM_spbiom[y,n,],na.rm=TRUE) #median pred EM fishery RPN for each year, across sims
   }}
-for(j in 1:60){
+for(j in 1:n.year){
   EM_sd_mean[j] <- mean(EM_sd_matrix[,j],na.rm=TRUE) #mean of the SDs
 }
 UCI_EM <- vector()
@@ -714,15 +715,15 @@ for(i in 1:n.sims){
   lines(sum_appC[,i]~c(1:n.year),typ="l")
 }
 
-
+Start fixing here on Monday
 #median apportioned (+- ~95% CIS of mean) TAC by area
 apportioned_C  #dim:  years, gears, areas, sims
 #sum over gears for total app.catch by area, year, sim
 apportioned_C_sum <- array(data=NA,dim=c(n.year,n.area,n.sims),dimnames=list(years,areas,sims))
 apportioned_C_sum <- apply(apportioned_C,c(1,3,4),sum)
 #find the median apportioned catch for each final EM run (year n.year) across sims
-med_appC <- matrix(data=NA,nrow=c(length(1:n.year)),ncol=c(length(1:n.sims)),dimnames=list(years,sims))
-for(y in 1:n.year) {
+med_appC <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(length(1:n.sims)),dimnames=list(years[forproj.styr:n.year],sims))
+for(y in forproj.styr:n.year) {
 for(m in 1:n.area) {
   med_appC[y,m] <- median(apportioned_C_sum[y,m,])
 }}
@@ -786,9 +787,14 @@ temp_a <- apply(app_num[forproj.styr:n.year,,],2,sum)
 
 #Bx%##
 actual vs predicted
+proportion of years below B/B40 EM-EM
+proportion of years were B/B40>1 but in that year true B/B40 is <1
+
 
 #Fx%##
 
 
+#ABC stability
+apportioned_C_sum
 
 
