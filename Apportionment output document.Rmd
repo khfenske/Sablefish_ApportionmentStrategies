@@ -1,0 +1,89 @@
+---
+title: "Apportionment output figures document"
+author: "Kari Fenske, Curry Cunningham, Dana Hanselman"
+date: "August 16, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Conditioning period
+
+
+# Model validation figures
+## Convergence
+This is the proportion of model years that converged for each simulation run, for the selected apportionment type. Convergenge is defined as the EM run in ADMB had a maximum gradient component less than 0.1.
+```{r, echo=FALSE,eval=TRUE}
+conv_num <- matrix(NA,ncol=n.sims,nrow=n.year)
+#max_grads <- (format(max_grads,scientific=FALSE))
+for(i in 1:n.sims){
+  for(y in forproj.styr:n.year){
+    if(abs(max_grads[y,i]) < 0.1) {
+    conv_num[y,i] <- 1      
+    } else {
+      conv_num[y,i] <- 0        
+    }
+  }
+}
+
+temp_b <- apply(conv_num[forproj.styr:n.year,],2,sum)
+(temp_b1 <- temp_b/length(forproj.styr:n.year))
+
+#proportion of sims and years that converged
+sum(temp_b)/(length(forproj.styr:n.year)*n.sims) 
+```
+
+## Selectivity
+### Longline fishery Pre-IFQ
+
+### Longline fishery Post-IFQ
+
+### Trawl fishery
+
+### Longline survey (US years)
+
+
+## Catchability
+### Longline fishery foreign years
+
+### Longline fishery Pre-IFQ
+
+### Longline fishery Post-IFQ
+
+### Longline survey (US years)
+
+### Longline survey (USJP years)
+
+
+## Indices
+### US longline fishery index (RPW)
+
+### US longline survey index (RPN)
+
+## Recruitment
+
+
+# Performance metrics
+

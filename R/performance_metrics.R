@@ -13,6 +13,11 @@ forproj.styr <- 44
 ##### Model validation things
 #############################
 
+#read in and build data across the apportionment types
+
+
+
+
 #Max Gradient - convergence##
 #proportion of years in a sim that converged
 #average proportion of years in all sims that converged for each apportionment option
@@ -476,16 +481,22 @@ EM_predrec[,,1] #EM recruitment estimates (dim - year, year, sim) year 1 is 1977
 rec_mill <- rec/1000000
 rec #OM recruitment
 #calc a matrix of medians across sims
-med_matrix <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.year)) #across sims
-med_med <- vector()
+EMmed_matrix <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.year)) #across sims
+EMmed_med <- vector()
 for(y in forproj.styr:n.year) {
   for(n in 15:n.year){
-    med_matrix[y,n] <- median(EM_pred.fishRPW[y,n,],na.rm=TRUE) #median pred EM surv RPN for each year, across sims
+    EMmed_matrix[y,n] <- median(EM_predrec[y,n,],na.rm=TRUE) #median pred EM surv RPN for each year, across sims
   }}
 for(j in 1:60){
-  med_med[j] <- median(med_matrix[,j],na.rm=TRUE)
+  EMmed_med[j] <- median(EMmed_matrix[,j],na.rm=TRUE)
+}
+#calc medians across sims for OM
+OMmed <- vector() 
+for(n in 15:n.year){
+  OMmed[n] <- median(rec_mill[,n],na.rm=TRUE) #median pred EM surv RPN for each year, across sims
 }
 
+#Plot EM & OM recruitment, includes retrospective:
 plot(EM_predrec[forproj.styr,1:n.year,1]~c(1:n.year),typ="l",ylim=c(0,100),ylab="Recruitment (millions)",xlab="Year",xlim=c(1,60))
 for(y in forproj.styr:n.year){
   for(i in 1:n.sims){
@@ -494,10 +505,8 @@ for(y in forproj.styr:n.year){
 for(i in 1:n.sims){
   lines(rec_mill[i,1:n.year]~c(1:n.year),typ="l",col="red") #OM generated recruitment (not used in years 1-43 for EM)
 }
-
-#terminal year only, across sims
+#Plot EM and OM recruitment terminal year only, across sims
 plot(EM_predrec[n.year,1:n.year,1]~c(1:n.year),typ="l",ylim=c(0,100),ylab="Recruitment (millions)",xlab="Year")
-#for(y in forproj.styr:n.year){
 for(i in 1:n.sims){
   lines(EM_predrec[n.year,1:n.year,i]~c(1:n.year),typ="l") #this is the EM estimated recruitment from the final year EM run
 }
@@ -506,32 +515,34 @@ for(i in 1:n.sims){
 }
 lines(cond.rec$Recruitment~c(2:43),typ="l",col="blue",lwd=3) #this is the summed recruitment input into the OM 
 
-
-
-plot(EM_pred.fishRPW[forproj.styr,,2]~c(1:n.year),typ="l",ylim=c(0,3000),ylab="Fishery RPW",xlab="Year",xlim=c(15,60))
+#EM with EM median plotted
+plot(EM_predrec[forproj.styr,,2]~c(1:n.year),typ="l",ylim=c(0,100),ylab="Recruitment (millions)",xlab="Year",xlim=c(15,60))
 for(y in forproj.styr:n.year){
   for(i in 1:n.sims){
-    lines(EM_pred.fishRPW[y,,i]~c(1:n.year),typ="l")
+    lines(EM_predrec[y,,i]~c(1:n.year),typ="l")
   }} 
-lines(med_med~c(1:n.year),typ="l",col="red",lwd=5) #median of the medians line
+lines(EMmed_med~c(1:n.year),typ="l",col="red",lwd=5) #median of the medians line
+#PUT IT ALL ON ONE
+#OM and EM with OM and EM medians
+plot(EM_predrec[forproj.styr,,2]~c(1:n.year),typ="l",ylim=c(0,100),ylab="Recruitment (millions)",xlab="Year",xlim=c(15,60))
+for(y in forproj.styr:n.year){
+  for(i in 1:n.sims){
+    lines(EM_predrec[y,,i]~c(1:n.year),typ="l",col="black") #all the EM RPNs
+  }} 
+for(i in 1:n.sims){
+  lines(rec_mill[i,44:n.year]~c(44:n.year),typ="l",col="red") #all the OM RPNs
+}
+lines(EMmed_med~c(1:n.year),typ="l",col="orange",lwd=5) #median of the medians line
+lines(OMmed[44:n.year]~c(44:n.year),typ="l",col="yellow",lwd=5) #median of the medians line
+
 
 #residuals for terminal year OM vs EM for each sim
-OM_Fish.RPW
-EM_pred.fishRPW
-resid.RPW <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
+resid.rec <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
 for (j in 1:n.year) {
   for(r in 1:n.sims) {
-    resid.RPW[j,r] <- OM_Fish.RPW[j,r] - EM_pred.fishRPW[n.year,j,r]
+    resid.rec[j,r] <- rec_mill[r,j] - EM_predrec[n.year,j,r]
   }
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -546,14 +557,235 @@ age_likelihood[,forproj.styr:y,] #likelihoods table
 ################################
 
 #SSB##
+ssb[,a,y,m,i] #OM ssb
+EM_spbiom[y,2:y,i] #EM ssb
+#calc a matrix of medians across sims for EM
+EMmed_matrix <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.year)) #across sims
+EMmed_med <- vector()
+EMmean_matrix <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.year))
+EMmean_mean <- vector()
+
+for(y in forproj.styr:n.year) {
+  for(n in 1:n.year){
+    EMmed_matrix[y,n] <- median(EM_spbiom[y,n,],na.rm=TRUE) #median pred EM fishery RPN for each year, across sims
+    EMmean_matrix[y,n] <- mean(EM_spbiom[y,n,],na.rm=TRUE)
+    }}
+for(j in 1:60){
+  EMmed_med[j] <- median(EMmed_matrix[,j],na.rm=TRUE)
+  EMmean_mean[j] <- mean(EMmean_matrix[,j],na.rm=TRUE)
+}
+#EM standard devs matrix, upper and lower ~95% CIs using mean of means
+EM_sd_matrix <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.year)) #across sims
+EM_sd_mean <- vector()
+for(y in forproj.styr:n.year) {
+  for(n in 1:n.year){
+    EM_sd_matrix[y,n] <- sd(EM_spbiom[y,n,],na.rm=TRUE) #median pred EM fishery RPN for each year, across sims
+  }}
+for(j in 1:60){
+  EM_sd_mean[j] <- mean(EM_sd_matrix[,j],na.rm=TRUE) #mean of the SDs
+}
+UCI_EM <- vector()
+LCI_EM <- vector()
+UCI_EM <- EMmean_mean + (2*EM_sd_mean)
+LCI_EM <- EMmean_mean - (2*EM_sd_mean)  
+#calc medians and means across sims for OM
+ssb_summed <- matrix(data=NA,nrow=length(1:n.year), ncol=length(1:n.sims))#ssb summed over ages, areas, sexes (so leaves a year x sim matrix)
+ssb_summed<- apply(ssb,c(3,5),sum)
+OMmed <- vector() 
+OMmean <- vector()
+for(n in 1:n.year){
+  OMmed[n] <- median(ssb_summed[n,],na.rm=TRUE) #median pred EM fishery RPN for each year, across sims
+  OMmean[n] <- mean(ssb_summed[n,],na.rm=TRUE) #median pred EM fishery RPN for each year, across sims
+  }
+#OM standard devs matrix
+OM_sd_vector <- vector() #across sims
+  for(n in 1:n.year){
+    OM_sd_vector[n] <- sd(ssb_summed[n,],na.rm=TRUE) #median pred EM fishery RPN for each year, across sims
+  }
+#PUT IT ALL ON ONE
+#OM and EM with OM and EM medians
+plot(EM_spbiom[forproj.styr,,2]~c(1:n.year),typ="l",ylim=c(0,500),ylab="SSB",xlab="Year",xlim=c(1,60))
+for(y in forproj.styr:n.year){
+  for(i in 1:n.sims){
+    lines(EM_spbiom[y,,i]~c(1:n.year),typ="l",col="black") #all the EM RPNs
+  }} 
+for(i in 1:n.sims){
+  lines(ssb_summed[,i]~c(1:n.year),typ="l",col="red") #all the OM RPNs
+}
+lines(EMmed_med~c(1:n.year),typ="l",col="orange",lwd=5) #median of the medians line
+lines(OMmed~c(1:n.year),typ="l",col="yellow",lwd=5) #median of the medians line
+#CI plot
+plot(EMmed_med~c(1:n.year),typ="l",col="black",lwd=5,ylim=c(0,500),ylab="SSB",xlab="Year",xlim=c(1,60)) #median of EM
+lines(UCI_EM~c(1:n.year),typ="l",col="black",lwd=1) #95% CI of mean
+lines(LCI_EM~c(1:n.year),typ="l",col="black",lwd=1) #95% CI of mean
+lines(OMmed~c(1:n.year),typ="l",col="red",lwd=5) #OM median of the medians line
+
+#compare terminal EM year estimates to previous year estimates (EM)
+plot(EM_spbiom[n.year,,1]~c(1:n.year),typ="l",ylim=c(0,500),ylab="SSB",xlab="Year",xlim=c(1,60))
+for(y in forproj.styr:n.year-1){
+  for(i in 1:n.sims){
+    lines(EM_spbiom[y,,i]~c(1:n.year),typ="l",col="red") #all the EM RPNs
+  }} 
+  for(i in 1:n.sims){
+    lines(EM_spbiom[n.year,,i]~c(1:n.year),typ="l",col="black") #all the EM RPNs
+  } 
+
+#ssb residuals
+resid.ssb <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
+for (j in 1:n.year) {
+  for(r in 1:n.sims) {
+    resid.ssb[j,r] <- ssb_summed[j,r] - EM_spbiom[n.year,j,r]
+  }
+}
+#percent diff
+resid.ssb2 <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
+for (j in 1:n.year) {
+  for(r in 1:n.sims) {
+    resid.ssb[j,r] <- (ssb_summed[j,r] - EM_spbiom[n.year,j,r])/((ssb_summed[j,r]+EM_spbiom[n.year,j,r])/2)*100
+  }
+}
+
+#OM true N by area proportion vs EM apportioned TAC by area for terminal year EMs and OMs
+apportioned_C
+EM_TAC_prop <- array(data=NA,dim=c(n.year,n.area,n.sims),dimnames=list(years,areas,sims))
+EM_TAC_prop <- apply(apportioned_C,c(1,3,4),sum)
+EM_TAC_prop2 <- prop.table(EM_TAC_prop,c(1,3)) #this is the EM proportions of TAC by area for each year and sim.
+OM_true_prop <- array(data=NA,dim=c(n.year,n.area,n.sims),dimnames=list(years,areas,sims))
+OM_true_prop <- apply(N,c(2,4,5),sum)
+OM_true_prop2 <- prop.table(OM_true_prop,c(1,3))
+
+rpd_ssb <- ((EM_TAC_prop2-OM_true_prop2)/OM_true_prop2)*100
+mean_rpd_ssb<-matrix(data=NA,nrow=length(1:n.year),ncol=length(1:n.area) )
+for(y in 1:n.year) {
+  for(m in 1:n.area){
+mean_rpd_ssb[y,m] <- mean(abs(rpd_ssb[y,m,])) #mean absolute RPD
+}}
+#median_rpd_ssb
+boxplot(mean_rpd_ssb,main="absolute RPD between OM and EM proportion SSB, by area", ylab="Mean RPD",xlab="Area") #mean relative percent difference between apportioned TAC and OM spatial abundance by area
+
+#OM true N vs EM apportioned TAC for areas combined
+ssb_summed[44:n.year,] #OM ssb summed across areas, ages, sexes
+EM_spbiom[n.year,44:y,] #EM ssb terminal year (n.year) run only
+rpd_ssb2 <- ((EM_spbiom[n.year,44:y,]-ssb_summed[44:n.year,])/ssb_summed[44:n.year,])*100
+melted_rpd_ssb2 <- melt(rpd_ssb2,na.rm=TRUE,value.name="RPD") 
+head(melted_rpd_ssb2)
+
+boxplot(melted_rpd_ssb2[,3])
+boxplot(abs(melted_rpd_ssb2[,3]))
 
 #catch##
-obs vs pred
+#sum to year and sim matrices
+apportioned_C #OM apportioned catch; years, gears, areas, sims
+sum_appC <- matrix(data=NA,nrow=length(1:n.year),ncol=length(1:n.sims))
+sum_appC <- apply(apportioned_C,c(1,4),sum)
+
+OM_fixed_catch  #2 OM - US fixed post-IFQ, based on harvest
+OM_trawl_catch  #3 OM - US trawl, based on harvest
+sum_OM_catch <- matrix(data=NA,nrow=length(1:n.year),ncol=length(1:n.sims))
+for(y in 1:n.year){
+  for(i in 1:n.sims) {
+  sum_OM_catch[y,i] <- sum(OM_fixed_catch[y,i],OM_trawl_catch[y,i])
+  }}
+
+C.n # OM catch in numbers, dim= sex,year,age,area,sim
+sum_C.n <- matrix(data=NA,nrow=length(1:n.year),ncol=length(1:n.sims))
+sum_C.n <- apply(C.n,c(2,5),sum)
+
+C.b # OM catch in biomass
+sum_C.b <- matrix(data=NA,nrow=length(1:n.year),ncol=length(1:n.sims))
+sum_C.b <- apply(C.b,c(2,5),sum)
+
+EM_predcatch_fixedgear
+EM_predcatch_trawlgear
+sum_EM_predcatch <- matrix(data=NA,nrow=c(length(1:n.year)),ncol=c(length(1:n.sims)),dimnames=list(years,sims)) #summed over gears
+for(y in 1:n.year){
+  for(i in 1:n.sims) {
+    sum_EM_predcatch[y,i] <- sum(EM_predcatch_fixedgear[n.year,y,i],EM_predcatch_trawlgear[n.year,y,i])
+  }}
+
+plot(sum_appC[,1]~c(1:n.year),typ="l",lwd=3)
+lines(sum_OM_catch[,1]~c(1:n.year),typ="l",col="red",lwd=3)
+lines(sum_C.b[,1]~c(1:n.year),typ="l",col="blue",lwd=3)
+lines(sum_EM_predcatch[,1]~c(1:n.year),typ="l",col="green",lwd=3)
+
+
+plot(sum_appC[,1]~c(1:n.year),typ="l")
+for(i in 1:n.sims){
+  lines(sum_appC[,i]~c(1:n.year),typ="l")
+}
+
+
+#median apportioned (+- ~95% CIS of mean) TAC by area
+apportioned_C  #dim:  years, gears, areas, sims
+#sum over gears for total app.catch by area, year, sim
+apportioned_C_sum <- array(data=NA,dim=c(n.year,n.area,n.sims),dimnames=list(years,areas,sims))
+apportioned_C_sum <- apply(apportioned_C,c(1,3,4),sum)
+#find the median apportioned catch for each final EM run (year n.year) across sims
+med_appC <- matrix(data=NA,nrow=c(length(1:n.year)),ncol=c(length(1:n.sims)),dimnames=list(years,sims))
+for(y in 1:n.year) {
+for(m in 1:n.area) {
+  med_appC[y,m] <- median(apportioned_C_sum[y,m,])
+}}
+
+melted_appC <- melt(apportioned_C_sum[n.year,,],na.rm=FALSE,value.name="TAC")  #terminal year only
+ggplot(melted_appC,aes(x=Var1,y=TAC,group=Var1))+
+  geom_boxplot()
+
+#median apportioned (+- ~95% CIS) TAC for all areas summed
+apportioned_C_sum2 <- matrix(data=NA,nrow=c(length(1:n.year)),ncol=c(length(1:n.sims)),dimnames=list(years,sims))
+apportioned_C_sum2 <- apply(apportioned_C_sum,c(1,3),sum)
+melted_appC2 <- melt(apportioned_C_sum2[n.year,],na.rm=FALSE,value.name="TAC")  #terminal year only
+median(melted_appC[,3])
+boxplot(melted_appC[,3])
+
+#median EM catch (+- ~95% CIs of mean) catch for all areas summed
+sum_EM_predcatch
+melted_sum_EMpredcatch <- melt(sum_EM_predcatch[n.year,],na.rm=FALSE,value.name="EMcatch")
+median(melted_sum_EMpredcatch$EMcatch)
+boxplot(melted_sum_EMpredcatch)
+
+#proportion of years (terminal year of EM runs) and sims where apportioned TAC falls below threshold
+threshold <- 2.0 #thousand mt
+apportioned_C_sum 
+app_num <- array(data=NA,dim=c(n.year,n.area,n.sims),dimnames=list(years,areas,sims))
+for(i in 1:n.sims){
+  for(m in 1:n.area){
+    for(y in forproj.styr:n.year){
+      if(apportioned_C_sum[y,m,i] < threshold) { #1 means above threshold
+        app_num[y,m,i] <- 0      
+      } else {
+      app_num[y,m,i] <- 1        #below threshold
+      }
+    }
+  }
+}
+#proportion years in each area above threshold across all years and sims 
+temp_a <- vector() 
+temp_a <- apply(app_num[forproj.styr:n.year,,],2,sum)
+(temp_a1 <- temp_a/(n.sims*(length(forproj.styr:n.year))) )
+
+
+
+
+#Proportion years/sims where of the catch in area x is more than 50% (or a changeable value) fish younger than the age @50% mature
+
+#Mean, median (+CIs) of age and length (converted from age?) for catches (apportioned TAC) in each EM area across years and sims
+#how do we even know this?
+
+#Median (across sims) change in TAC to each area from year to year (by area and for areas combined)
+
+#Catch at age * price @ age/size by area and for all areas (OM) and compare to EM catch at age * price
+
+
+
+
+
 
 
 #yield##
 
 #Bx%##
+actual vs predicted
 
 #Fx%##
 
