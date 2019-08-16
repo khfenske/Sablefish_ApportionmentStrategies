@@ -721,7 +721,7 @@ FUNCTION Get_Numbers_At_Age
       natage_m(styr,nages) = (mfexp(log_mean_rec - (natmort+hist_hal_F*fish1_sel_m(nages-1)) * (nages-1))/ (1. - exp(-natmort+hist_hal_F*fish1_sel_m(nages-1)) ))/2; 
      
   //cout<<"LMR "<<log_mean_rec;
-  for (i=styr; i<= endyr_rec; i++)  // so, for 1960-endyr...
+  for (i=styr; i<= endyr-1; i++)  // so, for 1960-endyr...
   {
     natage_f(i,1)           = mfexp(log_rec_dev(i) + log_mean_rec+sigr*sigr/2 )/2;    // REDUNDANT TO LINE 500 ABOVE?
     natage_m(i,1)           = mfexp(log_rec_dev(i) + log_mean_rec+sigr*sigr/2 )/2;
@@ -733,7 +733,7 @@ FUNCTION Get_Numbers_At_Age
   } 
 
   // End year  (terminal model year)
-	   for(i=endyr_rec+1;i<endyr;i++){
+	   for(i=endyr;i<endyr;i++){
 	    natage_f(i,1)           = mfexp(log_mean_rec+sigr*sigr/2)/2;                        
       natage_m(i,1)           = mfexp(log_mean_rec+sigr*sigr/2)/2;
       natage_f(i+1)(2,nages)  = ++elem_prod(natage_f(i)(1,nages-1),S_f(i)(1,nages-1));       // Following year  
