@@ -153,17 +153,17 @@ for(i in 1:n.sims){
 catchability$fishery
 q_fish <- matrix(data=NA, nrow=n.fish, ncol=n.area)
 for(m in 1:n.area){
-  q_fish[1,m] <- catchability$fishery$value[m]
-  q_fish[2,m] <- catchability$fishery$value[m+6]
-  q_fish[3,m] <- catchability$fishery$value[m+12]
-  q_fish[4,m] <- catchability$fishery$value[m+18]
+  q_fish[1,m] <- catchability$fishery$value[m] #fixed gear pre ifq
+  q_fish[2,m] <- catchability$fishery$value[m+6] #fixed gear post ifq
+  q_fish[3,m] <- catchability$fishery$value[m+12] #trawl 
+  q_fish[4,m] <- catchability$fishery$value[m+18] #fixed gear foreign years
 }
 
 catchability$survey
 q_surv <- matrix(data=NA, nrow=2, ncol=n.area)
 for(m in 1:n.area){
-  q_surv[1,m] <- catchability$survey$value[m]
-  q_surv[2,m] <- catchability$survey$value[m+6]
+  q_surv[1,m] <- catchability$survey$value[m] #us LL survey
+  q_surv[2,m] <- catchability$survey$value[m+6] #usjp LL survey
 }
 # ==================================================================================
 # Initialize Population - Conditioning the simulations (year 1, or 1976) ===========
@@ -468,6 +468,12 @@ run.model <- function() {
   if (file.exists(std.name)) {
     file.remove(std.name)
   }
+  
+  # extract ABC (read in a report file)
+  # this will come out of my EM  CHECK IF THERE ARE CODE CHANGES IN THE EM ABOUT F RATIO
+  get_ABC <<- readList(file.path(dir.temp,"tem.rep"))
+  get_mgc <<- read_pars(fn="tem", drop_phase=TRUE)#, file.path(dir.temp,"tem.par"))  #this doesn't work for getting the max gradient component
+  
   setwd(wd) #return to original working directory
 } #close run.model function
 
@@ -879,7 +885,7 @@ for(i in 1:n.sims) {
     OM_fixed_catch[y-1,i] <- sum(harvest.b[,y-1,,2,,i]) #2 - US fixed post-IFQ
     OM_trawl_catch[y-1,i] <- sum(harvest.b[,y-1,,3,,i]) #3 - US trawl
     #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
-    OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])#this could be moved into the data file builder function
+    OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])
     OM_Fish.RPW[y-1,i] <- sum(Fish.RPW[,y-1,,,i])
     #age comps have a year lag
     OM_Surv.RPN.age[y-1,,i] <- aggr_agecomp(Surv.AC[,y-1,,,i], Surv.RPN[,y-1,,,i],2) #aggregate comps by sex and area, weight by survey catch in area
@@ -894,18 +900,20 @@ for(i in 1:n.sims) {
     #calculate the moving average ratio between gear types (F ratio)   
     
     #=============================================================
-    #### Conduct Assessment #### 
+    #### Conduct Assessment and extract relevant files#### 
     
     time.elapsed<-run.model()
     
     #=============================================================
-    # extract ABC (read in a report file)
-    # this will come out of my EM  CHECK IF THERE ARE CODE CHANGES IN THE EM ABOUT F RATIO
-    get_ABC <- readList(file.path(dir.temp,"tem.rep"))
-    #get_mgc <- readList(file.path(dir.temp,"tem.par"))  #this doesn't work for getting the max gradient component
-    
+
     #copy .rep file to the sim folder and save with a unique name to keep a record of the EM run report
     #add a function here
+    #if get_mgc$maxgrad < 0.01 {
+    #  file.copy(from=file.path(dir.from,"tem.exe"), to=file.path(dir.to,"tem.exe"),overwrite=T)
+    #}
+    #else {
+      
+    #}
     
     #=============================================================
     #### Set Harvest Limits & apply apportionment method we are testing ####
@@ -973,54 +981,58 @@ for(i in 1:n.sims) {
       apportioned_C[is.na(apportioned_C)] <- 0 
     }
     # Accumulate things we want to track from the .rep file(s) and for use in the performance_metrics.R function
-    #max_grads <- get_ABC$#(how to get this?)
+    max_grads[y,i] <- get_mgc$maxgrad #(how to get this?) <- can we put in a stop/if-else here so that if the mgc is > some value it ends the year loop and moves to next sim?
     obj_fun_vals[y,i] <- get_ABC$obj_fun
     spr_penalty[y,i] <- get_ABC$SPRpen
     data_likelihood[y,i] <- get_ABC$datalikelihood
     ABC_projection[y,i] <- get_ABC$ABC_proj[1] #capturing the next year's projected ABC that will be used for apportionment
     
-    #age_likelihood_surv
-    #age_likelihood_fish
-    #surv_likelihood
-    #fish_likelihood
+    age_likelihood[1,y,i] <- get_ABC$age.likelihood_fish
+    age_likelihood[2,y,i] <- get_ABC$age.likelihood_surv
+    #index_likelihood[1,y,i] <- get_ABC$index.likelihood_fish
+    #index_likelihood[2,y,i] <- get_ABC$index.likelihood_surv
     
-    #EM_B40
-    #EM_SBF40
-    #EM_SBF35
-    #EM_SBF0
+    EM_B40[y,i] <- get_ABC$B40
+    EM_SBF40[y,i] <- get_ABC$SBF40
+    EM_SBF35[y,i] <- get_ABC$SBF35
+    #EM_SBF0 <- get_ABC$SBF0
     
-    #ABC_projection
-    #SSB_projection
-    #EM_depletion1
-    #EM_depletion2 #calculated quantity
+    ABC_projection[y,i] <- get_ABC$ABC_proj[1]
+    EM_depletion1[y,i] <- get_ABC$Depletion
+    EM_depletion2[y,i] <- (apply(ssb[,,,,i],3,sum)[y])/EM_B40[y,i]  #calculated quantity EM endyr spawnbiom / B40
+    EM_spbiom[y,2:y,i] <- get_ABC$spawn_biom #rows are OM year loops, cols are years within an OM loop, 3rd dimension is sim
+
+    EM_pred.srvRPN[y,15:y,i] <- get_ABC$pred_srv3_biom  #US dom LL survey RPN, starts in 1990/yr 15
+    EM_pred.fishRPW[y,15:(y-1),i] <- get_ABC$pred_srv5_biom #US fishery RPW, starts in 1990/yr 15
     
-    #EM_spbiom
-    #EM_pred.srvRPN
-    #EM_pred.fishRPW
+    EM_predrec[y,2:y,i] <- get_ABC$predrecruitment
+    EM_predcatch_fixedgear[y,2:y,i] <- get_ABC$pred_catch_fixed.biom
+    EM_predcatch_trawlgear[y,2:y,i] <- get_ABC$pred_catch_trawl.biom
     
-    #EM_predrec
-    #EM_predcatch_fixedgear
-    #EM_predcatch_trawlgear
+    EM_pred.sel.preifqfish[y,,1,i] <- get_ABC$fish1_sel_f
+    EM_pred.sel.preifqfish[y,,2,i] <- get_ABC$fish1_sel_m
+    EM_pred.sel.postifqfish[y,,1,i] <- get_ABC$fish4_sel_f
+    EM_pred.sel.postifqfish[y,,2,i] <- get_ABC$fish4_sel_m
+    EM_pred.sel.trawlfish[y,,1,i] <- get_ABC$fish3_sel_f
+    EM_pred.sel.trawlfish[y,,2,i] <- get_ABC$fish3_sel_m
+    #EM_pred.sel.forfish <- get_ABC$
+    #EM_pred.sel.forfish <- get_ABC$
+    EM_pred.sel.LLsurv[y,,1,i] <- get_ABC$srv1_sel_f
+    EM_pred.sel.LLsurv[y,,2,i] <- get_ABC$srv1_sel_m
+    #EM_pred.sel.USJPsurv <- get_ABC$
+    #EM_pred.sel.USJPsurv <- get_ABC$
     
-    #EM_pred.sel.preifqfish
-    #EM_pred.sel.postifqfish
-    #EM_pred.sel.trawlfish
-    #EM_pred.sel.forfish
-    #EM_pred.sel.LLsurv
-    #EM_pred.sel.USJPsurv
+    EM_q.LLsurv[y,i] <- get_ABC$q_srv1
+    EM_q.USJPsurv[y,i] <- get_ABC$q_srv2
+    EM_q.preifqfish[y,i] <- get_ABC$q_srv5
+    EM_q.postifqfish[y,i] <- get_ABC$q_srv8
+    EM_q.forfish[y,i] <- get_ABC$q_srv6
     
-    #EM_q.LLsurv
-    #EM_q.USJPsurv
-    #EM_q.preifqfish
-    #EM_q.postifqfish
-    #EM_q.trawlfish
-    #EM_q.forfish
-    
-    #EM_predAC.surv
-    #EM_predAC.fish
-    #EM_natage
-    #EM_totbiomass
-    #EM_F.a
+    #EM_predAC.surv <- get_ABC$
+    #EM_predAC.fish <- get_ABC$
+    #EM_natage <- get_ABC$
+    #EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
+    #EM_F.a <- get_ABC$
     
     
     ### side notes:
