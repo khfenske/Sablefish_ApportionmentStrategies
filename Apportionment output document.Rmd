@@ -29,6 +29,22 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
+```{r, echo=FALSE}
+#install the libraries
+require(dplyr)
+require(reshape2)
+require(tidyverse)
+require(ggplot2)
+```
+
+```{r, echo=FALSE}
+#read in the apportionment R object files
+
+#do final analysis and plotting across apportionment types
+
+
+```
+
 # Conditioning period
 
 
@@ -82,8 +98,26 @@ sum(temp_b)/(length(forproj.styr:n.year)*n.sims)
 
 ### US longline survey index (RPN)
 
+
 ## Recruitment
 
 
+## SSB time series
+
+
 # Performance metrics
+## stability for each apportionment option (over all areas summed, and by area) - mean and median absolute change in in ABC year to year and for all years
+
+## How well do apportionment options track true biomass? Relative percent difference in OM biomass by area vs EM apportionment by area
+
+## For each apportionment option, what is the proportion of years*sims where EM F/F40<1?
+
+## For each apportionment option, what is the proportion of years*sims where EM B/B40<1? What is the mean and median depletion (SSBterminal year/B40) across sims for each year from EM? (plot it)
+
+## mean and median age at harvest from EM (all areas combined) (and roughly mapped to size)
+## mean and median catch/ABC for each area and overall
+
+
+
+
 

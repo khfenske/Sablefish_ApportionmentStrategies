@@ -33,7 +33,7 @@ require(reshape2)
 require(tidyverse)
 require(ggplot2)
 #for extract-pars.R
-require(tidyverse)
+#require(tidyverse)
 #require(readxl)
 require(xlsx)
 # for sample-age-comps.R
@@ -470,10 +470,11 @@ run.model <- function() {
   }
   
   # extract ABC (read in a report file)
-  # this will come out of my EM  CHECK IF THERE ARE CODE CHANGES IN THE EM ABOUT F RATIO
+  #  CHECK IF THERE ARE CODE CHANGES IN THE EM ABOUT F RATIO
   get_ABC <<- readList(file.path(dir.temp,"tem.rep"))
   get_mgc <<- read_pars(fn="tem", drop_phase=TRUE)#, file.path(dir.temp,"tem.par"))  #this doesn't work for getting the max gradient component
-  
+  #get_Natage <<- readList(file.path(dir.temp,"Natage.rep"))
+  #get_catchatage <<- readList(file.path(dir.temp,"catchatage.rep"))
   setwd(wd) #return to original working directory
 } #close run.model function
 
@@ -1030,7 +1031,12 @@ for(i in 1:n.sims) {
     
     #EM_predAC.surv <- get_ABC$
     #EM_predAC.fish <- get_ABC$
-    #EM_natage <- get_ABC$
+    
+    #EM_natage_f <- get_Natage$natage_f
+    #EM_natage_m <- get_Natage$natage_m
+    #EM_LLcatchatage <- get_catchatage$LLcatchatage
+    #EM_TRcatchatage <- TRcatchatage
+    
     #EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
     #EM_F.a <- get_ABC$
     
@@ -1049,7 +1055,7 @@ for(i in 1:n.sims) {
 }#next i
 
 #save an image of the workspace for this set of years*sims for the specificed apportionment option (apport.opt)
-#save(list=ls(all.names=TRUE), file=paste0(dir.admb,"/apportionment",apport.opt,".RData"), envir=.GlobalEnv) #can use load or attach to retreive the saved image
+save(list=ls(all.names=TRUE), file=paste0(dir.admb,"/apportionment",apport.opt,".RData"), envir=.GlobalEnv) #can use load or attach to retreive the saved image
 
 #call the function to look at performance metrics here.
 

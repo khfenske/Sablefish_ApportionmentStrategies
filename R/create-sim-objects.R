@@ -101,7 +101,6 @@ create_sim_objects <- function() {
   EM_q.USJPsurv <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_q.preifqfish <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_q.postifqfish <<- matrix(NA,nrow=n.year,ncol=n.sims)
-  EM_q.trawlfish <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_q.forfish <<- matrix(NA,nrow=n.year,ncol=n.sims)
   
   #EM_predAC.surv <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))

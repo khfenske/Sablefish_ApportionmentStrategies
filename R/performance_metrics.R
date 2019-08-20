@@ -415,7 +415,7 @@ for(y in forproj.styr:n.year) {
   for(n in 15:n.year){
     EMmed_matrix[y,n] <- median(EM_pred.fishRPW[y,n,],na.rm=TRUE) #median pred EM fishery RPN for each year, across sims
   }}
-for(j in 1:60){
+for(j in 1:n.year){
   EMmed_med[j] <- median(EMmed_matrix[,j],na.rm=TRUE)
 }
 #calc medians across sims for OM
@@ -715,20 +715,20 @@ for(i in 1:n.sims){
   lines(sum_appC[,i]~c(1:n.year),typ="l")
 }
 
-Start fixing here on Monday
+
 #median apportioned (+- ~95% CIS of mean) TAC by area
 apportioned_C  #dim:  years, gears, areas, sims
 #sum over gears for total app.catch by area, year, sim
 apportioned_C_sum <- array(data=NA,dim=c(n.year,n.area,n.sims),dimnames=list(years,areas,sims))
 apportioned_C_sum <- apply(apportioned_C,c(1,3,4),sum)
-#find the median apportioned catch for each final EM run (year n.year) across sims
-med_appC <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(length(1:n.sims)),dimnames=list(years[forproj.styr:n.year],sims))
-for(y in forproj.styr:n.year) {
+#find the median apportioned catch by area for each final EM run (year n.year) across sims
+med_appC <-  vector()#matrix(data=NA,nrow=c(length(1:n.year)),ncol=c(length(1:n.sims)),dimnames=list(years,sims))
+#for(y in 1:n.year) {
 for(m in 1:n.area) {
-  med_appC[y,m] <- median(apportioned_C_sum[y,m,])
-}}
+  med_appC[m] <- median(apportioned_C_sum[n.year,m,])
+}#}
 
-melted_appC <- melt(apportioned_C_sum[n.year,,],na.rm=FALSE,value.name="TAC")  #terminal year only
+melted_appC <- melt(apportioned_C_sum[,,],na.rm=TRUE,value.name="TAC")  #
 ggplot(melted_appC,aes(x=Var1,y=TAC,group=Var1))+
   geom_boxplot()
 
@@ -736,8 +736,8 @@ ggplot(melted_appC,aes(x=Var1,y=TAC,group=Var1))+
 apportioned_C_sum2 <- matrix(data=NA,nrow=c(length(1:n.year)),ncol=c(length(1:n.sims)),dimnames=list(years,sims))
 apportioned_C_sum2 <- apply(apportioned_C_sum,c(1,3),sum)
 melted_appC2 <- melt(apportioned_C_sum2[n.year,],na.rm=FALSE,value.name="TAC")  #terminal year only
-median(melted_appC[,3])
-boxplot(melted_appC[,3])
+median(melted_appC2[,1])
+boxplot(melted_appC2[,1])
 
 #median EM catch (+- ~95% CIs of mean) catch for all areas summed
 sum_EM_predcatch
@@ -752,10 +752,10 @@ app_num <- array(data=NA,dim=c(n.year,n.area,n.sims),dimnames=list(years,areas,s
 for(i in 1:n.sims){
   for(m in 1:n.area){
     for(y in forproj.styr:n.year){
-      if(apportioned_C_sum[y,m,i] < threshold) { #1 means above threshold
+      if(apportioned_C_sum[y,m,i] < threshold) { #0 if below threshold
         app_num[y,m,i] <- 0      
       } else {
-      app_num[y,m,i] <- 1        #below threshold
+      app_num[y,m,i] <- 1        #if above threshold
       }
     }
   }
@@ -763,17 +763,44 @@ for(i in 1:n.sims){
 #proportion years in each area above threshold across all years and sims 
 temp_a <- vector() 
 temp_a <- apply(app_num[forproj.styr:n.year,,],2,sum)
-(temp_a1 <- temp_a/(n.sims*(length(forproj.styr:n.year))) )
+(temp_a1 <- temp_a/(n.sims*(length(forproj.styr:n.year))) ) 
 
 
 
 
 #Proportion years/sims where of the catch in area x is more than 50% (or a changeable value) fish younger than the age @50% mature
+#test.age <- 4
 
 #Mean, median (+CIs) of age and length (converted from age?) for catches (apportioned TAC) in each EM area across years and sims
-#how do we even know this?
 
+#ABC stability
 #Median (across sims) change in TAC to each area from year to year (by area and for areas combined)
+#by area
+apportioned_C_sum[forproj.styr:n.year,,1]
+diff_apport <- array(data=NA,dim=c(length(1:n.year),n.area,n.sims),dimnames=list(1:n.year,1:n.area,1:n.sims))
+for(i in 1:n.sims){
+  for(m in 1:n.area){
+  for(y in 1:(n.year-1)){
+    diff_apport[y+1,m,i] <- (abs(apportioned_C_sum[y,m,i]-apportioned_C_sum[y+1,m,i])/(abs(apportioned_C_sum[y,m,i]+apportioned_C_sum[y+1,m,i])/2))*100
+  }}}
+diff_apport[(forproj.styr):n.year,,]
+diff_apport_mean <- vector()
+diff_apport_med <- vector()
+for(m in 1:n.area){
+  diff_apport_mean[m] <- mean(diff_apport[(forproj.styr):n.year,m,]) #may need to change years over which mean and median are taken
+  diff_apport_med[m] <- median(diff_apport[(forproj.styr):n.year,m,])
+}
+diff_apport[,6,]
+#areas combined
+apportioned_C_sum2
+diff_apport <- matrix(data=NA,nrow=length(1:n.year),ncol=n.sims,dimnames=list(1:n.year,1:n.sims))
+for(i in 1:n.sims){
+for(y in 1:(n.year-1)){
+  diff_apport[y+1,i] <- (abs(apportioned_C_sum2[y,i]-apportioned_C_sum2[y+1,i])/(abs(apportioned_C_sum2[y,i]+apportioned_C_sum2[y+1,i])/2))*100
+  }}
+diff_apport[(forproj.styr):n.year,]
+mean(diff_apport[(forproj.styr):n.year,]) #may need to change years over which mean and median are taken
+median(diff_apport[(forproj.styr):n.year,])
 
 #Catch at age * price @ age/size by area and for all areas (OM) and compare to EM catch at age * price
 
@@ -786,15 +813,63 @@ temp_a <- apply(app_num[forproj.styr:n.year,,],2,sum)
 #yield##
 
 #Bx%##
-actual vs predicted
-proportion of years below B/B40 EM-EM
-proportion of years were B/B40>1 but in that year true B/B40 is <1
+#actual vs predicted
+EM_B40[forproj.styr:n.year,]
+ssb_summed
+#OM biomass by area, year, sim
+B_summed <- array(data=NA,dim=c(1:n.year,1:n.area,1:n.sims),dimnames=list(years,areas,sims))
+B_summed <- apply(B,c(2,4,5),sum) #biomass by area, year, sim
+OM_B_mean <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
+OM_B_mean <- apply(B_summed,c(1:2),mean) #mean across sims for each year and area
+OM_B_med <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
+OM_B_med <- apply(B_summed,c(1:2),median) #median across sims for each year and area
+#OM biomass by year, sim 
+B_summed2 <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
+B_summed2 <- apply(B,c(2,5),sum) #biomass by year, sim 
+OM_B_mean2 <- vector()
+OM_B_mean2 <- apply(B_summed,1,mean) #mean across sims for each year
+OM_B_med2 <- vector()
+OM_B_med2 <- apply(B_summed,1,median)
+
+
+#proportion of years below B/B40 EM-EM
+EM_B40
+EM_spbiom[n.year,,]
+EM_bratio <- matrix(data=NA,nrow=length(1:n.year),ncol=length(1:n.sims))
+for(i in 1:n.sims){
+  for(y in 1:n.year){
+EM_bratio[y,i] <- EM_spbiom[n.year,y,i]/EM_B40[y,i]
+}}
+#prop of years overfished (across years and sims)
+#mean ratio across years and sims
+#plot b/b40 for all sims over time w horiz line for 1
+
+
+
+#proportion of years were B/B40>1 but in that year true B/B40 is <1
+
+EM_B40[y,i] <- get_ABC$B40
+EM_SBF40[y,i] <- get_ABC$SBF40
+EM_SBF35[y,i] <- get_ABC$SBF35
+#EM_SBF0 <- get_ABC$SBF0
+
+ABC_projection[y,i] <- get_ABC$ABC_proj[1]
+EM_depletion1[y,i] <- get_ABC$Depletion
+EM_depletion2[y,i] <- (apply(ssb[,,,,i],3,sum)[y])/EM_B40[y,i]  #calculated quantity EM endyr spawnbiom / B40
+EM_spbiom[y,2:y,i] <- get_ABC$spawn_biom #rows are OM year loops, cols are years within an OM loop, 3rd dimension is sim
+
 
 
 #Fx%##
 
 
-#ABC stability
-apportioned_C_sum
+## mean and median age at harvest from EM (all areas combined) (and roughly mapped to size)
+## mean and median catch/ABC for each area and overall
 
 
+#Create objects with N.apportionment dimensions
+#load("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/apportionment1.RData")
+#gather all the apportionment-type specfic output here and save into objects with an apportionment dimension added. 
+#Save those objects so we can add 
+#to them in other workspaces.
+#call those objects back in in the rmd file

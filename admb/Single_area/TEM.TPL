@@ -1128,8 +1128,8 @@ REPORT_SECTION
   report << SBF40 << endl;
   report << "$SBF35" << endl;
   report << SBF35 << endl;
- // report << "$SBF0" << endl;
- // report << SBF0 << endl;
+  report << "$SB0" << endl;
+  report << SB0 << endl;
   report << "$Depletion"<< endl; 
   report << Depletion << endl;
 
@@ -1190,6 +1190,25 @@ REPORT_SECTION
   report << tot_biom << endl;
   }
 
+FUNCTION write_catchatage
+  ofstream catchrep("Catchatage.rep");
+
+  if(last_phase()) {
+  catchrep << "$LLcatchatage" << endl;
+  catchrep << pred_catch_fish1 << endl;
+  catchrep << "$TRcatchatage" << endl;
+  catchrep << pred_catch_fish3 << endl;
+  }
+
+FUNCTION write_Natage
+  ofstream Nrep("Natage.rep");
+
+  if(last_phase()) {
+  Nrep << "$natage_f" << endl;
+  Nrep << natage_f << endl;
+  Nrep << "$natage_m" << endl;
+  Nrep << natage_m << endl;
+  }
 
 FUNCTION write_fullrep
   ofstream fullrep("sable.rep");
@@ -1370,3 +1389,5 @@ TOP_OF_MAIN_SECTION
 
 FINAL_SECTION
   write_fullrep();
+  write_catchatage();
+  write_Natage();
