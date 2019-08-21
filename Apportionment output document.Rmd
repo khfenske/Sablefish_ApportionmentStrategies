@@ -29,47 +29,138 @@ plot(pressure)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=TRUE}
 #install the libraries
 require(dplyr)
 require(reshape2)
 require(tidyverse)
 require(ggplot2)
+#for extract-pars.R
+#require(readxl)
+require(xlsx)
+# for sample-age-comps.R
+require(gtools) 
+#for .dat file building
+require(PBSmodelling)
+require(R2admb)
 ```
 
 ```{r, echo=FALSE}
-#read in the apportionment R object files
+#read in the apportionment R object files for indexing
+wd <- ("C:/Repositories/Sablefish_ApportionmentStrategies") #may need to manually enter your wd here
+dir.output <- file.path(wd,"output/")
+setwd(dir.output)
+n.year <- readRDS("n.year.rds")
+years <- readRDS("years.rds")
+n.sims <- readRDS("n.sims.rds")
+sims <- readRDS("sims.rds")
+n.age <- readRDS("n.age.rds")
+ages <- readRDS("ages.rds")
+n.sex <- readRDS("n.sex.rds")
+sexes <- readRDS("sexes.rds")
+n.area <- readRDS("n.area.rds")
+areas <- readRDS("areas.rds")
+age.rec <- readRDS("age.rec.rds")
+A <- readRDS("A.rds")
+apport.opt <- readRDS("apport.opt.rds")
+n.fish <- readRDS("n.fish.rds")
+fish <- readRDS("fish.rds")
 
-#do final analysis and plotting across apportionment types
+###THESE ITEMS NEED MANUAL INPUT!!!###
+n.apports <- 4 #number of apportionment options that have been run and are to be compiled here
+apports <- c(1,2,3,4) #the folder numbers of the apportionment options to be compiled
+#"Equal-1","Fixed-2","Equilibrium-3","NPFMC-4","Exp_survey_wt-5","Exp_fishery_wt-6","Non-Exp_NPFMC-7",
+#"Partial_fixed-8","Age_based-9","RandEff-10"","All_to_one-11","TermYear_biom-12","Penalized-13","Non-exp_Agebased-14"
+apport.names <- list("Equal-1","Fixed-2","Equilibrium-3","NPFMC-4")
+
+#plotting things
+forproj.styr <- 44 #define the year (y) where EM is first run 
+OMyears <- c(1977:2018)
+rpn_years <- c(15:43)
+rpw_years <- c(15:42)
+
+#read in data from single area management model/Kari's single model (it's sort of hybrid data)
+mgmt_dat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/permanant_tem_single2018.dat")
+#read in data from the single area mgmt report file
+mgmt_rep <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Management/tem_simplified.rep")
+#read in data from the conditioning OM years
+OM <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem_single2018.dat")
 
 
 ```
+# General information
+
+
 
 # Conditioning period
+OM model set up - initial (1976) numbers, splitting these by areas and then ages then converting to biomass
+OM conditioning period is the same for years 1977-2018 for all subsequent EMs
+6 OM areas, movement specified between 6 areas, age based movement possible, but not implemented
+assume recruitment is 50:50 sex split and split equally between OM areas
 
+# Forward looping model validation figures
+general flow/order of operations - calculate F associated with catch permitted from previous year's assessment and apportionment, recruit new cohort, F and M occur, movement occurs, sample the (moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle'] ...then start over at beginning with a new year
 
-# Model validation figures
+number of years for the forward loop
+number of sims
+assuming recruitment is 50:50 sex split
+the apportionment options we are testing and specific options/choices within these
+
 ## Convergence
-This is the proportion of model years that converged for each simulation run, for the selected apportionment type. Convergenge is defined as the EM run in ADMB had a maximum gradient component less than 0.1.
-```{r, echo=FALSE,eval=TRUE}
-conv_num <- matrix(NA,ncol=n.sims,nrow=n.year)
+```{r,echo=FALSE}
+mgc_val <- 0.001
+```
+
+For these simulations, a model was considered 'converged' for a given year if the max gradient component was < `r mgc_val`. The proportion of sims which converged for each years for each apportionment method are:
+
+```{r, echo=FALSE}
+AM_max_grads <- array(data=NA, dim=c(n.year,n.sims,length(1:n.apports)), dimnames=list(years,sims,apports)) #Apportionment Master (AM) file for analyses
+
+for(b in 1:n.apports){
+  dir.temp <- paste0(dir.output,"/Apport.Option_",b)
+  setwd(dir.temp)
+AM_max_grads[,,b] <- readRDS("maxgrads.rds") 
+  setwd(dir.output) #set wd back where it was
+}
+#proportion of years in a sim that converged
+#average proportion of years in all sims that converged for each apportionment option
+conv_num <- array(data=NA, dim=c(n.year,n.sims,n.apports), dimnames=list(years,sims,apport.names))
 #max_grads <- (format(max_grads,scientific=FALSE))
-for(i in 1:n.sims){
-  for(y in forproj.styr:n.year){
-    if(abs(max_grads[y,i]) < 0.1) {
-    conv_num[y,i] <- 1      
-    } else {
-      conv_num[y,i] <- 0        
+for(b in 1:n.apports){
+  for(i in 1:n.sims){
+    for(y in forproj.styr:n.year){
+      if(abs(AM_max_grads[y,i,b]) < mgc_val) {
+        conv_num[y,i,b] <- 1      
+      } else {
+        conv_num[y,i,b] <- 0      
+      }
     }
   }
 }
-
-temp_b <- apply(conv_num[forproj.styr:n.year,],2,sum)
-(temp_b1 <- temp_b/length(forproj.styr:n.year))
-
-#proportion of sims and years that converged
-sum(temp_b)/(length(forproj.styr:n.year)*n.sims) 
+#proportion converged 
+#(proportion of sims that converged in year y) for each apportionment type
+temp_a <- apply(conv_num[forproj.styr:n.year,,],c(1,3),sum)
+(temp_a1 <- temp_a/n.sims) 
 ```
+
+
+The proportion of years which converged for each sims and apportionment method are:
+```{r, echo=FALSE}
+#(proportion of years that converged in each sim i)
+temp_b <- apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)
+(temp_b1 <- temp_b/length(forproj.styr:n.year))
+```
+
+Finally, the overall proportion of years x sims that converged for each apportionment method are:
+```{r, echo=FALSE} 
+#proportion of sims and years that converged
+for(b in 1:n.apports){
+temp_c <- sum(temp_b[,b])/(length(forproj.styr:n.year)*n.sims) 
+print(temp_c)
+}
+```
+
+
 
 ## Selectivity
 ### Longline fishery Pre-IFQ

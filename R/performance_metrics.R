@@ -705,7 +705,7 @@ for(y in 1:n.year){
   }}
 
 plot(sum_appC[,1]~c(1:n.year),typ="l",lwd=3)
-lines(sum_OM_catch[,1]~c(1:n.year),typ="l",col="red",lwd=3)
+lines(sum_OM_catch[,1]~c(1:n.year),typ="p",col="red",lwd=3)
 lines(sum_C.b[,1]~c(1:n.year),typ="l",col="blue",lwd=3)
 lines(sum_EM_predcatch[,1]~c(1:n.year),typ="l",col="green",lwd=3)
 
@@ -817,7 +817,7 @@ median(diff_apport[(forproj.styr):n.year,])
 EM_B40[forproj.styr:n.year,]
 ssb_summed
 #OM biomass by area, year, sim
-B_summed <- array(data=NA,dim=c(1:n.year,1:n.area,1:n.sims),dimnames=list(years,areas,sims))
+B_summed <- array(data=NA,dim=c(n.year,n.area,n.sims),dimnames=list(years,areas,c(1:n.sims)))
 B_summed <- apply(B,c(2,4,5),sum) #biomass by area, year, sim
 OM_B_mean <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
 OM_B_mean <- apply(B_summed,c(1:2),mean) #mean across sims for each year and area
@@ -827,10 +827,12 @@ OM_B_med <- apply(B_summed,c(1:2),median) #median across sims for each year and 
 B_summed2 <- matrix(data=NA, nrow=length(1:n.year),ncol=length(1:n.sims))
 B_summed2 <- apply(B,c(2,5),sum) #biomass by year, sim 
 OM_B_mean2 <- vector()
-OM_B_mean2 <- apply(B_summed,1,mean) #mean across sims for each year
+OM_B_mean2 <- apply(B_summed2,1,mean) #mean across sims for each year
 OM_B_med2 <- vector()
-OM_B_med2 <- apply(B_summed,1,median)
+OM_B_med2 <- apply(B_summed2,1,median)
 
+plot(OM_B_med2~years,typ="l",lwd=1,col="black")#,ylim=c(0,500))
+lines(OM_B_mean2~years,typ="l",lwd=3,col="red")
 
 #proportion of years below B/B40 EM-EM
 EM_B40

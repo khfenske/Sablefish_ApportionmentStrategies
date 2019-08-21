@@ -47,7 +47,7 @@ for(m in 1:n.area) {
     va_prop[f,m,,] <- prop.table(vuln.age[f,m,,])
   }
 }
-#get catch at age by area
+#get catch at age by area in kt
 for(y in 1:43) {
   for(m in 1:n.area) { 
     for(f in 1:n.fish) {

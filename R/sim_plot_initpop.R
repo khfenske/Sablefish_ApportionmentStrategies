@@ -28,7 +28,47 @@ sim_plot_initpop <- function() {
   OMyears <- c(1977:2018)
 
 ####make some plots  
+  #abundance N plots
+  #change from generated 5D array to a dataframe for plotting
+  melted_Ninit <- melt(N, varnames = c("Sex", "Year","Age", "Area","Sim"), na.rm=FALSE, value.name = "Numbers")
+  b2 <- melted_Ninit
+  
+  b3<-b2%>%group_by(Year,Sim) %>% summarize(Numbers=sum(Numbers,na.rm=T))
+  b4<-b3
+  ggplot(b4)+geom_line(aes(x=Year,y=Numbers,colour=Sim),alpha=0.5)+theme_bw(base_size=13)+
+    theme(legend.position="none")+ggtitle("Total Numbers trajectories")
+  ggsave("Numbers_tot_lines.png",width=8,height=5,dpi=325, path=dir.output)  
+  
+  dim(N)
+  simN_sum <- apply(N[,,,,1],2,sum)
+  simB_sum <- apply(B[,,,,1],2,sum)
+  mgmtN <- c(227.569424,225.133078,214.348775,202.312974,234.635297,228.675439,
+             223.024404,233.474335,226.238316,210.835746,197.26262,183.638328,
+             162.608407,138.835745,123.192946,118.53197,108.080044,93.414099,
+             83.964022,159.561953,166.4444777,157.2009806,180.5002287,183.5209969,
+             205.8722927,184.1836206,181.7986075,174.4102706,150.830862,129.4616883,
+             113.7451334,121.4683674,104.0961752,111.7859086,99.2854377,89.0569055,
+             82.837678,87.163893,77.2629253,96.086156,100.0417057,96.0967192,
+             124.029391,113.7307861,110.2138382,99.9701582,95.7489713,89.5424044,
+             84.6328623,80.147036,86.599641,79.9309313,77.8211843,67.23660782,
+             64.6833935,68.2611382,208.8285434,225.8192621,212.4078021)
+  (mgmtN) #59 years  
+  par(mfrow=c(1,1))
+  plot(mgmtN~mgmt_rep_years, ylim=c(0,250),typ="l",lwd=3,col="red")
+  lines(simN_sum[2:43]~OMyears,typ="l",lwd=3,col="black") # plotting one sim worth of N for illustration - but all sims should be same?
+  
+  N_F <- apply(N[1,,,,1],c(1,2),sum)
+  N_M <- apply(N[2,,,,1],c(1,2),sum)
+  par(mfrow=c(6,6))
+  for(a in 1:n.age){  
+  plot(N_F[,a]~years,typ="l",col="red")
+  lines(N_M[,a]~years,typ="l",col="blue")
+  }
 
+  
+  apply(N[,43,,,1],c(2),sum)
+  write.table(apply(N[,43,,,1],c(2),sum),"clipboard")
+  
   #spawning biomass
   mgmt_rep$SpBiom #1960-2018
   ssb_fsum <- apply(ssb[1,1:30,2:43,,1],2,sum) #1977-2018
@@ -67,12 +107,15 @@ sim_plot_initpop <- function() {
        5.31364,7.73184,16.88416,2.30162,29.923,16.93562,10.15266,41.4692,6.34222,12.67834,6.05714,10.71728,
        7.79438,8.44232,7.82108,17.84292,5.03906,9.29366,1.01781,7.98824,13.20866,150.343,40.1198,12.4912)
   recruits.area #recruits for the forward projecting period
-  sim_rec <- apply(recruits.area,c(1),sum)
+  sim_rec <- apply(recruits.area,c(1,3),sum)
   cond.rec$Recruitment #recruits for the conditioning period
   mean_sim <- mean(mgmt_rep_recruitment[18:58])
   mean_mgmt <- mean(sim_rec)
   
-  plot(sim_rec~c(1976:(1975+length(years))),xlim=c(1960,2020),typ="l",lwd=3,col="blue")
+  plot(sim_rec[,1]~c(1976:(1975+length(years))),xlim=c(1960,2020),typ="l",lwd=3,col="blue",ylim=c(0,300))
+  for(i in 1:n.sims){
+    lines(sim_rec[,i]~c(1976:(1975+length(years))),typ="l",lwd=1,col="blue")
+  }
   lines(mgmt_rep_recruitment~mgmt_rep_years,typ="l",lwd=3,col="red")  
   lines(cond.rec$Recruitment~OMyears,lty=3,lwd=3,col="black")
 
@@ -92,12 +135,12 @@ sim_plot_initpop <- function() {
                               554.820613993086, 444.38539069095, 420.076843267757,
                               484.066574150728, 385.215796739882, 494.334197637078,
                               561.460234787346, 611.493838991725)
-  #the sim 1 survey vs the mgmt model observed survey values
+  #the sim survey vs the mgmt model observed survey values
   plot(mgmt_rep_SurveyN~c(15:43),ylim=c(0,1000),typ="l",lwd=3,col="red") #management model
-  lines(OM_Surv.RPN[15:43,1]~rpn_years, lwd=3,col="black") #simulated values
-  #the sim 2 survey vs the mgmt model observed survey values
-  plot(mgmt_rep_SurveyN~c(15:43),ylim=c(0,1000),typ="l",lwd=3,col="red") #management model
-  lines(OM_Surv.RPN[15:43,2]~rpn_years, lwd=3,col="black")#simulated values
+  for(i in 1:n.sims){
+    lines(OM_Surv.RPN[15:43,i]~rpn_years, lwd=1,col="black") #simulated values
+  }
+
   
   #indices - fishery index vs the mgmt observed fishery values
   OM_Fish.RPW
@@ -114,42 +157,14 @@ sim_plot_initpop <- function() {
                             656.339331262708, 656.427863349683)
   #the sim 1 survey vs the mgmt model observed survey values
   plot(mgmt_rep_FishBiomass~c(15:42),ylim=c(0,2500),typ="l",lwd=3,col="red")
-  lines(OM_Fish.RPW[15:42,1]~rpw_years, lwd=3,col="black")
-  #the sim 2 survey vs the mgmt model observed survey values
-  plot(mgmt_rep_FishBiomass~c(15:42),ylim=c(0,2500),typ="l",lwd=3,col="red")
-  lines(OM_Fish.RPW[15:42,2]~rpw_years, lwd=3,col="black")  
+  for(i in 1:n.sims){
+  lines(OM_Fish.RPW[15:42,i]~rpw_years, lwd=1,col="black")
+  }
+
   
   
   
-  #abundance N plots
-  #change from generated 5D array to a dataframe for plotting
-  melted_Ninit <- melt(N, varnames = c("Sex", "Year","Age", "Area","Sim"), na.rm=FALSE, value.name = "Numbers")
-  b2 <- melted_Ninit
-  
-  b3<-b2%>%group_by(Year,Sim) %>% summarize(Numbers=sum(Numbers,na.rm=T))
-  b4<-b3
-  ggplot(b4)+geom_line(aes(x=Year,y=Numbers,colour=Sim),alpha=0.5)+theme_bw(base_size=13)+
-    theme(legend.position="none")+ggtitle("Total Numbers trajectories")
-  ggsave("Numbers_tot_lines.png",width=8,height=5,dpi=325, path=dir.output)  
-  
-  dim(N)
-  simN_sum <- apply(N[,,,,1],2,sum)
-  mgmtN <- c(227.569424,225.133078,214.348775,202.312974,234.635297,228.675439,
-             223.024404,233.474335,226.238316,210.835746,197.26262,183.638328,
-             162.608407,138.835745,123.192946,118.53197,108.080044,93.414099,
-             83.964022,159.561953,166.4444777,157.2009806,180.5002287,183.5209969,
-             205.8722927,184.1836206,181.7986075,174.4102706,150.830862,129.4616883,
-             113.7451334,121.4683674,104.0961752,111.7859086,99.2854377,89.0569055,
-             82.837678,87.163893,77.2629253,96.086156,100.0417057,96.0967192,
-             124.029391,113.7307861,110.2138382,99.9701582,95.7489713,89.5424044,
-             84.6328623,80.147036,86.599641,79.9309313,77.8211843,67.23660782,
-             64.6833935,68.2611382,208.8285434,225.8192621,212.4078021)
-  (mgmtN) #59 years  
-  plot(mgmtN~mgmt_rep_years, ylim=c(0,250),typ="l",lwd=3,col="red")
-  lines(simN_sum[2:43]~OMyears,typ="l",lwd=3,col="black")
-  
-  
-  #age comps
+   #age comps
   #Spatial movement obs vs pred age comps - fixed gear fishery (fish1) AREA 1
   length(OMyears)
   OM_Surv.RPN.age
@@ -193,14 +208,14 @@ sim_plot_initpop <- function() {
   
   #Fmort
   #F.mort[f,y,m,i]
-  par(mfrow=c(3,3))
-  for(i in 1:n.sims){
+  par(mfrow=c(2,3))
+  #for(i in 1:n.sims){
     for(f in 1:n.fish) {
       for(m in 1:n.area){
       plot(F.mort[f,,m,i]~years,ann=FALSE, typ="l", lty=1, col="red" , lwd=2, ylim=c(0,0.15))
       #lines(B77$obs_fish1_age_1[i,]~B77$ages, typ="p", pch=16)
       legend("topright",legend=c(f,m))
-      }}}
+      }}#}
 
   #selectivity
   dim(va)

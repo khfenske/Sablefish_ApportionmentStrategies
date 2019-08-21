@@ -18,9 +18,9 @@ estimate_Fmort4catch <- function(catch, temp.selex, temp.N, wa=wa, mx=mx, bisect
   
   ### Testing ###
   # temp.area <- 1
-  # temp.selex <- va[2,1,,]
+  # temp.selex <- va[2,1,1,]
   # catch <- (temp.catchnumbiom[1]*1000000) #kg
-  # temp.N <- N[,2,,temp.area,1] #Sex, year, age, area, sim
+  # temp.N <- N[1,2,,temp.area,1] #Sex, year, age, area, sim
   # bisection <- FALSE
   ###############
   
@@ -29,7 +29,7 @@ estimate_Fmort4catch <- function(catch, temp.selex, temp.N, wa=wa, mx=mx, bisect
     #  Works by iteratively adjusting bounds depending on where
     #   current estimate is relative to the objective (catch)
     range <- vector(length=2)
-    range[1] <- 1e-3 #was e-3
+    range[1] <- 1e-4 #was e-3
     range[2] <- 2 #this limits the F mort to an upper bound of 1 when it's set to 1
 
     #Iterate

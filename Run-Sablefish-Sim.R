@@ -19,9 +19,9 @@ dir.figs <- file.path(wd,"figs")
 dir.output <- file.path(wd,"output")
 dir.admb <- file.path(wd,"admb/Single_area")
 dir.R <- file.path(wd,"R")
-#dir.x <- file.path("C:/Repositories/hidden files with conf data") #this is for Kari's file paths - Curry and Dana, comment this out and 
+dir.x <- file.path("C:/Repositories/hidden files with conf data") #this is for Kari's file paths - Curry and Dana, comment this out and 
 # then un-comment-out the following line to use the dummy file
-dir.x <- dir.data #change this path to whatever place you have 
+#dir.x <- dir.data #change this path to whatever place you have 
 #the confidential catch data files stored. DO NOT LOAD TO GITHUB.
 
 EM_name <- "tem"
@@ -33,7 +33,6 @@ require(reshape2)
 require(tidyverse)
 require(ggplot2)
 #for extract-pars.R
-#require(tidyverse)
 #require(readxl)
 require(xlsx)
 # for sample-age-comps.R
@@ -61,7 +60,7 @@ source(file.path(dir.R,'sablefish-conditioning-datfile-builder.R'))
 source(file.path(dir.R,'sablefish-datfile-builder.R'))
 source(file.path(dir.R,'read-movement-rates.R')) #Function to read in movement rates
 source(file.path(dir.R,'copy-admb-sim.R')) #Function to copy files to the new sim folders
-
+source(file.path(dir.R,'save_RDSfiles.R')) #function called saveFerris to save objects from each sim as RDS files
 # Compile ADMB Code ==============================================  uncomment for MAC users or if Kari ever gets her path fixed
 #setwd(dir.admb)
 #os<-.Platform$OS.type
@@ -70,8 +69,8 @@ source(file.path(dir.R,'copy-admb-sim.R')) #Function to copy files to the new si
 #setwd(wd)
 
 # Extract Parameters =============================================
-#extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
-extract_pars(input.file="Sablefish_Input.xlsx")
+extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
+#extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 #confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
 
@@ -169,22 +168,33 @@ for(m in 1:n.area){
 # Initialize Population - Conditioning the simulations (year 1, or 1976) ===========
 N.by.area.props <- as.vector(c(0.123525838,0.138168043,0.112731838,0.401168634,0.102462464,0.121943183)) #mean proportion 
 # by area for n.areas from survey RPN (1979-2018) (from SurveyRPN.xlsx)
-#read in proportions at age for males and females from 1976 estimated N from the single area EM, which are the 
+#read in proportions at age for males and females from 1976 estimated N from the single area management EM, which are the 
 #same for both sexes so read in once here 
-Nprop.by.age <- as.vector(c(0.01499621,0.012601811,0.031930367,	0.030601254,	0.249981823,	0.051333394,	0.023219615,	0.009110259,	0.024604504,
-                            0.025654192,	0.014809429,	0.013695526,	0.012304411,	0.010897499,	0.009556439,	0.008318243,	0.007200544,
-                            0.006206813,	0.005333111,	0.004572241,	0.403269678,	0.003351983,	0.002870484,	0.002458885,	0.002107328,
-                            0.001806924,	0.001549864,	0.001330032,	0.001142024,	0.013185113)) #for 1:n.ages
+Nprop.by.age <- matrix(data=NA, nrow=length(1:n.sex),ncol=length(1:n.age))
+#Nprop.by.age <- as.vector(c(0.01499621,0.012601811,0.031930367,	0.030601254,	0.249981823,	0.051333394,	0.023219615,	0.009110259,	0.024604504,
+# 0.025654192,	0.014809429,	0.013695526,	0.012304411,	0.010897499,	0.009556439,	0.008318243,	0.007200544,
+# 0.006206813,	0.005333111,	0.004572241,	0.403269678,	0.003351983,	0.002870484,	0.002458885,	0.002107328,
+#0.001806924,	0.001549864,	0.001330032,	0.001142024,	0.013185113)) #for 1:n.ages
+Nprop.by.age[1,] <- c(0.031716103,0.031602849,0.030958186,0.029729302,0.028568173,0.028113849,0.028094936,0.028355016,
+                      0.028945266,0.029768139,0.030796569,0.031896544,0.032960482,0.033873809,0.034457647,0.034560065,
+                      0.034497449,0.034899462,0.035871293,0.036757433,0.037249226,0.037344223,0.037219186,0.037004976,
+                      0.036735971,0.036431323,0.036106482,0.035773381,0.035441679,0.034270983) #female proportion by sex and age from 2018 management EM for 1976 numbers at age
+Nprop.by.age[2,] <- c(0.035124353,0.035249778,0.035963717,0.037324658,0.038610564,0.039113709,0.039134655,0.038846627,
+                      0.038192948,0.037281648,0.036142702,0.034924522,0.033746252,0.032734778,0.032088199,0.031974776,
+                      0.03204412,0.031598907,0.030522642,0.029541276,0.028996634,0.028891429,0.029029902,0.029267131,
+                      0.029565044,0.02990243,0.030262179,0.030631075,0.030998423,0.032294923) #male proportion by sex and age from 2018 management EM for 1976 numbers at age
+
 #get catch at age in numbers (millions) or biomass (kt) from single area EM
 cond_catch_at_age <- array(data=NA, dim=c(43,n.fish,n.area,n.sex,n.age),dimnames=list(1:43,fish,1:n.area,sexes,ages))
-cond_catch_at_age <- cond_catch_AA(cond.catch, va, Ctype=2) #Ctype 1= biomass (kt), 2=numbers (millions)
+cond_catch_at_age <- cond_catch_AA(cond.catch, va, Ctype=2) #Ctype 1= biomass (kt), 2=numbers (millions)    ONLY USE CATCH IN NUMBERS!
 #sum across ages and sexes
 temp.catchnumbiom <- array(data=NA, dim=c(43,n.fish,n.area),dimnames=list(1:43,fish,1:n.area))
 temp.catchnumbiom <- apply(cond_catch_at_age,1:3,sum)
+apply(temp.catchnumbiom,1,sum)
 
 ### set up N samples and sigmas for sampling
-LLsurvRPNsigma <- 0.2
-LLfishRPWsigma <- 0.4
+LLsurvRPNsigma <- 0.05 #0.2
+LLfishRPWsigma <- 0.05 #0.4
 LLsurvAC_sampsize <- 200
 LLfishAC_sampsize <- 200
 
@@ -196,7 +206,9 @@ a <- 1
 for(i in 1:n.sims) {
   for(m in 1:n.area) {
     for(a in 1:n.age) {
-      N[,1,a,m,] <- Nstart * 0.5 * (Nprop.by.age[a]) #Nstart is in millions (check units), 0.5 is to divide equally between sexes 
+      for(h in 1:n.sex){
+        N[h,1,a,m,] <- Nstart * (Nprop.by.age[h,a]) #Nstart is in millions (check units), 0.5 is to divide equally between sexes 
+      } #close sex    
     } #close age
   } #close area
 }#next i
@@ -217,13 +229,15 @@ for(i in 1:n.sims) {
     for(m in 1:n.area) {
       f <- 1
       for(f in 1:n.fish) {
+        #for(h in 1:n.sex){
         # Find Fishing Mortality Rate for Apportioned Catch Level ------------------------ 
-        temp.Fmort <- estimate_Fmort4catch(catch=0.5*temp.catchnumbiom[y-1,f,m], 
-                                           temp.selex=va[f,m,,],
-                                           temp.N=N[,y-1,,m,i], 
+        temp.Fmort <- estimate_Fmort4catch(catch=temp.catchnumbiom[y-1,f,m], 
+                                           temp.selex=va[f,m,,], #there's a sex issue here
+                                           temp.N=N[,y-1,,m,i], #need to feed is N summed across sexes
                                            wa=wa, mx=mx, 
                                            bisection=TRUE)$Fmort
         F.mort[f,y-1,m,i] <- temp.Fmort  
+        #} #close sex
       } #next fishery/gear 
     } #close area
     
@@ -233,7 +247,7 @@ for(i in 1:n.sims) {
         for(m in 1:n.area) {
           #cond.rec are values read in from an excel file in the extract-pars.R function - they are estimated 
           #recruitments for 1977-2018 from the single area EM
-          N[,y,a,m,i] <- (1/6)*0.5*(cond.rec$Recruitment[y-1]) #multiplying by 0.5 to split evenly between sexes, y-1 calls the first year of cond.rec list 
+          N[,y,a,m,i] <- (rec.by.area.props[m])*0.5*(cond.rec$Recruitment[y-1]) #multiplying by 0.5 to split evenly between sexes, y-1 calls the first year of cond.rec list, 1/n.areas splits recruitment between areas equally 
         } # close area
         
         
@@ -345,15 +359,22 @@ for(i in 1:n.sims) {
     } #next area m
   } #close year 
   
-  for(y in 15:42) {
+  for(y in 15:20) { #pre IFQ 1990-1995 (aka 15-20)
+    m <- 1
+    for(m in 1:n.area) {
+      # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
+      #specify another comp sample size here
+      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[1,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+    } #next area m
+  } #close year 
+  for(y in 21:42) { #post IFQ years
     m <- 1
     for(m in 1:n.area) {
       # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
       #specify another comp sample size here
       Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[2,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
     } #next area m
-  } #close year 
-  
+  } #close year   
   ###then sample age comps for a different set of years for each set of comps
   # longline/fixed gear post-IFQ fishery age comps in numbers 
   y <- 24  
@@ -434,7 +455,7 @@ for(i in 1:n.sims) {
 ## then generate the updated .dat file to be pushed to the EM
 #only building a single conditioning dat file instead of 1 for each sim since they should all be the same for this project (for now)
 build_conditioning_datfile()  
-#sim_plot_initpop()
+#write conditioning period only objects to rds for plotting in RMD
 
 
 
@@ -475,11 +496,14 @@ run.model <- function() {
   get_mgc <<- read_pars(fn="tem", drop_phase=TRUE)#, file.path(dir.temp,"tem.par"))  #this doesn't work for getting the max gradient component
   #get_Natage <<- readList(file.path(dir.temp,"Natage.rep"))
   #get_catchatage <<- readList(file.path(dir.temp,"catchatage.rep"))
+  #get_agerep1 <<- readList(file.path(dir.temp,"agecomp_surv.rep"))
+  #get_agerep2 <<- readList(file.path(dir.temp,"agecomp_fish.rep"))
+  
   setwd(wd) #return to original working directory
 } #close run.model function
 
 #Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, trawl catches are placeholders, order is BS-AI-WG-CG-WY-EY/SEO
-for(y in 43:44) {  
+for(y in 43:44) {  #43 is 2018, 44 is 2019
   for(i in 1:n.sims){
     apportioned_C[y,1,,i] <- c(0,0,0,0,0,0) 
     apportioned_C[y,2,,i] <- c(1.501,2.03,1.659,5.246,1.765,3.179)
@@ -758,12 +782,14 @@ for(i in 1:n.sims) {
     #for subsequent years, use the EM output for ABC, which is generated at the end of this code chunk
     for(m in 1:n.area) {
       for(f in 1:n.fish) {
-        temp.Fmort <- estimate_Fmort4catch(catch=0.5*apportioned_C[y-1,f,m,i],
+        #for(h in 1:n.sex) {
+        temp.Fmort <- estimate_Fmort4catch(catch=apportioned_C[y-1,f,m,i],
                                            temp.selex=va[f,m,,],
                                            temp.N=N[,y-1,,m,i], 
                                            wa=wa, mx=mx, 
                                            bisection=FALSE)$Fmort
         F.mort[f,y-1,m,i] <- temp.Fmort 
+        #} #close sex
       } #close fish
     } #close area
     
@@ -906,14 +932,14 @@ for(i in 1:n.sims) {
     time.elapsed<-run.model()
     
     #=============================================================
-
+    
     #copy .rep file to the sim folder and save with a unique name to keep a record of the EM run report
     #add a function here
     #if get_mgc$maxgrad < 0.01 {
     #  file.copy(from=file.path(dir.from,"tem.exe"), to=file.path(dir.to,"tem.exe"),overwrite=T)
     #}
     #else {
-      
+    
     #}
     
     #=============================================================
@@ -974,7 +1000,7 @@ for(i in 1:n.sims) {
       apportioned_C[y+1,2,2,i] <- ABC_TS[y+1,2,i] #fill in ABC to area 2, post-ifq gear
       apportioned_C[y+1,2,3,i] <- ABC_TS[y+1,3,i] #fill in ABC to area 3, post-ifq gear
       apportioned_C[y+1,2,4,i] <- ABC_TS[y+1,4,i] #fill in ABC to area 4, post-ifq gear
-      apportioned_C[y+1,2,5,i] <- ABC_TS[y+1,5,i]*0.95 #post IFQ fishery, giving 95% of ABC to fixed gear
+      apportioned_C[y+1,2,5,i] <- ABC_TS[y+1,5,i]*0.95 #post IFQ fishery, giving 95% of ABC to fixed gear (this is only doing e-w split, and doing it wrong, need to also apport by gear here and above)
       apportioned_C[y+1,3,5,i] <- ABC_TS[y+1,5,i]*0.05 #trawl fishery, giving 5% of ABC to trawl
       apportioned_C[y+1,2,6,i] <- ABC_TS[y+1,6,i]*0.95 #post IFQ fishery, giving 95% of ABC to fixed gear
       apportioned_C[y+1,3,6,i] <- ABC_TS[y+1,6,i]*0.05 #trawl fishery, giving 5% of ABC to trawl
@@ -1001,8 +1027,8 @@ for(i in 1:n.sims) {
     ABC_projection[y,i] <- get_ABC$ABC_proj[1]
     EM_depletion1[y,i] <- get_ABC$Depletion
     EM_depletion2[y,i] <- (apply(ssb[,,,,i],3,sum)[y])/EM_B40[y,i]  #calculated quantity EM endyr spawnbiom / B40
-    EM_spbiom[y,2:y,i] <- get_ABC$spawn_biom #rows are OM year loops, cols are years within an OM loop, 3rd dimension is sim
-
+    #EM_spbiom[y,2:y,i] <- get_ABC$spawn_biom #rows are OM year loops, cols are years within an OM loop, 3rd dimension is sim (this is giving me an error for now)
+    
     EM_pred.srvRPN[y,15:y,i] <- get_ABC$pred_srv3_biom  #US dom LL survey RPN, starts in 1990/yr 15
     EM_pred.fishRPW[y,15:(y-1),i] <- get_ABC$pred_srv5_biom #US fishery RPW, starts in 1990/yr 15
     
@@ -1016,12 +1042,12 @@ for(i in 1:n.sims) {
     EM_pred.sel.postifqfish[y,,2,i] <- get_ABC$fish4_sel_m
     EM_pred.sel.trawlfish[y,,1,i] <- get_ABC$fish3_sel_f
     EM_pred.sel.trawlfish[y,,2,i] <- get_ABC$fish3_sel_m
-    #EM_pred.sel.forfish <- get_ABC$
-    #EM_pred.sel.forfish <- get_ABC$
+    ##EM_pred.sel.forfish <- get_ABC$
+    ##EM_pred.sel.forfish <- get_ABC$
     EM_pred.sel.LLsurv[y,,1,i] <- get_ABC$srv1_sel_f
     EM_pred.sel.LLsurv[y,,2,i] <- get_ABC$srv1_sel_m
-    #EM_pred.sel.USJPsurv <- get_ABC$
-    #EM_pred.sel.USJPsurv <- get_ABC$
+    ##EM_pred.sel.USJPsurv <- get_ABC$
+    ##EM_pred.sel.USJPsurv <- get_ABC$
     
     EM_q.LLsurv[y,i] <- get_ABC$q_srv1
     EM_q.USJPsurv[y,i] <- get_ABC$q_srv2
@@ -1029,16 +1055,16 @@ for(i in 1:n.sims) {
     EM_q.postifqfish[y,i] <- get_ABC$q_srv8
     EM_q.forfish[y,i] <- get_ABC$q_srv6
     
-    #EM_predAC.surv <- get_ABC$
-    #EM_predAC.fish <- get_ABC$
+    #EM_predAC.surv[y,,21:(y-1),,i] <- get_agerep1$pred_srv1_age
+    #EM_predAC.fish[y,,24:(y-1),,i] <- get_agerep2$pred_fish1_age
     
-    #EM_natage_f <- get_Natage$natage_f
-    #EM_natage_m <- get_Natage$natage_m
-    #EM_LLcatchatage <- get_catchatage$LLcatchatage
-    #EM_TRcatchatage <- TRcatchatage
+    #EM_natage[1,y,,2:y,,i] <- get_Natage$natage_f
+    #EM_natage[2,y,,2:y,,i] <- get_Natage$natage_m
+    #EM_LLcatchatage[y,,2:y,,i] <- get_catchatage$LLcatchatage
+    #EM_TRcatchatage[y,,2:y,,i] <- TRcatchatage
     
     #EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
-    #EM_F.a <- get_ABC$
+    #EM_F.a[y,,i] <- get_ABC$$Fully_selected_F
     
     
     ### side notes:
@@ -1054,8 +1080,13 @@ for(i in 1:n.sims) {
   }#next y
 }#next i
 
-#save an image of the workspace for this set of years*sims for the specificed apportionment option (apport.opt)
-save(list=ls(all.names=TRUE), file=paste0(dir.admb,"/apportionment",apport.opt,".RData"), envir=.GlobalEnv) #can use load or attach to retreive the saved image
+#call a function to save all the objects created here as .RDS in an apportionment-specific file
+dir.create(paste0(dir.output,"/Apport.Option_",apport.opt))
+saveFerris() #call the function to save all the objects we want to keep as RDS files (load and use them elsewhere for analyses and plotting)
 
-#call the function to look at performance metrics here.
+#save an image of the workspace for this set of years*sims for the specificed apportionment option (apport.opt)
+#can use load or attach to retreive the saved image
+save(list=ls(all.names=TRUE), file=paste0(dir.admb,"/apportionment",apport.opt,".RData"), envir=.GlobalEnv) 
+
+
 
