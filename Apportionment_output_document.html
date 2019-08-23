@@ -128,7 +128,40 @@ $(document).ready(function () {
 
 <div id="general-information" class="section level1">
 <h1>General information</h1>
-<p>These simulation analyses contain two primary components, a 6-area operating model (OM) and a 1-area estimation model (EM). The OM simulates data in two periods - a conditioning period which occurs for years 1977-2018, and a forward projecting perion which runs for years 2019-2025. # Conditioning period OM model set up - initial (1976) numbers, splitting these by areas and then ages then converting to biomass OM conditioning period is the same for years 1977-2018 for all subsequent EMs 6 OM areas, movement specified between 6 areas, age based movement possible, but not implemented assume recruitment is 50:50 sex split and split equally between OM areas</p>
+<p>This document presents the apportionment simulation work to date. It is a work in progress and we are seeking feedback on OM and EM set up, alternative performance metrics that would be useful in making apportionment method recommendations, and any other suggestions for simulation and model performance.</p>
+<p>These apportionment simulation analyses contain two primary components, a 6-area operating model (OM) and a 1-area estimation model (EM). The OM simulates data in two periods - a deterministic conditioning period which occurs for years 1977-2018 and is the same across simulations, and a stochastic forward projecting portion which runs for years 2019-2025. The EM is similar to the EM used for sablefish management, but begins in 1977 instead of 1960, does not include length compositions, and does not fit a trawl survey. After the conditioning period data is generated in the OM, the OM population is sampled, and simulated data from the OM is combined into a single area dataset which is passed to the EM.</p>
+<p>In the forward projecting period, the OM-EM is iterative. The order of operations for year y: OM - Read in previous year’s apportioned ABC by area, estimate the F required to catch, apply F and M to OM population, move fish between areas, sample the population for fishery and longline survey abundance indices and for longline survey and fixed gear fishery age compositions, build the .dat file and pass it to the EM in ADMB, run the</p>
+<p>At present for each apportionment method we examine, we are running 4 simulations covering years 1977-2025. For November, we hope to present results for 100 (or more) simulated datasets each looping over years 2019-2049 (30 years for forward looping years).</p>
+<p>There are some inherent assumptions in this simulation we would like to present up front: 1) we assume ABC=TAC and 100% of ABC is caught in each region 2) we do not correct for whale depredation in the ABC or survey 3) other things… 4) Operator error is real. 5) OMG, I’m not smart enough to do this.</p>
+</div>
+<div id="apportionment-methods" class="section level1">
+<h1>Apportionment methods</h1>
+<p>In the analyses presented in this docyment we examine X apportion methods: Equal-1, Fixed-2, Equilibrium-3, NPFMC-4.<br />
+The future plan is to examine this suite: 1 - Equal<br />
+2 - Fixed<br />
+3 - Equilibrium<br />
+4 - NPFMC<br />
+5 - Exp_survey_wt<br />
+6 - Exp_fishery_wt<br />
+7 - Non-Exp_NPFMC<br />
+8 - Partial_fixed<br />
+9 - Age_based<br />
+10 - RandEff<br />
+11 - All_to_one<br />
+12 - TermYear_biom-12<br />
+13 - Penalized<br />
+14 - Non-exp_Agebased</p>
+</div>
+<div id="conditioning-period" class="section level1">
+<h1>Conditioning period</h1>
+<p>OM model set up - initial (1976) numbers, splitting these by areas and then ages then converting to biomass OM conditioning period is the same for years 1977-2018 for all subsequent EMs 6 OM areas, movement specified between 6 areas, age based movement possible, but not implemented assume recruitment is 50:50 sex split and split equally between OM areas. The OM conditioning period is deterministic, with recruitment from the EM read in, catch, read in and the F which generated that catch estimated and applied to the population.</p>
+<p>OM specifications recruitment</p>
+</div>
+<div id="conditioning-period-validation" class="section level1">
+<h1>conditioning period validation</h1>
+</div>
+<div id="em-specifications" class="section level1">
+<h1>EM specifications</h1>
 </div>
 <div id="forward-looping-model-validation-figures" class="section level1">
 <h1>Forward looping model validation figures</h1>

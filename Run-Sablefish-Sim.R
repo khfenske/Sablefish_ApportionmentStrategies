@@ -13,6 +13,7 @@
 
 # Define Workflow ================================================
 wd <- getwd() #Project Directory
+wd <- setwd("C:/Repositories/Sablefish_ApportionmentStrategies") #may need to manually enter your wd here
 
 dir.data <- file.path(wd,"data")
 dir.figs <- file.path(wd,"figs")
@@ -495,10 +496,10 @@ run.model <- function() {
   #  CHECK IF THERE ARE CODE CHANGES IN THE EM ABOUT F RATIO
   get_ABC <<- readList(file.path(dir.temp,"tem.rep"))
   get_mgc <<- read_pars(fn="tem", drop_phase=TRUE)#, file.path(dir.temp,"tem.par"))  #this doesn't work for getting the max gradient component
-  #get_Natage <<- readList(file.path(dir.temp,"Natage.rep"))
-  #get_catchatage <<- readList(file.path(dir.temp,"catchatage.rep"))
-  #get_agerep1 <<- readList(file.path(dir.temp,"agecomp_surv.rep"))
-  #get_agerep2 <<- readList(file.path(dir.temp,"agecomp_fish.rep"))
+  get_Natage <<- readList(file.path(dir.temp,"Natage.rep"))
+  get_catchatage <<- readList(file.path(dir.temp,"catchatage.rep"))
+  get_agerep1 <<- readList(file.path(dir.temp,"agecomp_surv.rep"))
+  get_agerep2 <<- readList(file.path(dir.temp,"agecomp_fish.rep"))
   
   setwd(wd) #return to original working directory
 } #close run.model function
@@ -1036,12 +1037,12 @@ for(i in 1:n.sims) {
     EM_B40[y,i] <- get_ABC$B40
     EM_SBF40[y,i] <- get_ABC$SBF40
     EM_SBF35[y,i] <- get_ABC$SBF35
-    #EM_SBF0 <- get_ABC$SBF0
+    EM_SBF0 <- get_ABC$SBF0
     
     ABC_projection[y,i] <- get_ABC$ABC_proj[1]
     EM_depletion1[y,i] <- get_ABC$Depletion
     EM_depletion2[y,i] <- (apply(ssb[,,,,i],3,sum)[y])/EM_B40[y,i]  #calculated quantity EM endyr spawnbiom / B40
-    #EM_spbiom[y,2:y,i] <- get_ABC$spawn_biom #rows are OM year loops, cols are years within an OM loop, 3rd dimension is sim (this is giving me an error for now)
+    EM_spbiom[y,2:y,i] <- get_ABC$spawn_biom #rows are OM year loops, cols are years within an OM loop, 3rd dimension is sim (this is giving me an error for now)
     
     EM_pred.srvRPN[y,15:y,i] <- get_ABC$pred_srv3_biom  #US dom LL survey RPN, starts in 1990/yr 15
     EM_pred.fishRPW[y,15:(y-1),i] <- get_ABC$pred_srv5_biom #US fishery RPW, starts in 1990/yr 15
@@ -1069,16 +1070,16 @@ for(i in 1:n.sims) {
     EM_q.postifqfish[y,i] <- get_ABC$q_srv8
     EM_q.forfish[y,i] <- get_ABC$q_srv6
     
-    #EM_predAC.surv[y,,21:(y-1),,i] <- get_agerep1$pred_srv1_age
-    #EM_predAC.fish[y,,24:(y-1),,i] <- get_agerep2$pred_fish1_age
+    EM_predAC.surv[y,,21:(y-1),,i] <- get_agerep1$pred_srv1_age
+    EM_predAC.fish[y,,24:(y-1),,i] <- get_agerep2$pred_fish1_age
     
-    #EM_natage[1,y,,2:y,,i] <- get_Natage$natage_f
-    #EM_natage[2,y,,2:y,,i] <- get_Natage$natage_m
-    #EM_LLcatchatage[y,,2:y,,i] <- get_catchatage$LLcatchatage
-    #EM_TRcatchatage[y,,2:y,,i] <- TRcatchatage
+    EM_natage[1,y,,2:y,,i] <- get_Natage$natage_f
+    EM_natage[2,y,,2:y,,i] <- get_Natage$natage_m
+    EM_LLcatchatage[y,,2:y,,i] <- get_catchatage$LLcatchatage
+    EM_TRcatchatage[y,,2:y,,i] <- TRcatchatage
     
-    #EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
-    #EM_F.a[y,,i] <- get_ABC$$Fully_selected_F
+    EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
+    EM_F.a[y,,i] <- get_ABC$Fully_selected_F
     
     
     ### side notes:

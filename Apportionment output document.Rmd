@@ -21,6 +21,14 @@ require(gtools)
 require(PBSmodelling)
 require(R2admb)
 
+###THESE ITEMS NEED MANUAL INPUT!!!###
+n.apports <- 4 #number of apportionment options that have been run and are to be compiled here
+apports <- c(1,2,3,4) #the folder numbers of the apportionment options to be compiled
+#"Equal-1","Fixed-2","Equilibrium-3","NPFMC-4","Exp_survey_wt-5","Exp_fishery_wt-6","Non-Exp_NPFMC-7",
+#"Partial_fixed-8","Age_based-9","RandEff-10"","All_to_one-11","TermYear_biom-12","Penalized-13","Non-exp_Agebased-14"
+apport.names <- list("Equal-1","Fixed-2","Equilibrium-3","NPFMC-4") #list the names of the apportionment options being compared
+
+
 #read in the apportionment R object files for indexing
 wd <- ("C:/Repositories/Sablefish_ApportionmentStrategies") #may need to manually enter your wd here
 dir.output <- file.path(wd,"output/")
@@ -41,18 +49,12 @@ apport.opt <- readRDS("apport.opt.rds")
 n.fish <- readRDS("n.fish.rds")
 fish <- readRDS("fish.rds")
 
-###THESE ITEMS NEED MANUAL INPUT!!!###
-n.apports <- 4 #number of apportionment options that have been run and are to be compiled here
-apports <- c(1,2,3,4) #the folder numbers of the apportionment options to be compiled
-#"Equal-1","Fixed-2","Equilibrium-3","NPFMC-4","Exp_survey_wt-5","Exp_fishery_wt-6","Non-Exp_NPFMC-7",
-#"Partial_fixed-8","Age_based-9","RandEff-10"","All_to_one-11","TermYear_biom-12","Penalized-13","Non-exp_Agebased-14"
-apport.names <- list("Equal-1","Fixed-2","Equilibrium-3","NPFMC-4")
-
 #plotting things
 forproj.styr <- 44 #define the year (y) where EM is first run 
-OMyears <- c(1977:2018)
-rpn_years <- c(15:43)
-rpw_years <- c(15:42)
+OMyears <- c(1977:2018) #conditioning period years for OM
+rpn_years <- c(15:43) #LL survey index years
+rpw_years <- c(15:42) #fixed gear fishery years
+mgmt_rep_years <- c(1960:2018) # these are the years for management EM data (for comparison plotting)
 
 #read in data from single area management model/Kari's single model (it's sort of hybrid data)
 mgmt_dat <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/permanant_tem_single2018.dat")
@@ -61,18 +63,123 @@ mgmt_rep <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Man
 #read in data from the conditioning OM years
 OM <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem_single2018.dat")
 
+#read in OM objects as you use them below
+#read in EM objects as you use them below
 
 ```
+
 # General information
-These simulation analyses contain two primary components, a 6-area operating model (OM) and a 1-area estimation model (EM). The OM simulates data in two periods - a deterministic conditioning period which occurs for years 1977-2018 and is the same across simulations, and a stochastic forward projecting portion which runs for years 2019-`r 1976+n.year-1`.  The EM is similar to the EM used for sablefish management, but begins in 1977 instead of 1960, does not include length compositions, and does not fit a trawl survey.
+This document presents the apportionment simulation work to date. It is a work in progress and we are seeking feedback on OM and EM set up, alternative performance metrics that would be useful in making apportionment method recommendations, and any other suggestions for simulation and model performance.
+
+These apportionment simulation analyses contain two primary components, a 6-area operating model (OM) and a 1-area estimation model (EM). The OM simulates data in two periods - a deterministic conditioning period which occurs for years 1977-2018 and is the same across simulations, and a stochastic forward projecting portion which runs for years 2019-`r 1976+n.year-1`.  The EM is similar to the EM used for sablefish management, but begins in 1977 instead of 1960, does not include length compositions, and does not fit a trawl survey. After the conditioning period data is generated in the OM, the OM population is sampled, and simulated data from the OM is combined into a single area dataset which is passed to the EM. 
+
+In the forward projecting period, the OM-EM is iterative. The order of operations for year y: OM - Read in previous year's apportioned ABC by area, estimate the F required to catch, apply F and M to OM population, move fish between areas, sample the population for fishery and longline survey abundance indices and for longline survey and fixed gear fishery age compositions, build the .dat file and pass it to the EM in ADMB, run the
+
+At present for each apportionment method we examine, we are running `r n.sims` simulations covering years 1977-`r 1976+n.year-1`. For November, we hope to present results for 100 (or more) simulated datasets each looping over years 2019-2049 (30 years for forward looping years).
+
+There are some inherent assumptions in this simulation we would like to present up front:
+1) we assume ABC=TAC and 100% of ABC is caught in each region
+2) we do not correct for whale depredation in the ABC or survey 
+3) other things...
+4) Operator error is real.
+5) OMG, I'm not smart enough to do this.
+
+
+# Apportionment methods
+In the analyses presented in this docyment we examine X apportion methods: `r apport.names`.  
+The future plan is to examine this suite:  
+1 - Equal  
+2 - Fixed  
+3 - Equilibrium  
+4 - NPFMC  
+5 - Exp_survey_wt  
+6 - Exp_fishery_wt  
+7 - Non-Exp_NPFMC  
+8 - Partial_fixed  
+9 - Age_based  
+10 - RandEff  
+11 - All_to_one  
+12 - TermYear_biom-12  
+13 - Penalized  
+14 - Non-exp_Agebased  
 
 # Conditioning period
-OM model set up - initial (1976) numbers, splitting these by areas and then ages then converting to biomass
+OM model set up - initial (1976) numbers, 
+splitting these by areas and then ages then converting to biomass
 OM conditioning period is the same for years 1977-2018 for all subsequent EMs
 6 OM areas, movement specified between 6 areas, age based movement possible, but not implemented
 assume recruitment is 50:50 sex split and split equally between OM areas. The OM conditioning period is deterministic, with recruitment from the EM read in, catch, read in and the F which generated that catch estimated and applied to the population. 
 
-conditioning period validation
+OM specifications  
+initial population  
+recruitment  
+q  
+selextivity in OM is spatial for some fleets/surveys.
+movement  
+
+
+# conditioning period validation
+The figures and tables below are presented to show the ability of the OM conditioning period to match the current EM historical data. Because this isn't a full MSE, alternative states of nature and alternative realities are not the focus. 
+
+Abundance in numbers (millions of fish, summed over areas) generated from the OM matches the Management model EM.
+```{r, echo=FALSE}
+dir.temp <- paste0(dir.output,"/Apport.Option_",1) #OM for conditioning period is the same across apportionment options, so pulling conditioning period output from foler 1
+setwd(dir.temp)
+N <- readRDS("N.rds") #OM conditioning period N 
+B <- readRDS("B.rds")
+setwd(dir.output) #set wd back where it was
+```
+
+``` {r, echo=FALSE}
+#management N, by year (summed across ages, sexes) for 1960-2018 is:
+mgmtN <- c(227.569424,225.133078,214.348775,202.312974,234.635297,228.675439,
+           223.024404,233.474335,226.238316,210.835746,197.26262,183.638328,
+           162.608407,138.835745,123.192946,118.53197,108.080044,93.414099,
+           83.964022,159.561953,166.4444777,157.2009806,180.5002287,183.5209969,
+           205.8722927,184.1836206,181.7986075,174.4102706,150.830862,129.4616883,
+           113.7451334,121.4683674,104.0961752,111.7859086,99.2854377,89.0569055,
+           82.837678,87.163893,77.2629253,96.086156,100.0417057,96.0967192,
+           124.029391,113.7307861,110.2138382,99.9701582,95.7489713,89.5424044,
+           84.6328623,80.147036,86.599641,79.9309313,77.8211843,67.23660782,
+           64.6833935,68.2611382,208.8285434,225.8192621,212.4078021)
+
+#OM conditioning period N, by year (summed across ages, sexes, areas)
+simN_sum <- apply(N[,,,,1],2,sum) # sim 1 results only (sims are all identical for conditioning period)
+par(mfrow=c(1,1))
+plot(mgmtN~mgmt_rep_years, ylim=c(0,250),typ="l",lwd=3,col="red",ylab="Year",xlab="Abundance (millions)")
+lines(simN_sum1[2:43]~OMyears,typ="l",lwd=3,col="black") 
+legend("bottomleft", legend=c("Management EM", "Conditioning OM"),lty=c(1,1),lwd=c(3,3), col=c("red","black"))
+
+```
+
+
+Biomass (kt, summed over areas) generated from the OM matches the Management model EM.
+```{r, echo=FALSE}
+
+
+```
+
+
+Spawning biomass (kt, summed over areas) generated from the OM matches the Management model EM.
+```{r, echo=FALSE}
+
+
+```
+
+
+OM catch was designed to match EM observed catch.
+```{r, echo=FALSE}
+
+
+```
+
+
+OM recruitment was desined to match EM recruitment.
+```{r, echo=FALSE}
+
+
+```
+
 
 #EM specifications
 

@@ -24,6 +24,8 @@ sim_plot_initpop <- function() {
   #read in data from the conditioning OM years
   OM <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_area/tem_single2018.dat")
   head(OM)
+  
+  
   #OM data that's not in the .dat file (aka 'report' type data) includes:
   OMyears <- c(1977:2018)
 
@@ -52,8 +54,15 @@ sim_plot_initpop <- function() {
   #ggsave("Numbers_tot_lines.png",width=8,height=5,dpi=325, path=dir.output)  
   
   dim(N)
-  simN_sum <- apply(N[,,,,1],2,sum)
-  simB_sum <- apply(B[,,,,1],2,sum)
+  simN_sum1 <- apply(N[,,,,1],2,sum)
+  simN_sum2 <- apply(N[,,,,2],2,sum)
+  simN_sum3 <- apply(N[,,,,3],2,sum)
+  simN_sum4 <- apply(N[,,,,4],2,sum)
+ 
+  
+  
+  
+    simB_sum <- apply(B[,,,,1],2,sum)
   mgmtN <- c(227.569424,225.133078,214.348775,202.312974,234.635297,228.675439,
              223.024404,233.474335,226.238316,210.835746,197.26262,183.638328,
              162.608407,138.835745,123.192946,118.53197,108.080044,93.414099,
@@ -67,7 +76,10 @@ sim_plot_initpop <- function() {
   (mgmtN) #59 years  
   par(mfrow=c(1,1))
   plot(mgmtN~mgmt_rep_years, ylim=c(0,250),typ="l",lwd=3,col="red")
-  lines(simN_sum[2:43]~OMyears,typ="l",lwd=3,col="black") # plotting one sim worth of N for illustration - but all sims should be same?
+  lines(simN_sum1[2:43]~OMyears,typ="l",lwd=3,col="black") # plotting one sim worth of N for illustration - but all sims should be same?
+  lines(simN_sum2[2:43]~OMyears,typ="l",lwd=3,col="black")
+  lines(simN_sum3[2:43]~OMyears,typ="l",lwd=3,col="black")
+  lines(simN_sum4[2:43]~OMyears,typ="l",lwd=3,col="black")
   
   #N_F <- apply(N[1,,,,1],c(1,2),sum)
   #N_M <- apply(N[2,,,,1],c(1,2),sum)
