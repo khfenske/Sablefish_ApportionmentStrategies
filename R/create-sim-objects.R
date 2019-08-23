@@ -107,7 +107,7 @@ create_sim_objects <- function() {
   
   EM_predAC.surv <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))
   EM_predAC.fish <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))
-  EM_natage
+  EM_natage <<- array(dim=c(n.sex,n.year,n.age, n.year,n.age,n.sims), dimnames=list(sexes,years,ages,years,ages,sims))
   EM_totbiomass <<- array(dim=c(n.year,n.year, n.sims), dimnames=list(years, years, sims))
   EM_F_full <<- array(dim=c(n.year, n.year, n.sims), dimnames=list(years, years, sims)) #Age-specific Fishing mortality
   
