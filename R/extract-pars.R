@@ -13,8 +13,8 @@
 
 
 
-extract_pars <- function(input.file="Sablefish_Input_matchMGMTqselex.xlsx") {
-# extract_pars <- function(input.file="Sablefish_Input.xlsx") {
+#extract_pars <- function(input.file="Sablefish_Input_matchMGMTqselex.xlsx") {
+extract_pars <- function(input.file="Sablefish_Input.xlsx") {
     #require(tidyverse)
   #require(readxl)
   #require(xlsx)
@@ -92,12 +92,21 @@ extract_pars <- function(input.file="Sablefish_Input_matchMGMTqselex.xlsx") {
   a <- 1
   for(a in 1:n.age) {
     la[,a] <<- linf*(1-exp(-1*vbk*(ages[a]+to)))
-    # wa[a,] <<- alpha[1]*(la[a,1])^beta[1]
+     ##wa[a,] <<- alpha[1]*(la[a,1])^beta[1]
     ln.wa[,a] <<- log(ln_wa_par1) + ln_wa_par2*log(1-exp(-1*ln_wa_par3*(a+ln_wa_par4)))
-    wa[,a] <<- exp(ln.wa[,a])
+    #wa[,a] <<- exp(ln.wa[,a])
   }
   
-
+  wa[1,] <<- c(0.916819778,1.477123278,2.052195835,2.598202155,3.090971733,3.520478614,3.885686957,
+               4.190661834,4.441940672,4.646893835,4.812779804,4.946254777,5.053162923,5.138490103,
+              5.20640581,5.260347147,5.303117714,5.336986373,5.363778285,5.384954987,5.401682719,
+               5.414889559,5.425312496,5.433535815,5.440022136,5.445137382,5.449170763,5.452350711,
+               5.454857574,5.456833673)
+  wa[2,] <<- c(0.971715586,1.456610048,1.877666845,	2.216248989,	2.476126923,	2.669769481,	2.811274969,
+               2.913338963,	2.986303936,	3.038149188,	3.074833056,	3.100713565,	3.118935223,
+               3.131746354,	3.140744588,	3.147060361,	3.151491197,	3.1545986,	3.156777345,
+               3.158304712,	3.159375318,	3.160125696,	3.1606516,	3.161020166,	3.161278459,	3.161459467,
+               3.161586315,	3.161675206,	3.161737498,	3.161781151)
   
   # Extract: Maturity Parameters ==============================================================
   #Note: This should be updated to take maturity parameters
@@ -107,11 +116,16 @@ extract_pars <- function(input.file="Sablefish_Input_matchMGMTqselex.xlsx") {
   
   #Calculate Maturity @ Age
   ma <<- array(dim=c(n.sex, n.age), dimnames=list(sexes, c(1:n.age)))  
-  s <- 1
-  for(s in 1:n.sex) {
-    # Ma[,s] <- 1/(1+exp(-(ages - ahat[s])/ghat[s]) #Halibut Model
-    ma[s,] <<- 1/(1+exp(-ghat[s]*(ages - ahat[s]))) #Sablefish 2017 Assessment
-  }#next s
+  ma[1,] <<- c(0.006083885,0.023843063,0.076916038,0.19831158,0.393646519,0.604336724,0.765348989,
+               0.864708591,0.920670269,0.951682904,0.96921586,0.979475535,0.985715607,0.989658818,
+               0.992241742,0.993990254,0.995209671,0.996083126,0.996723891,0.99720407,0.997570789,
+               0.997855613,0.998080165,0.998259566,0.998404595,0.998523068,0.998620752,0.99870196,0.998769965,1)
+  ma[2,] <<- c(rep(0,times=n.age))
+  #s <- 1
+  #for(s in 1:n.sex) {
+   ##Ma[,s] <- 1/(1+exp(-(ages - ahat[s])/ghat[s]) #Halibut Model
+   #ma[s,] <<- 1/(1+exp(-ghat[s]*(ages - ahat[s]))) #Sablefish 2017 Assessment
+  #}#next s
   
   # Extract: Length Bins and Maturity @ Length ================================================
   #Length bins

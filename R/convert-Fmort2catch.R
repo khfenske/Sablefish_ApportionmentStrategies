@@ -24,6 +24,9 @@ convert_Fmort2catch <- function(Fmort, temp.selex, temp.N, wa=wa, mx=mx) {
   ###############
   
   #Fishing mortality rate at age
+  temp.selex[1,]<-temp.selex[1,]*1.1
+  temp.selex[2,]<-temp.selex[2,]*0.9
+  
   F_at_age <- Fmort*temp.selex
   
   #Total instantaneous mortality

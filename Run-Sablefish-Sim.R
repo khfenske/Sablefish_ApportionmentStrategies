@@ -45,7 +45,7 @@ require(R2admb)
 source(file.path(dir.R,'extract-pars.R'))
 source(file.path(dir.R,'extract-catch.R'))
 source(file.path(dir.R,'calc-selectivity.R'))
-source(file.path(dir.R,'calc-init-age-prop.R'))
+#source(file.path(dir.R,'calc-init-age-prop.R'))
 source(file.path(dir.R,'create-sim-objects.R'))
 source(file.path(dir.R,'create-sim-recruitments.R')) #Simulate Recruitment across years and sims
 source(file.path(dir.R,'create-cond-catch.R')) #creates an array of catch by year,age,sex,area,fish 
@@ -69,8 +69,8 @@ source(file.path(dir.R,'save_RDSfiles.R')) #function called saveFerris to save o
 #setwd(wd)
 
 # Extract Parameters =============================================
-extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
-#extract_pars(input.file="Sablefish_Input.xlsx")
+#extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
+extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 #confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
 
@@ -170,31 +170,32 @@ N.by.area.props <- as.vector(c(0.123525838,0.138168043,0.112731838,0.401168634,0
 # by area for n.areas from survey RPN (1979-2018) (from SurveyRPN.xlsx)
 #read in proportions at age for males and females from 1976 estimated N from the single area management EM, which are the 
 #same for both sexes so read in once here 
-Nprop.by.age <- matrix(data=NA, nrow=length(1:n.sex),ncol=length(1:n.age))
-#Nprop.by.age <- as.vector(c(0.01499621,0.012601811,0.031930367,	0.030601254,	0.249981823,	0.051333394,	0.023219615,	0.009110259,	0.024604504,
-# 0.025654192,	0.014809429,	0.013695526,	0.012304411,	0.010897499,	0.009556439,	0.008318243,	0.007200544,
-# 0.006206813,	0.005333111,	0.004572241,	0.403269678,	0.003351983,	0.002870484,	0.002458885,	0.002107328,
-#0.001806924,	0.001549864,	0.001330032,	0.001142024,	0.013185113)) #for 1:n.ages
-Nprop.by.age[1,] <- c(0.031716103,0.031602849,0.030958186,0.029729302,0.028568173,0.028113849,0.028094936,0.028355016,
-                      0.028945266,0.029768139,0.030796569,0.031896544,0.032960482,0.033873809,0.034457647,0.034560065,
-                      0.034497449,0.034899462,0.035871293,0.036757433,0.037249226,0.037344223,0.037219186,0.037004976,
-                      0.036735971,0.036431323,0.036106482,0.035773381,0.035441679,0.034270983) #female proportion by sex and age from 2018 management EM for 1976 numbers at age
-Nprop.by.age[2,] <- c(0.035124353,0.035249778,0.035963717,0.037324658,0.038610564,0.039113709,0.039134655,0.038846627,
-                      0.038192948,0.037281648,0.036142702,0.034924522,0.033746252,0.032734778,0.032088199,0.031974776,
-                      0.03204412,0.031598907,0.030522642,0.029541276,0.028996634,0.028891429,0.029029902,0.029267131,
-                      0.029565044,0.02990243,0.030262179,0.030631075,0.030998423,0.032294923) #male proportion by sex and age from 2018 management EM for 1976 numbers at age
+Nprop.by.age <- matrix(data=NA, nrow=length(1:n.sex),ncol=length(1:n.age)) #for 1:n.ages
+#female proportion by sex and age from 2018 management EM for 1976 numbers at age
+Nprop.by.age[1,] <- c(0.007498105,0.006273418,0.015515102,0.01421143,0.111430006,0.022654624,0.010255354,
+                      0.004042173,0.011060536,0.01180997,0.007027882,0.006733719,0.006270302,0.005739313,
+                      0.00517116,0.00457675,0.003971775,0.00341558,0.002966511,0.002611281,0.235760078,
+                      0.00198415,0.001702258,0.001452383,0.001236852,0.001052263,0.000894633,0.000760538,
+                      0.00064673,0.007170945)
+#male proportion by sex and age from 2018 management EM for 1976 numbers at age
+Nprop.by.age[2,] <- c(0.007498105,0.006328393,0.016415265,0.016389824,0.138551817,0.02867877,0.012964261,
+                      0.005068086,0.013543968,0.013844222,0.007781547,0.006961807,0.006034109,0.005158186,
+                      0.004385279,0.003741493,0.003228769,0.002791233,0.0023666,0.00196096,0.1675096,
+                      0.001367833,0.001168226,0.001006502,0.000870476,0.000754661,0.000655231,0.000569494,
+                      0.000495294,0.006014168)
 
 #get catch at age in numbers (millions) or biomass (kt) from single area EM
 cond_catch_at_age <- array(data=NA, dim=c(43,n.fish,n.area,n.sex,n.age),dimnames=list(1:43,fish,1:n.area,sexes,ages))
 cond_catch_at_age <- cond_catch_AA(cond.catch, va, Ctype=2) #Ctype 1= biomass (kt), 2=numbers (millions)    ONLY USE CATCH IN NUMBERS!
+
 #sum across ages and sexes
 temp.catchnumbiom <- array(data=NA, dim=c(43,n.fish,n.area),dimnames=list(1:43,fish,1:n.area))
 temp.catchnumbiom <- apply(cond_catch_at_age,1:3,sum)
-apply(temp.catchnumbiom,1,sum)
+
 
 ### set up N samples and sigmas for sampling
-LLsurvRPNsigma <- 0.05 #0.2
-LLfishRPWsigma <- 0.05 #0.4
+LLsurvRPNsigma <- 0.15 #0.2
+LLfishRPWsigma <- 0.15 #0.4
 LLsurvAC_sampsize <- 200
 LLfishAC_sampsize <- 200
 
@@ -207,7 +208,7 @@ for(i in 1:n.sims) {
   for(m in 1:n.area) {
     for(a in 1:n.age) {
       for(h in 1:n.sex){
-        N[h,1,a,m,] <- Nstart * (Nprop.by.age[h,a]) #Nstart is in millions (check units), 0.5 is to divide equally between sexes 
+        N[h,1,a,m,] <- Nstart * (Nprop.by.age[h,a]) #Nstart is in millions (check units) 
       } #close sex    
     } #close age
   } #close area
@@ -217,7 +218,7 @@ for(m in 1:n.area) {N[,1,,m,] <- N[,1,,m,] * N.by.area.props[m]} #N by age and a
 #now calculate biomass
 for(a in 1:n.age) {B[,1,a,,] <- N[,1,a,,] * wa[,a]}  #in kt
 
-
+(N[,1,,,1])
 # ==============Condition years 2-43 (aka 1977-2018)
 #set up initial population and dat file
 i <- 1
@@ -359,7 +360,7 @@ for(i in 1:n.sims) {
     } #next area m
   } #close year 
   
-  for(y in 15:20) { #pre IFQ 1990-1995 (aka 15-20)
+  for(y in 15:19) { #pre IFQ 1990-1994 (aka 15-19)
     m <- 1
     for(m in 1:n.area) {
       # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
@@ -367,7 +368,7 @@ for(i in 1:n.sims) {
       Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[1,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
     } #next area m
   } #close year 
-  for(y in 21:42) { #post IFQ years
+  for(y in 20:42) { #post IFQ years
     m <- 1
     for(m in 1:n.area) {
       # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
@@ -502,14 +503,18 @@ run.model <- function() {
   setwd(wd) #return to original working directory
 } #close run.model function
 
-#Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, trawl catches are placeholders, order is BS-AI-WG-CG-WY-EY/SEO
-for(y in 43:44) {  #43 is 2018, 44 is 2019
+#Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, order is BS-AI-WG-CG-WY-EY/SEO
+#for(y in 43:44) {  #43 is 2018, 44 is 2019
   for(i in 1:n.sims){
-    apportioned_C[y,1,,i] <- c(0,0,0,0,0,0) 
-    apportioned_C[y,2,,i] <- c(1.501,2.03,1.659,5.246,1.765,3.179)
-    apportioned_C[y,3,,i] <- c(0.25,0.25,0.25,0.25,0.25,0.25) ## these are just placeholders!! for 2018
-    apportioned_C[y,4,,i] <- c(0,0,0,0,0,0)
-  }}
+    apportioned_C[43,1,,i] <- c(0,0,0,0,0,0) 
+    apportioned_C[43,2,,i] <- c(0.53,0.48,1.18,3.64,1.62,3.01)
+    apportioned_C[43,3,,i] <- c(1.1,0.2,0.2,2.1,0,0) #0 for wy is replacement for conf data
+    apportioned_C[43,4,,i] <- c(0,0,0,0,0,0)
+    apportioned_C[44,1,,i] <- c(0,0,0,0,0,0) 
+    apportioned_C[44,2,,i] <- c(1.12575,1.5225,1.4931,4.7214,1.5885,2.8611) #these are 2018 EM estimates of 2019 ABC, before whale depred
+    apportioned_C[44,3,,i] <- c(0.37525,0.5075,0.1659,0.5246,0.1765,0.3179) 
+    apportioned_C[44,4,,i] <- c(0,0,0,0,0,0)
+  }#}
 
 #temp place for the apportionment functions (maybe get them into a separate function for simpler code)
 #apport.opt = 1: equal to all areas
@@ -996,14 +1001,23 @@ for(i in 1:n.sims) {
           apportioned_C[y+1,f,m,i] <- 0
         }
       }
-      apportioned_C[y+1,2,1,i] <- ABC_TS[y+1,1,i] #fill in ABC to area 1, post-ifq gear
-      apportioned_C[y+1,2,2,i] <- ABC_TS[y+1,2,i] #fill in ABC to area 2, post-ifq gear
-      apportioned_C[y+1,2,3,i] <- ABC_TS[y+1,3,i] #fill in ABC to area 3, post-ifq gear
-      apportioned_C[y+1,2,4,i] <- ABC_TS[y+1,4,i] #fill in ABC to area 4, post-ifq gear
-      apportioned_C[y+1,2,5,i] <- ABC_TS[y+1,5,i]*0.95 #post IFQ fishery, giving 95% of ABC to fixed gear (this is only doing e-w split, and doing it wrong, need to also apport by gear here and above)
-      apportioned_C[y+1,3,5,i] <- ABC_TS[y+1,5,i]*0.05 #trawl fishery, giving 5% of ABC to trawl
-      apportioned_C[y+1,2,6,i] <- ABC_TS[y+1,6,i]*0.95 #post IFQ fishery, giving 95% of ABC to fixed gear
-      apportioned_C[y+1,3,6,i] <- ABC_TS[y+1,6,i]*0.05 #trawl fishery, giving 5% of ABC to trawl
+      apportioned_C[y+1,2,1,i] <- ABC_TS[y+1,1,i]*0.75 #fill in ABC to area 1 BS, post-ifq gear
+      apportioned_C[y+1,3,1,i] <- ABC_TS[y+1,1,i]-apportioned_C[y+1,2,1,i] #fill in ABC to area 1, trawl gear
+      
+      apportioned_C[y+1,2,2,i] <- ABC_TS[y+1,2,i]*0.75 #fill in ABC to area 2 AI, post-ifq gear
+      apportioned_C[y+1,3,2,i] <- ABC_TS[y+1,2,i]-apportioned_C[y+1,2,2,i] #fill in ABC to area 2, trawl gear
+      
+      apportioned_C[y+1,2,3,i] <- ABC_TS[y+1,3,i]*0.90 #fill in ABC to area 3 WG, post-ifq gear
+      apportioned_C[y+1,3,3,i] <- ABC_TS[y+1,3,i]-apportioned_C[y+1,2,3,i] #fill in ABC to area 3, trawl gear
+      
+      apportioned_C[y+1,2,4,i] <- ABC_TS[y+1,4,i]*0.90 #fill in ABC to area 4 CG, post-ifq gear
+      apportioned_C[y+1,3,4,i] <- ABC_TS[y+1,4,i]-apportioned_C[y+1,2,4,i] #fill in ABC to area 4, trawl gear
+      
+      apportioned_C[y+1,2,5,i] <- ABC_TS[y+1,5,i]*0.90 #Area 5 WY post IFQ fishery, giving 95% of ABC to fixed gear (this is only doing e-w split, and doing it wrong, need to also apport by gear here and above)
+      apportioned_C[y+1,3,5,i] <- ABC_TS[y+1,5,i]-apportioned_C[y+1,2,5,i] #fill in ABC to area 5, trawl gear
+      
+      apportioned_C[y+1,2,6,i] <- ABC_TS[y+1,6,i]*0.90 #Area 6 EY-SEO post IFQ fishery, giving 95% of ABC to fixed gear
+      apportioned_C[y+1,3,6,i] <- ABC_TS[y+1,6,i]-apportioned_C[y+1,2,6,i] #fill in ABC to area 6, trawl gear
       
       apportioned_C[is.na(apportioned_C)] <- 0 
     }

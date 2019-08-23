@@ -28,16 +28,28 @@ sim_plot_initpop <- function() {
   OMyears <- c(1977:2018)
 
 ####make some plots  
+  #wt at age
+  plot(wa[1,]~ages,typ="l",lwd=3,col="black")
+  lines(wa[2,]~ages,typ="l",lwd=3,col="black",lty=3)
+  lines(mgmt_dat$wt_f~ages,typ="p",lwd=3,col="red",lty=1)
+  lines(mgmt_dat$wt_m~ages,typ="p",lwd=3,col="red",lty=3)
+  
+  #maturity at age
+  plot(ma[1,]~ages,typ="l",lwd=3,col="black")
+  lines(ma[2,]~ages,typ="l",lwd=3,col="black",lty=3)
+  lines(mgmt_dat$p_mature~ages,typ="p",lwd=3,col="red",lty=1)
+  
+  
   #abundance N plots
   #change from generated 5D array to a dataframe for plotting
-  melted_Ninit <- melt(N, varnames = c("Sex", "Year","Age", "Area","Sim"), na.rm=FALSE, value.name = "Numbers")
-  b2 <- melted_Ninit
+  #melted_Ninit <- melt(N, varnames = c("Sex", "Year","Age", "Area","Sim"), na.rm=FALSE, value.name = "Numbers")
+  #b2 <- melted_Ninit
   
-  b3<-b2%>%group_by(Year,Sim) %>% summarize(Numbers=sum(Numbers,na.rm=T))
-  b4<-b3
-  ggplot(b4)+geom_line(aes(x=Year,y=Numbers,colour=Sim),alpha=0.5)+theme_bw(base_size=13)+
-    theme(legend.position="none")+ggtitle("Total Numbers trajectories")
-  ggsave("Numbers_tot_lines.png",width=8,height=5,dpi=325, path=dir.output)  
+  #b3<-b2%>%group_by(Year,Sim) %>% summarize(Numbers=sum(Numbers,na.rm=T))
+  #b4<-b3
+  #ggplot(b4)+geom_line(aes(x=Year,y=Numbers,colour=Sim),alpha=0.5)+theme_bw(base_size=13)+
+   # theme(legend.position="none")+ggtitle("Total Numbers trajectories")
+  #ggsave("Numbers_tot_lines.png",width=8,height=5,dpi=325, path=dir.output)  
   
   dim(N)
   simN_sum <- apply(N[,,,,1],2,sum)
@@ -57,25 +69,58 @@ sim_plot_initpop <- function() {
   plot(mgmtN~mgmt_rep_years, ylim=c(0,250),typ="l",lwd=3,col="red")
   lines(simN_sum[2:43]~OMyears,typ="l",lwd=3,col="black") # plotting one sim worth of N for illustration - but all sims should be same?
   
-  N_F <- apply(N[1,,,,1],c(1,2),sum)
-  N_M <- apply(N[2,,,,1],c(1,2),sum)
-  par(mfrow=c(6,6))
-  for(a in 1:n.age){  
-  plot(N_F[,a]~years,typ="l",col="red")
-  lines(N_M[,a]~years,typ="l",col="blue")
-  }
+  #N_F <- apply(N[1,,,,1],c(1,2),sum)
+  #N_M <- apply(N[2,,,,1],c(1,2),sum)
+  #par(mfrow=c(6,6))
+  #for(a in 1:n.age){  
+  #plot(N_F[,a]~years,typ="l",col="red")
+  #lines(N_M[,a]~years,typ="l",col="blue")
+  #}
 
   
-  apply(N[,43,,,1],c(2),sum)
-  write.table(apply(N[,43,,,1],c(2),sum),"clipboard")
+  #apply(N[,43,,,1],c(2),sum)
+  #write.table(ma,"clipboard")
+  apply(N[,1,,,1],c(1,2,3),sum)
+  ab <- apply(N[,,,,1],c(2,3),sum)
+  #proportion N at age and B at age
+  ab123 <- apply(N[1,,,,1],c(1,2),sum)
+  abc <- prop.table(ab123,1) #proportion F at age for each year
+  mab123 <- apply(N[2,,,,1],c(1,2),sum)
+  mabc <- prop.table(ab123,1) #proportion F at age for each year
+  bab123 <- apply(B[1,,,,1],c(1,2),sum)
+  babc <- prop.table(bab123,1) #proportion F at age for each year
+  bmab123 <- apply(B[2,,,,1],c(1,2),sum)
+  bmabc <- prop.table(bab123,1) #proportion F at age for each year
   
+  plot(abc[1,]~ages,typ="l",lwd=3,col="red",ylim=c(0,1)) #1976
+  lines(mabc[1,]~ages,typ="l",lwd=3,col="blue")
+  lines(abc[5,]~ages,typ="l",lwd=3,col="red")
+  lines(mabc[5,]~ages,typ="l",lwd=3,col="blue")
+  lines(babc[1,]~ages,typ="l",lwd=3,col="orange")
+  lines(bmabc[1,]~ages,typ="l",lwd=3,col="green")  
+  
+  #proportion F:M
+  #ab123[1,]/ab[1]
+  
+  #total biomass
+  OM_totB <- apply(B[,,,,1],2,sum) #b dim = sex,year,age,area,sim
+  mgmt_rep$Tot_biom # for years 1960:2018
+  plot(mgmt_rep$Tot_biom[18:59]~mgmt_rep_years[18:59],typ="l",lwd=3,col="red",ylim=c(0,600))
+  lines(OM_totB[2:43]~c(1977:2018),typ="l",lwd=3,col="black")
   #spawning biomass
-  mgmt_rep$SpBiom #1960-2018
-  ssb_fsum <- apply(ssb[1,1:30,2:43,,1],2,sum) #1977-2018
+    mgmt_rep$SpBiom #1960-2018
+  ssb_fsum <- apply(ssb[1,,2:43,,1],2,sum) #1977-2018 female OM SSB
+  B2 <- apply(B[,,,,1],2,sum) #female OM Biomass
   par(mfrow=c(1,1))
-  plot(ssb_fsum~mgmt_rep_years[18:59],typ="l",lwd=3,col="black",ylim=c(0,300))
+  plot(ssb_fsum~mgmt_rep_years[18:59],typ="l",lwd=3,col="black",ylim=c(0,250))
   lines(mgmt_rep$SpBiom[18:59]~mgmt_rep_years[18:59],lwd=3,col="red")
-
+  #lines(B2[2:43]~mgmt_rep_years[18:59],col="black",typ="p",lwd=3)
+  #lines(mgmt_rep$Tot_biom[18:59]~mgmt_rep_years[18:59],lwd=3,col="red")
+  
+  plot(mgmtN~mgmt_rep_years, ylim=c(0,450),typ="l",lwd=3,col="red")
+  lines(simN_sum[2:43]~OMyears,typ="l",lwd=3,col="black") # plotting one sim worth of N for illustration - but all sims should be same?
+  lines(B2[2:43]~OMyears,col="green",typ="l",lwd=3)
+  lines(ssb_fsum~OMyears)
   #melted_ssb <- melt(ssb,varnames = c("Sex", "Age","Year", "Area","Sim"), na.rm=FALSE, value.name = "ssb")
   #b2 <-melted_ssb
   #b3<-b2%>%group_by(Year,Sim) %>% summarize(ssb=sum(ssb,na.rm=T))
@@ -97,6 +142,54 @@ sim_plot_initpop <- function() {
   plot(mgmtCatch~mgmt_rep_years,typ="l",col="red",lwd=3) #mgmt catch
   lines(C.b_sum[2:43]~OMyears,lwd=3) #sim catch 
   lines(OM_sumcatch[2:43]~OMyears, col="blue",lwd=3)#sim harvest
+  
+  #PLOT CATCH BY GEAR/FLEET 
+  C.n
+  C.b
+  C.b_sum2 <- apply(C.b[,,,,1],2,sum)
+  C.b2fem <- apply(C.b[1,,,,1],1,sum) #catch in biomass for years, females summed over age,area, for sim1
+  C.b3fem <- apply(C.b[1,,,,1],c(1,3),sum) #catch in biomass for years, areas, females summed over age, for sim1
+  C.b2mal <- apply(C.b[2,,,,1],1,sum) #catch in biomass for years, males summed over sex,age,area, for sim1
+  C.b3mal <- apply(C.b[2,,,,1],c(1,3),sum) #catch in biomass for years, areas, males summed over age, for sim1
+  
+  harvest.n2fem <- apply(harvest.b[1,,,,,1],c(1),sum)#harvest in biomass for years, females summed over gear,age,area, for sim1
+  harvest.n2mal <- apply(harvest.b[2,,,,,1],c(1),sum)#harvest in biomass for years, males summed over gear,age,area, for sim1
+  cond.catch2 <- apply(cond.catch[,2:13],1,sum)
+  temp.catchnumbiom2 <- apply(temp.catchnumbiom,1,sum)
+  cond_catch_at_age2 <- apply(cond_catch_at_age,1,sum) #how does cond catch at age have sex?
+  
+  par(mfrow=c(1,1))
+  plot(C.b_sum2~years,typ="l",col="black",lwd=3,ylim=c(0,40))
+  lines(C.b2fem+C.b2mal~years,col="blue")
+  lines(C.b2fem~years,typ="l",col="red",lwd=3) 
+  lines(harvest.n2fem~years,typ="l",col="red",lwd=3) #catch and harvet match? yep
+  lines(C.b2mal~years,typ="l",col="blue",lwd=3)
+  lines(harvest.n2mal~years,typ="l",col="blue",lwd=3) #catch and harvet match? yep
+  lines(temp.catchnumbiom2~c(1:43),typ="l",col="green",lwd=3)
+  lines(cond_catch_at_age2~c(1:43),typ="l",col="darkgreen",lwd=3)
+  lines(cond.catch2~c(1:43),typ="l",col="orange",lwd=3)
+  
+  
+  plot(C.b3fem[,1]~years,typ="l",col="blue",lwd=3,ylim=c(0,15))
+  lines(C.b3fem[,2]~years,typ="l",col="green",lwd=3)
+  lines(C.b3fem[,3]~years,typ="l",col="orange",lwd=3)
+  lines(C.b3fem[,4]~years,typ="l",col="red",lwd=3)
+  lines(C.b3fem[,5]~years,typ="l",col="black",lwd=3)
+  lines(C.b3fem[,6]~years,typ="l",col="purple",lwd=3)
+  lines(C.b3mal[,1]~years,typ="l",col="blue",lwd=3,lty=3)
+  lines(C.b3mal[,2]~years,typ="l",col="green",lwd=3,lty=3)
+  lines(C.b3mal[,3]~years,typ="l",col="orange",lwd=3,lty=3)
+  lines(C.b3mal[,4]~years,typ="l",col="red",lwd=3,lty=3)
+  lines(C.b3mal[,5]~years,typ="l",col="black",lwd=3,lty=3)
+  lines(C.b3mal[,6]~years,typ="l",col="purple",lwd=3,lty=3)
+  
+  
+  #sex ratio generated by create-cond-catch
+  ttt <- apply(cond_catch_at_age,c(1,3,4),sum) #dim=year,gear,area, sex, age
+  for(m in 1:n.area){
+  rrr <- ttt[,m,1]/ttt[,m,2]
+  uuu <- ttt[,m,1]/(ttt[,m,1]+ttt[,m,2])
+  }
   
   
   #recruitment
@@ -212,7 +305,7 @@ sim_plot_initpop <- function() {
   #for(i in 1:n.sims){
     for(f in 1:n.fish) {
       for(m in 1:n.area){
-      plot(F.mort[f,,m,i]~years,ann=FALSE, typ="l", lty=1, col="red" , lwd=2, ylim=c(0,0.15))
+      plot(F.mort[f,,m,i]~years,ann=FALSE, typ="l", lty=1, col="red" , lwd=2, ylim=c(0,0.3))
       #lines(B77$obs_fish1_age_1[i,]~B77$ages, typ="p", pch=16)
       legend("topright",legend=c(f,m))
       }}#}

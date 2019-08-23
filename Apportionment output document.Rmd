@@ -5,31 +5,8 @@ date: "August 16, 2019"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-```{r, echo=FALSE, warning=TRUE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #install the libraries
 require(dplyr)
 require(reshape2)
@@ -43,9 +20,7 @@ require(gtools)
 #for .dat file building
 require(PBSmodelling)
 require(R2admb)
-```
 
-```{r, echo=FALSE}
 #read in the apportionment R object files for indexing
 wd <- ("C:/Repositories/Sablefish_ApportionmentStrategies") #may need to manually enter your wd here
 dir.output <- file.path(wd,"output/")
@@ -89,14 +64,17 @@ OM <- readList("C:/Repositories/Sablefish_ApportionmentStrategies/admb/Single_ar
 
 ```
 # General information
-
-
+These simulation analyses contain two primary components, a 6-area operating model (OM) and a 1-area estimation model (EM). The OM simulates data in two periods - a deterministic conditioning period which occurs for years 1977-2018 and is the same across simulations, and a stochastic forward projecting portion which runs for years 2019-`r 1976+n.year-1`.  The EM is similar to the EM used for sablefish management, but begins in 1977 instead of 1960, does not include length compositions, and does not fit a trawl survey.
 
 # Conditioning period
 OM model set up - initial (1976) numbers, splitting these by areas and then ages then converting to biomass
 OM conditioning period is the same for years 1977-2018 for all subsequent EMs
 6 OM areas, movement specified between 6 areas, age based movement possible, but not implemented
-assume recruitment is 50:50 sex split and split equally between OM areas
+assume recruitment is 50:50 sex split and split equally between OM areas. The OM conditioning period is deterministic, with recruitment from the EM read in, catch, read in and the F which generated that catch estimated and applied to the population. 
+
+conditioning period validation
+
+#EM specifications
 
 # Forward looping model validation figures
 general flow/order of operations - calculate F associated with catch permitted from previous year's assessment and apportionment, recruit new cohort, F and M occur, movement occurs, sample the (moved) OM population, add OM data to .dat file, run EM, apply apportionment [end of single 'year cycle'] ...then start over at beginning with a new year
