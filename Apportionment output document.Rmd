@@ -146,8 +146,8 @@ mgmtN <- c(227.569424,225.133078,214.348775,202.312974,234.635297,228.675439,
 #OM conditioning period N, by year (summed across ages, sexes, areas)
 simN_sum <- apply(N[,,,,1],2,sum) # sim 1 results only (sims are all identical for conditioning period)
 par(mfrow=c(1,1))
-plot(mgmtN~mgmt_rep_years, ylim=c(0,250),typ="l",lwd=3,col="red",ylab="Year",xlab="Abundance (millions)")
-lines(simN_sum1[2:43]~OMyears,typ="l",lwd=3,col="black") 
+plot(mgmtN~mgmt_rep_years, ylim=c(0,250),typ="l",lwd=3,col="red",xlab="Year",ylab="Abundance (millions)")
+lines(simN_sum[2:43]~OMyears,typ="l",lwd=3,col="black") 
 legend("bottomleft", legend=c("Management EM", "Conditioning OM"),lty=c(1,1),lwd=c(3,3), col=c("red","black"))
 
 ```
@@ -155,26 +155,57 @@ legend("bottomleft", legend=c("Management EM", "Conditioning OM"),lty=c(1,1),lwd
 
 Biomass (kt, summed over areas) generated from the OM matches the Management model EM.
 ```{r, echo=FALSE}
-
+mgmt_rep$Tot_biom #management EM total biomass
+simB_sum <- apply(B[,,,,1],2,sum) #OM conditioning period B, by year (summed across ages, sexes, areas), from sim 1
+par(mfrow=c(1,1))
+plot(mgmt_rep$Tot_biom~mgmt_rep_years, ylim=c(0,650),typ="l",lwd=3,col="red",xlab="Year",ylab="Biomass (kt)")
+lines(simB_sum[2:43]~OMyears,typ="l",lwd=3,col="black") 
+legend("bottomleft", legend=c("Management EM", "Conditioning OM"),lty=c(1,1),lwd=c(3,3), col=c("red","black"))
 
 ```
 
 
 Spawning biomass (kt, summed over areas) generated from the OM matches the Management model EM.
 ```{r, echo=FALSE}
-
+mgmt_rep$SpBiom #mgmt EM ssb
+simssb_sum <- apply(ssb[,,,,1],3,sum) #OM conditioning period ssb, summed across ages, sexes, areas
+par(mfrow=c(1,1))
+plot(mgmt_rep$SpBiom~mgmt_rep_years, ylim=c(0,300),typ="l",lwd=3,col="red",xlab="Year",ylab="Spawning Biomass (kt)")
+lines(simssb_sum[2:43]~OMyears,typ="l",lwd=3,col="black") 
+legend("bottomleft", legend=c("Management EM", "Conditioning OM"),lty=c(1,1),lwd=c(3,3), col=c("red","black"))
 
 ```
 
 
 OM catch was designed to match EM observed catch.
 ```{r, echo=FALSE}
+mgmtCatch <- mgmt_rep$Obs_CatchTrawl + mgmt_rep$Obs_CatchFixedGear #total catch from mgmt EM
+read.in.catch <- apply(temp.catchnumbiom,1,sum)
+sim_C.b_sum <- apply(C.b[,,,,1],2,sum)
+sim_harv_sum <- apply(harvest.b[,,,,,1],2,sum)
 
+#Option 1
+#plot(mgmtCatch~mgmt_rep_years, ylim=c(0,55),typ="l",lwd=3,col="red",xlab="Year",ylab="Catch (kt)")
+#lines(read.in.catch[2:(length(OMyears)+1)]~OMyears,typ="l",lwd=3,col="black")
+#lines(sim_C.b_sum[2:(length(OMyears)+1)]~OMyears,typ="l",lwd=3,col="blue")
+#lines(sim_harv_sum[2:(length(OMyears)+1)]~OMyears,typ="l",lwd=3,col="blue")
+#legend("topright", legend=c("Management EM Catch", "Conditioning OM Input Catch", "Conditioning OM Est. Catch", "Conditioning OM Est. Harvest"),lty=c(1,1,1,1),lwd=c(3,3,3,3), col=c("red","black","blue","blue"))
+#option 2 - without harvest line
+plot(mgmtCatch~mgmt_rep_years, ylim=c(0,55),typ="l",lwd=3,col="red",xlab="Year",ylab="Catch (kt)")
+lines(read.in.catch[2:(length(OMyears)+1)]~OMyears,typ="l",lwd=3,col="black")
+lines(sim_C.b_sum[2:(length(OMyears)+1)]~OMyears,typ="l",lwd=3,col="blue")
+legend("topright", legend=c("Management EM Catch", "Conditioning OM Input Catch", "Conditioning OM Est. Catch"),lty=c(1,1,1),lwd=c(3,3,3), col=c("red","black","blue"))
 
 ```
 
 
-OM recruitment was desined to match EM recruitment.
+OM recruitment was designed to match EM recruitment.
+```{r, echo=FALSE}
+mgmt_rep
+
+```
+
+We also estimate, but DO NOT use it during the conditioning period. You can see here how the estimated values compare in magnitude and frequency of strong year classes to the estimates from the management EM which are used as inputs to the conditioning period OM.
 ```{r, echo=FALSE}
 
 
