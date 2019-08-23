@@ -508,8 +508,8 @@ run.model <- function() {
 #for(y in 43:44) {  #43 is 2018, 44 is 2019
   for(i in 1:n.sims){
     apportioned_C[43,1,,i] <- c(0,0,0,0,0,0) 
-    apportioned_C[43,2,,i] <- c(0.53,0.48,1.18,3.64,1.62,3.01)
-    apportioned_C[43,3,,i] <- c(1.1,0.2,0.2,2.1,0,0) #0 for wy is replacement for conf data
+    apportioned_C[43,2,,i] <- c(0.53,0.48,1.18,3.64,1.62,3.01) #2018 actual catch
+    apportioned_C[43,3,,i] <- c(1.1,0.2,0.2,2.1,0,0) #2018 catch, 0 for wy is replacement for conf data
     apportioned_C[43,4,,i] <- c(0,0,0,0,0,0)
     apportioned_C[44,1,,i] <- c(0,0,0,0,0,0) 
     apportioned_C[44,2,,i] <- c(1.12575,1.5225,1.4931,4.7214,1.5885,2.8611) #these are 2018 EM estimates of 2019 ABC, before whale depred
@@ -1031,8 +1031,8 @@ for(i in 1:n.sims) {
     
     age_likelihood[1,y,i] <- get_ABC$age.likelihood_fish
     age_likelihood[2,y,i] <- get_ABC$age.likelihood_surv
-    #index_likelihood[1,y,i] <- get_ABC$index.likelihood_fish
-    #index_likelihood[2,y,i] <- get_ABC$index.likelihood_surv
+    index_likelihood[1,y,i] <- get_ABC$index.likelihood_fish
+    index_likelihood[2,y,i] <- get_ABC$index.likelihood_surv
     
     EM_B40[y,i] <- get_ABC$B40
     EM_SBF40[y,i] <- get_ABC$SBF40
@@ -1073,13 +1073,14 @@ for(i in 1:n.sims) {
     EM_predAC.surv[y,,21:(y-1),,i] <- get_agerep1$pred_srv1_age
     EM_predAC.fish[y,,24:(y-1),,i] <- get_agerep2$pred_fish1_age
     
-    EM_natage[1,y,,2:y,,i] <- get_Natage$natage_f
-    EM_natage[2,y,,2:y,,i] <- get_Natage$natage_m
-    EM_LLcatchatage[y,,2:y,,i] <- get_catchatage$LLcatchatage
-    EM_TRcatchatage[y,,2:y,,i] <- TRcatchatage
-    
+    #EM_natage[1,y,,2:y,,i] <- get_Natage$natage_f #need to rerun tpl for new exe first
+    #EM_natage[2,y,,2:y,,i] <- get_Natage$natage_m
+    EM_LLcatchatage[1,y,,2:y,,i] <- get_catchatage$LLcatchatage_f
+    EM_LLcatchatage[2,y,,2:y,,i] <- get_catchatage$LLcatchatage_m
+    EM_TRcatchatage[1,y,,2:y,,i] <- get_catchatage$TRcatchatage_f
+    EM_TRcatchatage[2,y,,2:y,,i] <- get_catchatage$TRcatchatage_m
     EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
-    EM_F.a[y,,i] <- get_ABC$Fully_selected_F
+    EM_F_full[y,2:y,i] <- get_ABC$Fully_selected_F
     
     
     ### side notes:

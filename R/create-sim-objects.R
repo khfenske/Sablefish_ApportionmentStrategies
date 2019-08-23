@@ -90,7 +90,9 @@ create_sim_objects <- function() {
   EM_predrec <<- array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims))
   EM_predcatch_fixedgear <<- array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims))
   EM_predcatch_trawlgear <<- array(dim=c(n.year,n.year,n.sims), dimnames=list(years, years, sims))
-
+  EM_LLcatchatage <<- array(dim=c(n.sex,n.year,n.age, n.year,n.age,n.sims), dimnames=list(sexes,years,ages,years,ages,sims))
+  EM_TRcatchatage <<- array(dim=c(n.sex,n.year,n.age, n.year,n.age,n.sims), dimnames=list(sexes,years,ages,years,ages,sims))
+  
   EM_pred.sel.preifqfish <<- array(dim=c(n.year,n.age, n.sex,n.sims), dimnames=list(years,  ages, sexes, sims))
   EM_pred.sel.postifqfish <<- array(dim=c(n.year, n.age, n.sex, n.sims), dimnames=list(years, ages, sexes, sims))
   EM_pred.sel.trawlfish <<- array(dim=c(n.year,n.age, n.sex, n.sims), dimnames=list(years, ages, sexes, sims))
@@ -103,11 +105,11 @@ create_sim_objects <- function() {
   EM_q.postifqfish <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_q.forfish <<- matrix(NA,nrow=n.year,ncol=n.sims)
   
-  #EM_predAC.surv <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))
-  #EM_predAC.fish <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))
-  #EM_natage
+  EM_predAC.surv <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))
+  EM_predAC.fish <<- array(dim=c(n.year,n.age,n.year,n.age,n.sims))
+  EM_natage
   EM_totbiomass <<- array(dim=c(n.year,n.year, n.sims), dimnames=list(years, years, sims))
-  #EM_F.a <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes, years, ages, areas, sims)) #Age-specific Fishing mortality
+  EM_F_full <<- array(dim=c(n.year, n.year, n.sims), dimnames=list(years, years, sims)) #Age-specific Fishing mortality
   
   
   #Return section  #what does this section do?
