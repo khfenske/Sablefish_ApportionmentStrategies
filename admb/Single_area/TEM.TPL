@@ -1193,12 +1193,16 @@ REPORT_SECTION
   }
 
 FUNCTION write_catchatage
-  ofstream catchrep("Catchatage.rep");
+  ofstream catchrep("catchatage.rep");
   if(last_phase()) {
-  catchrep << "$LLcatchatage" << endl;
-  catchrep << pred_catch_fish1 << endl;
-  catchrep << "$TRcatchatage" << endl;
-  catchrep << pred_catch_fish3 << endl;
+  catchrep << "$LLcatchatage_f" << endl;
+  catchrep << catage_fish1_f << endl;
+  catchrep << "$LLcatchatage_m" << endl;
+  catchrep << catage_fish1_m << endl;
+  catchrep << "$TRcatchatage_f" << endl;
+  catchrep << catage_fish3_f << endl;
+  catchrep << "$TRcatchatage_m" << endl;
+  catchrep << catage_fish3_m << endl;
   }
 
 FUNCTION write_Natage
@@ -1403,7 +1407,7 @@ TOP_OF_MAIN_SECTION
 
 FINAL_SECTION
   //write_fullrep();
-  write_catchatage();
+   write_catchatage();
   write_Natage();
   write_agecomps_fish();
   write_agecomps_surv();
