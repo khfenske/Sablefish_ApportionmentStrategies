@@ -13,8 +13,8 @@
 
 
 
-#extract_pars <- function(input.file="Sablefish_Input_matchMGMTqselex.xlsx") {
-extract_pars <- function(input.file="Sablefish_Input.xlsx") {
+extract_pars <- function(input.file="Sablefish_Input_matchMGMTqselex.xlsx") {
+#extract_pars <- function(input.file="Sablefish_Input.xlsx") {
     #require(tidyverse)
   #require(readxl)
   #require(xlsx)
@@ -185,8 +185,8 @@ extract_pars <- function(input.file="Sablefish_Input.xlsx") {
   selex.surv <<- list()  
   
   #Record Type and Number
-  surv <<- unique(in.selex.surv$Fleet)
-  n.surv <<- length(surv)
+  surv.name <<- unique(in.selex.surv$Fleet)
+  n.surv <<- length(surv.name)
 
   #US Longline
   selex.surv$USLongline$a50[1:2] <<- as.numeric(in.selex.surv[in.selex.surv$Fleet=='USLongline' & in.selex.surv$Par=='a50',(3:4)])

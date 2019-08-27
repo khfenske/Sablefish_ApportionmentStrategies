@@ -38,17 +38,17 @@ calc_selectivity <- function(type=NULL, fleet=NULL) {
   ###############
   
   # Check Inputs ========================================
-  if(! type %in% c('surv','fish')) {
-    stop(paste("type: '",type,"', must be of: 'surv' or 'fish'"))
+  if(! type %in% c('surv.name','fish')) {
+    stop(paste("type: '",type,"', must be of: 'surv.name' or 'fish'"))
   }
-  if(type=='surv') {
-    if(! fleet %in% surv) { stop(paste("name: '", fleet, "' is not a recognized survey")) }
+  if(type=='surv.name') {
+    if(! fleet %in% surv.name) { stop(paste("name: '", fleet, "' is not a recognized survey")) }
   }else {
     if(! fleet %in% fish) { stop(paste("name: '", fleet, "' is not a recognized fishery")) }
   }
   
   # Calculate Selectivity ==================================
-  if(type=='surv') {
+  if(type=='surv.name') {
     #Get select type
     temp.selex.type <- selex.surv.type$Type[selex.surv.type$Fleet==fleet]
     #Create output object

@@ -21,7 +21,7 @@ dir.output <- file.path(wd,"output")
 dir.admb <- file.path(wd,"admb/Single_area")
 dir.R <- file.path(wd,"R")
 dir.x <- file.path("C:/Repositories/hidden files with conf data") #this is for Kari's file paths - Curry and Dana, comment this out and 
-# then un-comment-out the following line to use the dummy file
+# then un-comment-out the following line to use the dummy file (no confidential data in this file)
 #dir.x <- dir.data #change this path to whatever place you have 
 #the confidential catch data files stored. DO NOT LOAD TO GITHUB.
 
@@ -70,8 +70,8 @@ source(file.path(dir.R,'save_RDSfiles.R')) #function called saveFerris to save o
 #setwd(wd)
 
 # Extract Parameters =============================================
-#extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
-extract_pars(input.file="Sablefish_Input.xlsx")
+extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
+#extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 #confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
 
@@ -108,8 +108,8 @@ selex <- list() #Selectivity List
 
 #Proceed with list format
 #Surveys
-selex$surv$USLongline <- calc_selectivity(type='surv', fleet='USLongline')
-selex$surv$USJPLL <- calc_selectivity(type='surv', fleet='USJPLL')
+selex$surv$USLongline <- calc_selectivity(type='surv.name', fleet='USLongline')
+selex$surv$USJPLL <- calc_selectivity(type='surv.name', fleet='USJPLL')
 
 #Fisheries
 selex$fish$USfixed_preIFQ <- calc_selectivity(type='fish', fleet='USfixed_preIFQ')
@@ -124,10 +124,10 @@ for(i in 1:n.fish) {
   va[i,,,] <- calc_selectivity(type='fish', fleet=fish[i])
 }
 
-va_surv <- array(dim=c(n.surv,n.sex,n.age), dimnames=list(surv,sexes,ages))
+va_surv <- array(dim=c(n.surv,n.sex,n.age), dimnames=list(surv.name,sexes,ages))
 i <- 1
 for(i in 1:n.surv) {
-  va_surv[i,,] <- calc_selectivity(type='surv', fleet=surv[i])
+  va_surv[i,,] <- calc_selectivity(type='surv.name', fleet=surv.name[i])
 }
 # Create Simulation Objects =======================================
 #NOTE: Currently calculates data for n areas, where n is defined in the input spreadsheet (n.areas)  
@@ -1073,8 +1073,8 @@ for(i in 1:n.sims) {
     EM_predAC.surv[y,,21:(y-1),,i] <- get_agerep1$pred_srv1_age
     EM_predAC.fish[y,,24:(y-1),,i] <- get_agerep2$pred_fish1_age
     
-    #EM_natage[1,y,,2:y,,i] <- get_Natage$natage_f #need to rerun tpl for new exe first
-    #EM_natage[2,y,,2:y,,i] <- get_Natage$natage_m
+    EM_natage[1,y,,2:y,,i] <- get_Natage$natage_f #need to rerun tpl for new exe first
+    EM_natage[2,y,,2:y,,i] <- get_Natage$natage_m
     EM_LLcatchatage[1,y,,2:y,,i] <- get_catchatage$LLcatchatage_f
     EM_LLcatchatage[2,y,,2:y,,i] <- get_catchatage$LLcatchatage_m
     EM_TRcatchatage[1,y,,2:y,,i] <- get_catchatage$TRcatchatage_f
