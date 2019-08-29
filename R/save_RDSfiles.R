@@ -60,6 +60,7 @@ saveRDS(va,"va.rds" )
 saveRDS(va_surv,"va_surv.rds" ) 
 saveRDS(q_fish,"q_fish.rds")
 saveRDS(q_surv,"q_surv.rds")
+saveRDS(apportioned_C,"apportioned_C.rds")
 
 #save the apportionment-specific EM things to an apportionment folder
 saveRDS(max_grads,"maxgrads.rds")

@@ -70,8 +70,8 @@ source(file.path(dir.R,'save_RDSfiles.R')) #function called saveFerris to save o
 #setwd(wd)
 
 # Extract Parameters =============================================
-extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
-#extract_pars(input.file="Sablefish_Input.xlsx")
+#extract_pars(input.file="Sablefish_Input_matchMGMTqselex.xlsx")
+extract_pars(input.file="Sablefish_Input.xlsx")
 extract_catch(dir.x,input.file="catch_input_conditioning.xlsx") #using a separate function for this because catch by gear and area has
 #confidential data, catch is in kt, change this function to read in the dummy spreadsheet (fake catch data) for running this for now
 
@@ -1102,7 +1102,7 @@ saveFerris() #call the function to save all the objects we want to keep as RDS f
 
 #save an image of the workspace for this set of years*sims for the specificed apportionment option (apport.opt)
 #can use load or attach to retreive the saved image
-save(list=ls(all.names=TRUE), file=paste0(dir.admb,"/apportionment",apport.opt,".RData"), envir=.GlobalEnv) 
+#save(list=ls(all.names=TRUE), file=paste0(dir.admb,"/apportionment",apport.opt,".RData"), envir=.GlobalEnv) 
 source(file.path(dir.R,'save_RDSfiles.R')) #function called saveFerris to save objects from each sim as RDS files
 
 
