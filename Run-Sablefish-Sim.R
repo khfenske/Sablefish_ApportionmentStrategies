@@ -745,7 +745,30 @@ agebased_apportionment <- function(ABC.total,n.areas,LLlencomp,L50_mat) {
   }
   return(ABC.EM)
 }
-#apport.opt = 10: Random effects model apportionment
+#apport.opt = 10: Random effects model apportionment - well proxy - using terminal year survey only
+termLL_apportionment <- function(ABC.total,n.areas,biom.data) { #note this uses numbers not biomass for survey
+  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  biom.data2 <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  #biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.prop.sum <- vector(length=n.areas)
+  #wts <- c(0.0625, 0.0625, 0.125, 0.25, 0.5) #the weighting values      
+  
+  biom.data2 <- apply(biom.data,c(2,4),sum)
+  for (t in (length(biom.data2[,1])-4):length(biom.data2[,1])) {
+    for (r in 1:n.areas) {
+      biom.data.prop[t,r] <- biom.data2[t,r]/sum(biom.data2[t,]) #calc proportion by year across areas for survey data
+    }}
+  #for (t in 1:length(biom.data.prop[,1])) {
+    #for (r in 1:n.areas) {    
+      #biom.data.prop.wt[t,r] <- biom.data.prop[t,r]*wts[t]    
+    #}}  
+  biom.prop.sum <- biom.data.prop[5,]  
+  for (r in 1:n.areas) {
+    ABC.EM[r] <- ABC.total * biom.prop.sum 
+  }
+  return(ABC.EM)
+}
 
 #apport.opt = 11: all to one area
 all2one_apportionment <- function(ABC.total,n.areas,luckyarea) {
@@ -988,9 +1011,9 @@ for(i in 1:n.sims) {
         ABC_TS[y+1,,i] <- agebased_apportionment(get_ABC$ABC_proj[1],n.area,N[,y,,,i],A_L.mat) #A_L_mat is the row corresponding to the age/length at 50% maturity
       } 
       
-      #if (apport.opt==10) { #this needs editing
-      #ABC_TS[y,,i] <- random.effect(get_ABC$ABC_proj[1],n.area,lucky.area) #L50_mat is the row corresponding to the age/length at 50% maturity
-      #} 
+      if (apport.opt==10) { 
+      ABC_TS[y,,i] <- termLL_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,(y-4):y,,,i]) 
+      } 
       
       if (apport.opt==11) {
         ABC_TS[y+1,,i] <- all2one_apportionment(get_ABC$ABC_proj[1],n.area,lucky.area) #L50_mat is the row corresponding to the age/length at 50% maturity
