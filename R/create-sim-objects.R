@@ -80,6 +80,8 @@ create_sim_objects <- function() {
   EM_SBF40 <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_SBF35 <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_SBF0 <<- matrix(NA,nrow=n.year,ncol=n.sims)
+  EM_F35 <<- matrix(NA,nrow=n.year,ncol=n.sims)
+  EM_F40 <<- matrix(NA,nrow=n.year,ncol=n.sims)
   EM_depletion1 <<- matrix(NA,nrow=n.year,ncol=n.sims) #spawning biomass in endyr/spawning biomass in startyr output from .rep file
   EM_depletion2 <<- matrix(NA,nrow=n.year,ncol=n.sims) #spawning biomass in endyr/B40
   

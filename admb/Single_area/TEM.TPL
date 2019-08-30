@@ -1130,6 +1130,10 @@ REPORT_SECTION
   report << SBF35 << endl;
   report << "$SB0" << endl;
   report << SB0 << endl;
+  report << "F35" << endl;
+  report << F35 << endl;
+  report << "F40" << endl;
+  report << F40 << endl;
   report << "$Depletion"<< endl; 
   report << Depletion << endl;
 

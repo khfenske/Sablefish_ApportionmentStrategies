@@ -1037,10 +1037,12 @@ for(i in 1:n.sims) {
     EM_B40[y,i] <- get_ABC$B40
     EM_SBF40[y,i] <- get_ABC$SBF40
     EM_SBF35[y,i] <- get_ABC$SBF35
-    EM_SBF0 <- get_ABC$SBF0
+    EM_SBF0[y,i] <- get_ABC$SBF0
+    EM_F35[y,i] <- get_ABC$F35
+    EM_F40[y,i] <- get_ABC$F40
     
     ABC_projection[y,i] <- get_ABC$ABC_proj[1]
-    EM_depletion1[y,i] <- get_ABC$Depletion
+    EM_depletion1[y,i] <- get_ABC$Depletion #spawn_biom endyr / spawn_biom start year
     EM_depletion2[y,i] <- (apply(ssb[,,,,i],3,sum)[y])/EM_B40[y,i]  #calculated quantity EM endyr spawnbiom / B40
     EM_spbiom[y,2:y,i] <- get_ABC$spawn_biom #rows are OM year loops, cols are years within an OM loop, 3rd dimension is sim (this is giving me an error for now)
     

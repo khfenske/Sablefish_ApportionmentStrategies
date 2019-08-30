@@ -86,6 +86,7 @@ There are some inherent assumptions in this simulation we would like to present 
 1) we assume ABC=TAC and 100% of apportioned ABC is caught in each region
 2) we do not correct for whale depredation in the ABC or survey index
 3) recruitment occurs at age 2 and recruitment is split equally between males and females
+4) 
 
 
 # Alternative apportionment scenarios 
@@ -1277,14 +1278,17 @@ pct_chg3 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],4,mean)#mean
 ##mean increase?
 ```
 The mean absolute percent change in ABC for each apportionment method is
-`r pct_chg3`
+```{r, echo=FALSE}
+pct_chg3
+```
 This reflects the inherent variability in ABC from year to year.
   
 Drilling down further, the mean absolute percent change in ABC for each area and apportionment method is
-`r pct_chg2`
+```{r, echo=FALSE}
+pct_chg2
+```
 This reflects what an individual management area may experience in terms of average change in ABC from year to year.
   
-
 
 ## How well do apportionment methods track true (SSB) biomass proportions by area? Relative percent difference in OM biomass by area vs EM apportionment by area
 ``` {r, echo=FALSE}
@@ -1329,14 +1333,134 @@ for(y in 1:(length(forproj.styr:n.year))){
 resid.biomApport
 #means of em abc and OM biomass residuals and of proportions
 variable.blable <- apply(resid.biomApport,c(2,4),mean) #mean absolute relative % difference between 'true' and apportioned ABC by area for each apport method (low is good if we want apportionment to track true ssb)
+rownames(variable.blable)<-c("BS", "AI","WG", "CG","WY", "EY/SEO")
+```
+This is the mean absolute relative % difference between 'true' and apportioned ABC by area for each apport method (low is good if we want apportionment to track true ssb)
+```{r, echo=FALSE}
+variable.blable
+```
+
+## For each apportionment option, what is the proportion of years*sims where EM F/F40<1?
+this needs to be coded after I get a new exe that spits out the values I need
+
+## For each apportionment option, what is the proportion of years*sims where EM SSB(endyear)/B40>1? (not overfished) 
+```{r, echo=FALSE}
+#create arrays to hold indices
+AM_EM_B40 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
+AM_EM_SBF40 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
+AM_EM_SBF35 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
+AM_EM_SBF0 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
+AM_EM_depletion1 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
+AM_EM_depletion2 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
+
+#read in things
+for(b in 1:n.apports){
+dir.temp <- paste0(dir.output,"/Apport.Option_",b)
+AM_EM_B40[,,b] <- readRDS(file.path(dir.temp,"EM_B40.rds")) 
+AM_EM_SBF40[,,b] <- readRDS(file.path(dir.temp,"EM_SBF40.rds")) 
+AM_EM_SBF35[,,b] <- readRDS(file.path(dir.temp,"EM_SBF35.rds")) 
+#AM_EM_SBF0[,,b] <- readRDS(file.path(dir.temp,"EM_SBF0.rds")) 
+AM_EM_depletion1[,,b] <- readRDS(file.path(dir.temp,"EM_depletion1.rds")) 
+AM_EM_depletion2[,,b] <- readRDS(file.path(dir.temp,"EM_depletion2.rds")) 
+}
+#remember things we have read in before
+#AM_EM_spbiom
+#OM_ssb
+```
+
+```{r, echo=FALSE}
+#calc SSB(endyr)/B40 for each year, sim, apport
+B40_ratio <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
+
+for(y in 1:n.year){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+      B40_ratio[y,i,b] <- AM_EM_spbiom[y,y,i,b]/AM_EM_B40[y,i,b] #take the EM spbiom from the terminal year of each iteration of EM over years
+    }
+  }
+}
+#mean and median and CIs for B40_ratio across years and sim by apportionment method
+B40_ratio_mean <- vector()
+B40_ratio_median <- vector()
+B40_ratio_sd <- vector()
+B40_ratio_mean <- apply(B40_ratio[forproj.styr:n.year,,],3,mean)
+B40_ratio_median <- apply(B40_ratio[forproj.styr:n.year,,],3,median) 
+for(b in 1:n.apports){
+B40_ratio_sd[b] <- sd(B40_ratio[forproj.styr:n.year,,b])
+}
+melted_B40ratio <- melt(B40_ratio[forproj.styr:n.year,,],value.name="SSB_B40")
+ggplot(melted_B40ratio,aes(x=Var3,y=SSB_B40)) +#,fill=Apportionment)) + 
+           geom_boxplot()
+
+#mean and median and CIs forB40_ratio across sims by year and apportionment method
+B40_ratio_mean2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
+B40_ratio_median2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
+B40_ratio_mean2 <- apply(B40_ratio[forproj.styr:n.year,,],c(1,3),mean)
+B40_ratio_median2 <- apply(B40_ratio[forproj.styr:n.year,,],c(1,3),median) 
+melted_B40ratio2 <- melt(B40_ratio[forproj.styr:n.year,,],value.name="SSB_B40")
+names(melted_B40ratio2) <- c("Year","Sim","Apportionment.Method","SSB_B40")
+
+melted_B40ratio2 %>%
+ggplot(aes(x=factor(Apportionment.Method),y=SSB_B40,fill=factor(Year))) + 
+           geom_boxplot()
+
+melted_B40ratio2 %>%
+ggplot(aes(x=factor(Year),y=SSB_B40,fill=factor(Apportionment.Method))) + 
+           geom_boxplot()
+
+#now calculate the proportion of years SSB/b40 >1
+B40_props <- array(data=NA,dim=c(length(forproj.styr:n.year),n.sims,n.apports),dimnames=list(forproj.styr:n.year,sims,apport.names))
+for(y in forproj.styr:n.year){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+      if(B40_ratio[y,i,b] < 1.0) {
+        B40_props[(y-43),i,b] <- 0
+      } else{
+        B40_props[(y-43),i,b] <- 1 
+      }
+      }
+  }}
+#B40_props
+#proportions
+B40_props2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
+B40_props2 <- apply(B40_props[,,],c(1,3),sum)
+B40_props3 <- B40_props2/(n.sims)
+#proportion of sims where SSB_enyr (EM, all areas) > B40 for each forward year and apportionment option is:
+B40_props3
+
+#proportions apportionment methods where sims and years were > 1:
+B40_props4 <- vector()
+B40_props4 <- apply(B40_props[,,],3,sum)
+B40_props5 <- B40_props4/(n.sims*length(forproj.styr:n.year))
+#proportion of sims where SSB_enyr (EM, all areas) > B40 for each forward year and apportionment option is:
+B40_props5
 ```
 
 
-## For each apportionment option, what is the proportion of years*sims where EM F/F40<1?
+What is SSB_endyr/ssb_styr for each apportionment method?
+```{r,echo=FALSE}
+#AM_EM_depletion1
+melted_depletion1 <- melt(AM_EM_depletion1[forproj.styr:n.year,,],value.name="Depletion")
+names(melted_depletion1) <- c("Year","Sim","Apportionment.Method","Depletion")
 
-## For each apportionment option, what is the proportion of years*sims where EM B/B40<1? What is the mean and median depletion (SSBterminal year/B40) across sims for each year from EM? (plot it)
+melted_depletion1 %>%
+ggplot(aes(x=factor(Apportionment.Method),y=Depletion,fill=factor(Year))) + 
+           geom_boxplot()
+
+melted_depletion1 %>%
+ggplot(aes(x=factor(Year),y=Depletion,fill=factor(Apportionment.Method))) + 
+           geom_boxplot()
+```
 
 ## mean and median age at harvest from EM (all areas combined) (and roughly mapped to size)
+```{r, echo=FALSE}
+
+#AM_EM_natage
+#  EM_LLcatchatage <<- array(dim=c(n.sex,n.year,n.age, n.year,n.age,n.sims), dimnames=list(sexes,years,ages,years,ages,sims))
+#  EM_TRcatchatage <<- array(dim=c(n.sex,n.year,n.age, n.year,n.age,n.sims), dimnames=list(sexes,years,ages,years,ages,sims))
+
+```
+
 ## mean and median catch/ABC for each area and overall
 
 #Proportion years/sims where of the catch in area x is more than 50% (or a changeable value) fish younger than the age @50% mature
