@@ -98,7 +98,7 @@ The future plan is to examine this suite:
 5 - Exp_survey_wt (Similar to ‘NPFMC’ option but using survey index only)  
 6 - Exp_fishery_wt (Similar to ‘NPFMC’ option but using fishery index only)   
 7 - Non-Exp_NPFMC (A 5-yr moving average of fishery and survey indices)  
-8 - Partial_fixed (BS and AI receive 10%  of the ABC each, WG, CG, WY, and EY are apportioned based on NPFMC method)   
+8 - Partial_fixed (BS and AI receive 10%  of the ABC each, WG, CG, WY, and EY are apportioned based on NPFMC method)  
 9 - Age_based (Based on the proportions of fish at age of 50% maturity in each area - i.e. areas with greater proportion of fish at age of 50% maturity or greater will be apportioned a greater proportion of ABC)  
 10 - (needs to be added) Terminal year of longline survey (no exp wts), proxy for RE model.  Maybe sub this for equilibrium movement?
 ``` {r, echo=FALSE}
@@ -992,7 +992,8 @@ melt_resid.ssb2 %>%
 ```
 
   
-# Performance metrics   
+# Performance metrics
+As you read the things below, I could use help thinking about ways to combine a suite of interesting (relevant) performance metrics in a table or (maybe) figure that would be a single source of info for comparison. Which of the items below (or that need to be added) would be included?  
 ```{r,echo=FALSE}
 #create arrays for the apportionments
 AM_EM_abc <- array(data=NA,dim=c(n.year,n.fish,n.area,n.sims,n.apports),dimnames=list(years,fish,areas,sims,apport.names))
@@ -1003,10 +1004,10 @@ AM_EM_abc[,,,,b] <- readRDS(file.path(dir.temp,"apportioned_C.rds"))
 }
 ```
 
-The overall mean and median (areas summed and years summed, for each apportionment method)  
+The overall mean and median (combines: areas, gears, years, sims) for 2019-`r 1976+n.year-1`.  
 ``` {r,echo=FALSE}
-abc_allmean <- apply(AM_EM_abc,5,mean)
-abc_allmed <- apply(AM_EM_abc,5,median)
+abc_allmean <- apply(AM_EM_abc[44:n.year,,,,],5,mean)
+abc_allmed <- apply(AM_EM_abc[44:n.year,,,,],5,median)
 abc_allmean
 abc_allmed
 
@@ -1014,7 +1015,7 @@ allmean_sd <- vector()
 allmean_uci <- vector()
 allmean_lci <- vector()
 for(b in 1:n.apports){
-allmean_sd[b] <- sd(AM_EM_abc[,,,,b])
+allmean_sd[b] <- sd(AM_EM_abc[44:n.year,,,,b])
 allmean_uci[b] <- abc_allmean[b] + (1.92*allmean_sd[b])
 allmean_lci[b] <- abc_allmean[b] - (1.92*allmean_sd[b])
 }
@@ -1030,7 +1031,7 @@ all_abc[b,3] <- allmean_uci[b]
 all_abc[b,4] <- allmean_lci[b]
 }
 
-melted_ABC <- melt(AM_EM_abc[43:n.year,,,,], value.name="ABC")
+melted_ABC <- melt(AM_EM_abc[44:n.year,,,,], value.name="ABC")
 names(melted_ABC) <- c("Year","Fishery","Area","Sim","Apportionment.Method","ABC")
 melted_ABC %>% 
 ggplot(aes(x=factor(Apportionment.Method),y=ABC)) +#,fill=Apportionment)) + 
@@ -1039,29 +1040,29 @@ ggplot(aes(x=factor(Apportionment.Method),y=ABC)) +#,fill=Apportionment)) +
 ```
   
   
-Median and mean apportioned ABC by area (over all sims and forward looping years) - relative means and medians
+Median and mean apportioned ABC by area and year (combines: gears, sims) for 2019-`r 1976+n.year-1`.  
 ```{r,echo=FALSE}
 #set up objects to hold secondary products
-mean_ABC <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
-median_ABC <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
-meanABC_uci <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
-meanABC_lci <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
+mean_ABC <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
+median_ABC <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
+meanABC_uci <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
+meanABC_lci <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
 #medianABC_uci <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
 #medianABC_lci <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
-sd_1 <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
+sd_1 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
+tempsd <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(years[forproj.styr:n.year],areas,sims,apport.names))
 #calculate things
-mean_ABC <- apply(AM_EM_abc,c(1,3,5),mean)
-median_ABC <- apply(AM_EM_abc,c(1,3,5),median)
-
-#calc sd for year, area, apportionment, across sims
-#first, sum abc over gear and take sd
-for(y in 1:n.year){
+mean_ABC <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,5),mean)
+median_ABC <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,5),median)
+tempsd <-apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum)
+#calc sd 
+for(y in 1:length(forproj.styr:n.year)){
   for(m in 1:n.area) {
     for(b in 1:n.apports){
-sd_1[y,m,b] <- sd((apply(AM_EM_abc,c(1,3,4,5),sum))[y,m,,b])
+      sd_1[y,m,b] <- sd(tempsd[y,m,,b])
     }}}
 #then fill in uci and lci 
-for(y in 1:n.year){
+for(y in 1:length(forproj.styr:n.year)){
   for(m in 1:n.area) {
     for(b in 1:n.apports){
 meanABC_lci[y,m,b] <- mean_ABC[y,m,b] - (1.96*sd_1[y,m,b])
@@ -1071,38 +1072,35 @@ meanABC_uci[y,m,b] <- mean_ABC[y,m,b] + (1.96*sd_1[y,m,b])
 par(mfrow=c(3,2))
 for(b in 1:n.apports){
   for(m in 1:n.area){
-plot(mean_ABC[(forproj.styr-1):n.year,m,b]~years[(forproj.styr-1):n.year],typ="l",col="black",lwd=3,ylim=c(0,6),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
-lines(median_ABC[(forproj.styr-1):n.year,m,b]~years[(forproj.styr-1):n.year],typ="l",col="red",lwd=3)
-lines(meanABC_uci[(forproj.styr-1):n.year,m,b]~years[(forproj.styr-1):n.year],lty=3,col="grey",lwd=1)
-lines(meanABC_lci[(forproj.styr-1):n.year,m,b]~years[(forproj.styr-1):n.year],lty=3,col="grey",lwd=1)
+plot(mean_ABC[,m,b]~years[forproj.styr:n.year],typ="l",col="black",lwd=3,ylim=c(0,6),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
+lines(median_ABC[,m,b]~years[forproj.styr:n.year],typ="l",col="red",lwd=3)
+lines(meanABC_uci[,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+lines(meanABC_lci[,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
 legend("topright",legend=c("Mean ABC","Median ABC","Upper & Lower ~95% CI"),lwd=c(3,3),col=c("black","red","grey","grey"),cex=0.5)
 }}
 ``` 
 
-Median and mean apportioned ABC by area and by gear (over all sims and forward looping years) - relative means and medians
+Median and mean apportioned ABC by area, gear, and year (combines: sims) for 2019-`r 1976+n.year-1`.  
 ``` {r,echo=FALSE}
 #set up objects to hold secondary products
-mean_ABC_gear <- array(data=NA,dim=c(n.year,n.fish,n.area,n.apports),dimnames=list(years,fish, areas,apport.names))
-median_ABC_gear <- array(data=NA,dim=c(n.year,n.fish,n.area,n.apports),dimnames=list(years,fish,areas,apport.names))
-meanABC_uci_gear <- array(data=NA,dim=c(n.year,n.fish,n.area,n.apports),dimnames=list(years,fish,areas,apport.names))
-meanABC_lci_gear <- array(data=NA,dim=c(n.year,n.fish,n.area,n.apports),dimnames=list(years,fish,areas,apport.names))
-medianABC_uci_gear <- array(data=NA,dim=c(n.year,n.fish,n.area,n.apports),dimnames=list(years,fish,areas,apport.names))
-medianABC_lci_gear <- array(data=NA,dim=c(n.year,n.fish,n.area,n.apports),dimnames=list(years,fish,areas,apport.names))
-sd_2 <- array(data=NA,dim=c(n.year,n.fish,n.area,n.apports),dimnames=list(years,fish,areas,apport.names))
+mean_ABC_gear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish, areas,apport.names))
+median_ABC_gear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish,areas,apport.names))
+meanABC_uci_gear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish,areas,apport.names))
+meanABC_lci_gear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish,areas,apport.names))
+sd_2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish,areas,apport.names))
 #calculate things
-mean_ABC_gear <- apply(AM_EM_abc,c(1,2,3,5),mean)
-median_ABC_gear <- apply(AM_EM_abc,c(1,2,3,5),median)
+mean_ABC_gear <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,3,5),mean)
+median_ABC_gear <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,3,5),median)
 
-#calc sd for year, area, apportionment, across sims
-#first, sum abc over gear and take sd
-for(y in 1:n.year){
+#calc sd 
+for(y in 1:length(forproj.styr:n.year)){
   for(f in 1:n.fish){
     for(m in 1:n.area) {
       for(b in 1:n.apports){
 sd_2[y,f,m,b] <- sd(AM_EM_abc[y,f,m,,b])
       }}}}
 #then fill in uci and lci 
-for(y in 1:n.year){
+for(y in 1:length(forproj.styr:n.year)){
   for(f in 1:n.fish){
     for(m in 1:n.area) {
       for(b in 1:n.apports){
@@ -1113,45 +1111,226 @@ meanABC_uci_gear[y,f,m,b] <- mean_ABC_gear[y,f,m,b] + (1.96*sd_2[y,f,m,b])
 par(mfrow=c(3,2))
 for(b in 1:n.apports){
   for(m in 1:n.area){
-plot(mean_ABC_gear[(forproj.styr-1):n.year,2,m,b]~years[(forproj.styr-1):n.year],typ="l",col="black",lwd=3,ylim=c(0,6),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
-  lines(mean_ABC_gear[(forproj.styr-1):n.year,3,m,b]~years[(forproj.styr-1):n.year],typ="l",col="red",lwd=3)
-  lines(median_ABC_gear[(forproj.styr-1):n.year,2,m,b]~years[(forproj.styr-1):n.year],typ="l",col="red",lwd=3)
-lines(meanABC_uci_gear[(forproj.styr-1):n.year,m,b]~years[(forproj.styr-1):n.year],lty=3,col="grey",lwd=1)
-lines(meanABC_lci_gear[(forproj.styr-1):n.year,m,b]~years[(forproj.styr-1):n.year],lty=3,col="grey",lwd=1)
-legend("topright",legend=c("Mean ABC","Median ABC","Upper & Lower ~95% CI"),lwd=c(3,3),col=c("black","red","grey","grey"),cex=0.5)
+plot(mean_ABC_gear[,2,m,b]~years[forproj.styr:n.year],typ="l",col="black",lwd=3,ylim=c(0,10),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
+  lines(mean_ABC_gear[,3,m,b]~years[forproj.styr:n.year],typ="l",col="blue",lwd=3)
+  lines(median_ABC_gear[,2,m,b]~years[forproj.styr:n.year],typ="l",col="red",lwd=3)
+  lines(median_ABC_gear[,3,m,b]~years[forproj.styr:n.year],lty=3,col="red",lwd=3)
+  lines(meanABC_uci_gear[,2,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+  lines(meanABC_lci_gear[,2,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+  lines(meanABC_uci_gear[,3,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+  lines(meanABC_lci_gear[,3,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+legend("topright",legend=c("Mean ABC Fixed Gear","Mean ABC Trawl Gear","Median ABC Fixed Gear","Median ABC Trawl Gear","Upper & Lower ~95% CI"),lwd=c(3,3,3,3,1,1),col=c("black","blue","red","red","grey","grey"),lty=c(1,1,1,3,1,1,1,1),cex=0.5)
 }}
 ```
 
-Median and mean apportioned ABC for all areas and gears summed (over all areas, sims and forward looping years) - relative values
+Median and mean apportioned ABC by year (combines: areas, gears, sims) for 2019-`r 1976+n.year-1`.  
 ``` {r,echo=FALSE}
-mean_ABC_allA <- matrix(data=NA,nrow=c(n.year),ncol=c(n.apports),dimnames=list(years,apport.names))
-median_ABC_allA <- matrix(data=NA,nrow=c(n.year),ncol=c(n.apports),dimnames=list(years,apport.names))
-meanABC_uci_allA <- matrix(data=NA,nrow=c(n.year),ncol=c(n.apports),dimnames=list(years,apport.names))
-meanABC_lci_allA <- matrix(data=NA,nrow=c(n.year),ncol=c(n.apports),dimnames=list(years,apport.names))
-medianABC_uci_allA <- matrix(data=NA,nrow=c(n.year),ncol=c(n.apports),dimnames=list(years,apport.names))
-medianABC_lci_allA <- matrix(data=NA,nrow=c(n.year),ncol=c(n.apports),dimnames=list(years,apport.names))
+#set up objects to hold secondary products
+mean_ABC_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
+median_ABC_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
+meanABC_uci_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
+meanABC_lci_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
+medianABC_uci_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
+medianABC_lci_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
+sd_3 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
 
+#calculate things
+mean_ABC_allA <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,5),mean)
+median_ABC_allA <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,5),median)
+tempsd <-apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,4,5),sum)
+
+#calc sd 
+for(y in 1:length(forproj.styr:n.year)){
+  for(b in 1:n.apports){
+sd_3[y,b] <- sd(tempsd[y,,b])
+  }}
+#then fill in uci and lci 
+for(y in 1:length(forproj.styr:n.year)){
+  for(b in 1:n.apports){
+meanABC_lci_allA[y,b] <- meanABC_uci_allA[y,b] - (1.96*sd_3[y,b])
+meanABC_uci_allA[y,b] <- meanABC_uci_allA[y,b] + (1.96*sd_3[y,b])
+  }} 
+#then plot
+par(mfrow=c(3,2))
+for(b in 1:n.apports){
+  for(m in 1:n.area){
+plot(mean_ABC_allA[,b]~years[forproj.styr:n.year],typ="l",col="black",lwd=3,ylim=c(0,10),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
+  lines(median_ABC_allA[,b]~years[forproj.styr:n.year],typ="l",col="red",lwd=3)
+  lines(meanABC_uci_allA[,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+  lines(meanABC_lci_allA[,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+legend("topright",legend=c("Mean ABC","Median ABC","Upper & Lower ~95% CI"),lwd=c(3,3,1),col=c("black","red","grey"),cex=0.5)
+}}
 ```
 
-Median and mean apportioned ABC by gear for all areas summed (over all areas, sims and forward looping years) - relative values
+Median and mean apportioned ABC by gear (combines: areas, sims) for 2019-`r 1976+n.year-1`.
 ``` {r,echo=FALSE}
-mean_ABC_allgear <- array(data=NA,dim=c(n.year,n.fish,n.apports),dimnames=list(years,fish,apport.names))
-median_ABC_allgear <- array(data=NA,dim=c(n.year,n.fish,n.apports),dimnames=list(years,fish,apport.names))
-meanABC_uci_allgear <- array(data=NA,dim=c(n.year,n.fish,n.apports),dimnames=list(years,fish,apport.names))
-meanABC_lci_allgear <- array(data=NA,dim=c(n.year,n.fish,n.apports),dimnames=list(years,fish,apport.names))
-medianABC_uci_allgear <- array(data=NA,dim=c(n.year,n.fish,n.apports),dimnames=list(years,fish,apport.names))
-medianABC_lci_allgear <- array(data=NA,dim=c(n.year,n.fish,n.apports),dimnames=list(years,fish,apport.names))
+mean_ABC_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
+median_ABC_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
+meanABC_uci_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
+meanABC_lci_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
+medianABC_uci_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
+medianABC_lci_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
+sd_4 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
+#calculate things
+mean_ABC_allgear <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,5),mean)
+median_ABC_allgear <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,5),median)
+tempsd <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,4,5),sum)
 
+#calc sd 
+for(y in 1:length(forproj.styr:n.year)){
+  for(f in 1:n.fish){
+  for(b in 1:n.apports){
+sd_4[y,f,b] <- sd(tempsd[y,f,,b])
+  }}}
+#then fill in uci and lci 
+for(y in 1:length(forproj.styr:n.year)){
+  for(b in 1:n.apports){
+meanABC_lci_allgear[y,2,b] <- mean_ABC_allgear[y,2,b] - (1.96*sd_4[y,2,b])
+meanABC_uci_allgear[y,2,b] <- mean_ABC_allgear[y,2,b] + (1.96*sd_4[y,2,b])
+meanABC_lci_allgear[y,3,b] <- mean_ABC_allgear[y,3,b] - (1.96*sd_4[y,3,b])
+meanABC_uci_allgear[y,3,b] <- mean_ABC_allgear[y,3,b] + (1.96*sd_4[y,3,b])
+  }}
+#then plot
+par(mfrow=c(3,2))
+for(b in 1:n.apports){
+plot(mean_ABC_allgear[,2,b]~years[forproj.styr:n.year],typ="l",col="black",lwd=3,ylim=c(0,10),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
+  lines(mean_ABC_allgear[,3,b]~years[forproj.styr:n.year],typ="l",col="blue",lwd=3)
+  lines(median_ABC_allgear[,2,b]~years[forproj.styr:n.year],typ="l",col="red",lwd=3)
+  lines(median_ABC_allgear[,3,b]~years[forproj.styr:n.year],lty=3,col="red",lwd=3)
+  lines(meanABC_uci_allgear[,2,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+  lines(meanABC_lci_allgear[,2,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+  lines(meanABC_uci_allgear[,3,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+  lines(meanABC_lci_allgear[,3,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
+legend("topright",legend=c("Mean ABC Fixed Gear","Mean ABC Trawl Gear","Median ABC Fixed Gear","Median ABC Trawl Gear","Upper & Lower ~95% CI"),lwd=c(3,3,3,3,1,1),col=c("black","blue","red","red","grey","grey"),lty=c(1,1,1,3,1,1,1,1),cex=0.5)
+}
+```
+  
+Next we examine the proportion of years (terminal year of EM runs) and sims where apportioned ABC summed over areas is above a specified threshold value. It is simple to change the threshold value being evaluated; the present value of the ABC threshold for management areas combined is:
+``` {r, echo=FALSE}
+threshold_allA <- 12.0 #value in kilotons
+threshold <- 2.0
+```
+`r threshold_allA` kilotons.  
+
+The proportion of years and simulations where total ABC is above the all-area threshold is
+``` {r,echo=FALSE}
+AM_EM_abc_sum <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,4,5),sum)
+dimnames(AM_EM_abc_sum)<-list(forproj.styr:n.year,sims,apport.names)
+app_num <- array(data=NA,dim=c(length(forproj.styr:n.year),n.sims,n.apports),dimnames=list(forproj.styr:n.year,sims,apport.names))
+for(b in 1:n.apports){
+  for(i in 1:n.sims){
+    for(y in 1:length(forproj.styr:n.year)){
+      if(AM_EM_abc_sum[y,i,b] < threshold_allA) { #0 if below threshold
+        app_num[y,i,b] <- 0      
+      } else {
+      app_num[y,i,b] <- 1        #if above threshold
+      }
+    }
+  }
+}
+#proportion years in each area above threshold across all years and sims 
+temp_a <- vector() 
+temp_a <- apply(app_num[,,],3,sum)
+(temp_a1 <- temp_a/(n.sims*(length(forproj.styr:n.year))) ) 
 ```
 
-proportion of years (terminal year of EM runs) and sims where apportioned TAC falls below threshold
-proportion years in each area above threshold across all years and sims 
+
+It may also be of value to set a threshold for individual management areas. We are presenting results for a threshold of `r threshold` kilotons.
+``` {r, echo=FALSE}
+AM_EM_abc_sum2 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum)
+dimnames(AM_EM_abc_sum2)<-list(forproj.styr:n.year,areas,sims,apport.names)
+app_num2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,c("BS","AI","WG","CG","WY","EY/SEO"),sims,apport.names))
+for(b in 1:n.apports){
+  for(m in 1:n.area){
+    for(i in 1:n.sims){
+      for(y in 1:length(forproj.styr:n.year)){
+      if(AM_EM_abc_sum2[y,m,i,b] < threshold) { #0 if below threshold
+        app_num2[y,m,i,b] <- 0      
+      } else {
+      app_num2[y,m,i,b] <- 1        #if above threshold
+      }
+    }
+  }
+}}
+#proportion years in each area above threshold across all years and sims 
+temp_b <- matrix(data=NA,nrow=c(n.area),ncol=c(n.apports)) 
+temp_b <- apply(app_num2,c(2,4),sum)
+(temp_b1 <- temp_b/(n.sims*(length(forproj.styr:n.year))) ) 
+
+```
+  
+## The stability of ABC apportionment to individual management areas and of ABC as a whole may be of interest. 
+``` {r, echo=FALSE}
+AM_EM_abc_sum3 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum)
+diff_apport <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,1:n.area,1:n.sims,apport.names))
+for(b in 1:n.apports){
+  for(i in 1:n.sims){
+    for(m in 1:n.area){
+      for(y in 1:length(forproj.styr:(n.year-1))){
+    diff_apport[y,m,i,b] <- (abs(AM_EM_abc_sum3[y,m,i,b]-AM_EM_abc_sum3[y+1,m,i,b])/(abs(AM_EM_abc_sum3[y,m,i,b]+AM_EM_abc_sum3[y+1,m,i,b])/2))*100
+      }}}}
+diff_apport
+pct_chg1 <- apply(diff_apport,c(1,2,4),mean) #mean across sims
+pct_chg2 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],c(2,4),mean) #mean across sims and years
+pct_chg3 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],4,mean)#mean across sims, areas, years
+##mean decrease?
+##mean increase?
+```
+The mean absolute percent change in ABC for each apportionment method is
+`r pct_chg3`
+This reflects the inherent variability in ABC from year to year.
+  
+Drilling down further, the mean absolute percent change in ABC for each area and apportionment method is
+`r pct_chg2`
+This reflects what an individual management area may experience in terms of average change in ABC from year to year.
+  
 
 
-## stability for each apportionment option (over all areas summed, and by area) - mean and median absolute change in in ABC year to year and for all years
+## How well do apportionment methods track true (SSB) biomass proportions by area? Relative percent difference in OM biomass by area vs EM apportionment by area
+``` {r, echo=FALSE}
+#create arrays to hold indices
+AM_EM_natage <- array(data=NA,dim=c(n.sex,n.year,n.age,n.year,n.age,n.sims,length(1:n.apports)),dimnames=list(sexes,years,ages,years,ages,sims,apport.names))
+AM_EM_totbiomass <- array(data=NA,dim=c(n.year,n.year,n.sims,length(1:n.apports)),dimnames=list(years,years,sims,apport.names))
+#read in things
+for(b in 1:n.apports){
+dir.temp <- paste0(dir.output,"/Apport.Option_",b)
+AM_EM_natage[,,,,,,b] <- readRDS(file.path(dir.temp,"EM_natage.rds")) 
+AM_EM_totbiomass[,,,b] <- readRDS(file.path(dir.temp,"EM_totbiomass.rds")) 
+}
+#remember things we have read in before
+#AM_EM_spbiom
+#OM_ssb
+#calc abc proportion by area by year and by sim and by apportionment type
+temp_abc <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum)
+ABC_prop_1 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apport.names))
+for(y in 1:(length(forproj.styr:n.year))){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+    ABC_prop_1[y,,i,b] <- prop.table(temp_abc[y,,i,b])
+}}}
 
+#calc proportions OM ssbiomass by area and year
+temp_abc2 <- apply(OM_ssb[,,forproj.styr:n.year,,,],c(3,4,5,6),sum)
+ABC_prop_2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apport.names))
+for(y in 1:(length(forproj.styr:n.year))){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+    ABC_prop_2[y,,i,b] <- prop.table(temp_abc2[y,,i,b])
+}}}
 
-## How well do apportionment options track true biomass? Relative percent difference in OM biomass by area vs EM apportionment by area
+#residuals abs relative % diff (I think...lol)
+resid.biomApport <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apport.names))
+for(y in 1:(length(forproj.styr:n.year))){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+      for(m in 1:n.area){
+        resid.biomApport[y,m,i,b] <- (abs(ABC_prop_1[y,m,i,b]-ABC_prop_2[y,m,i,b])/(abs(ABC_prop_1[y,m,i,b]+ABC_prop_2[y,m,i,b])/2))*100
+      }}}}
+resid.biomApport
+#means of em abc and OM biomass residuals and of proportions
+variable.blable <- apply(resid.biomApport,c(2,4),mean) #mean absolute relative % difference between 'true' and apportioned ABC by area for each apport method (low is good if we want apportionment to track true ssb)
+```
+
 
 ## For each apportionment option, what is the proportion of years*sims where EM F/F40<1?
 
