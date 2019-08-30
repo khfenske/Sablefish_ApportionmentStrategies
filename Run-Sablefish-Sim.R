@@ -1105,7 +1105,7 @@ saveFerris() #call the function to save all the objects we want to keep as RDS f
 #save an image of the workspace for this set of years*sims for the specificed apportionment option (apport.opt)
 #can use load or attach to retreive the saved image
 #save(list=ls(all.names=TRUE), file=paste0(dir.admb,"/apportionment",apport.opt,".RData"), envir=.GlobalEnv) 
-source(file.path(dir.R,'save_RDSfiles.R')) #function called saveFerris to save objects from each sim as RDS files
+#source(file.path(dir.R,'save_RDSfiles.R')) #function called saveFerris to save objects from each sim as RDS files
 
 
 
