@@ -748,24 +748,24 @@ agebased_apportionment <- function(ABC.total,n.areas,LLlencomp,L50_mat) {
 #apport.opt = 10: Random effects model apportionment - well proxy - using terminal year survey only
 termLL_apportionment <- function(ABC.total,n.areas,biom.data) { #note this uses numbers not biomass for survey
   ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
-  biom.data2 <- matrix(data=NA, ncol=n.areas,nrow=5)
-  biom.data.prop <- matrix(data=NA, ncol=n.areas,nrow=5)
+  biom.data2 <- vector()
+  biom.data.prop <- vector()
   #biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
-  biom.prop.sum <- vector(length=n.areas)
+  #biom.prop.sum <- vector(length=n.areas)
   #wts <- c(0.0625, 0.0625, 0.125, 0.25, 0.5) #the weighting values      
   
-  biom.data2 <- apply(biom.data,c(2,4),sum)
-  for (t in (length(biom.data2[,1])-4):length(biom.data2[,1])) {
+  biom.data2 <- apply(biom.data,3,sum)
+  #for (t in (length(biom.data2[,1])-4):length(biom.data2[,1])) {
     for (r in 1:n.areas) {
-      biom.data.prop[t,r] <- biom.data2[t,r]/sum(biom.data2[t,]) #calc proportion by year across areas for survey data
-    }}
+      biom.data.prop[r] <- biom.data2[r]/sum(biom.data2) #calc proportion by year across areas for survey data
+    }#}
   #for (t in 1:length(biom.data.prop[,1])) {
     #for (r in 1:n.areas) {    
       #biom.data.prop.wt[t,r] <- biom.data.prop[t,r]*wts[t]    
     #}}  
-  biom.prop.sum <- biom.data.prop[5,]  
+  #biom.prop.sum <- biom.data.prop
   for (r in 1:n.areas) {
-    ABC.EM[r] <- ABC.total * biom.prop.sum 
+    ABC.EM[r] <- ABC.total * biom.data.prop[r] 
   }
   return(ABC.EM)
 }
@@ -1012,7 +1012,7 @@ for(i in 1:n.sims) {
       } 
       
       if (apport.opt==10) { 
-      ABC_TS[y,,i] <- termLL_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,(y-4):y,,,i]) 
+      ABC_TS[y,,i] <- termLL_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,y,,,i]) 
       } 
       
       if (apport.opt==11) {
@@ -1060,7 +1060,7 @@ for(i in 1:n.sims) {
     EM_B40[y,i] <- get_ABC$B40
     EM_SBF40[y,i] <- get_ABC$SBF40
     EM_SBF35[y,i] <- get_ABC$SBF35
-    EM_SBF0[y,i] <- get_ABC$SBF0
+    EM_SBF0[y,i] <- get_ABC$SB0
     EM_F35[y,i] <- get_ABC$F35
     EM_F40[y,i] <- get_ABC$F40
     
@@ -1097,17 +1097,16 @@ for(i in 1:n.sims) {
     
     EM_predAC.surv[y,,21:(y-1),,i] <- get_agerep1$pred_srv1_age
     EM_predAC.fish[y,,24:(y-1),,i] <- get_agerep2$pred_fish1_age
-    
-    EM_natage[1,y,,2:y,,i] <- get_Natage$natage_f #need to rerun tpl for new exe first
-    EM_natage[2,y,,2:y,,i] <- get_Natage$natage_m
     EM_LLcatchatage[1,y,,2:y,,i] <- get_catchatage$LLcatchatage_f
     EM_LLcatchatage[2,y,,2:y,,i] <- get_catchatage$LLcatchatage_m
     EM_TRcatchatage[1,y,,2:y,,i] <- get_catchatage$TRcatchatage_f
     EM_TRcatchatage[2,y,,2:y,,i] <- get_catchatage$TRcatchatage_m
     EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
     EM_F_full[y,2:y,i] <- get_ABC$Fully_selected_F
-    
-    
+    if(y=n.year){
+    EM_natage[1,y,,i] <- get_Natage$natage_f 
+    EM_natage[2,y,,i] <- get_Natage$natage_m    
+    }
     ### side notes:
     # No Recruitment relationship  Can we change this so it reads in a rec value from a separate file which draws N simulations * N years worth of rec values all 
     # at once so the same recruitment can be applied to single and spatial models? Could make it so that if SSB is 0, 0 rec is used instead so we 
