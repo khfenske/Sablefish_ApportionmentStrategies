@@ -137,7 +137,7 @@ N_hold <- array(dim=c(n.sex, n.year, n.area, n.age, n.sims), dimnames=list(sexes
 
 # Simulate Annual Recruitments ====================================
 #setup_years <- 39 #number of years to run the loop setting up the initial population and building initial dat file
-create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=NULL, 
+create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=0.3, 
                         n.year=n.year, n.sims=n.sims, seed=111) #Creates rec object 
 
 # divide annual recruitments into areas - the values for area.props are from the proportions of age-2 fish by area 
@@ -200,6 +200,8 @@ LLfishRPWsigma <- 0.15 #0.4
 LLsurvAC_sampsize <- 200
 LLfishAC_sampsize <- 200
 
+#cond.rec$Recruitment[40]<- 50 #changing year 40 (2014) recruitment to a lower value
+
 ##### Condition year 1 (aka 1976):
 # since we track numbers in this model, I will initialize things in numbers instead of biomass
 i <- 1
@@ -219,7 +221,6 @@ for(m in 1:n.area) {N[,1,,m,] <- N[,1,,m,] * N.by.area.props[m]} #N by age and a
 #now calculate biomass
 for(a in 1:n.age) {B[,1,a,,] <- N[,1,a,,] * wa[,a]}  #in kt
 
-(N[,1,,,1])
 # ==============Condition years 2-43 (aka 1977-2018)
 #set up initial population and dat file
 i <- 1
@@ -493,9 +494,8 @@ run.model <- function() {
   }
   
   # extract ABC (read in a report file)
-  #  CHECK IF THERE ARE CODE CHANGES IN THE EM ABOUT F RATIO
   get_ABC <<- readList(file.path(dir.temp,"tem.rep"))
-  get_mgc <<- read_pars(fn="tem", drop_phase=TRUE)#, file.path(dir.temp,"tem.par"))  #this doesn't work for getting the max gradient component
+  get_mgc <<- read_pars(fn="tem", drop_phase=TRUE)
   get_Natage <<- readList(file.path(dir.temp,"Natage.rep"))
   get_catchatage <<- readList(file.path(dir.temp,"catchatage.rep"))
   get_agerep1 <<- readList(file.path(dir.temp,"agecomp_surv.rep"))
@@ -746,8 +746,14 @@ agebased_apportionment <- function(ABC.total,n.areas,LLlencomp,L50_mat) {
   return(ABC.EM)
 }
 #apport.opt = 10: Random effects model apportionment - well proxy - using terminal year survey only
+#if (apport.opt==10) { 
+#  ABC_TS[y,,i] <- termLL_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,y,,,i]) 
+#} 
+#biom.data=Surv.RPN[,y,,,i] #dim(2 30 6)
+#n.areas=n.area
+#ABC.total = get_ABC$ABC_proj[1]
 termLL_apportionment <- function(ABC.total,n.areas,biom.data) { #note this uses numbers not biomass for survey
-  ABC.EM <- vector(length=n.areas) #creating the output vector to hold apportioned ABCs
+  ABC.EM <- vector() #creating the output vector to hold apportioned ABCs
   biom.data2 <- vector()
   biom.data.prop <- vector()
   #biom.data.prop.wt <- matrix(data=NA, ncol=n.areas,nrow=5)
@@ -925,12 +931,12 @@ for(i in 1:n.sims) {
       for(h in 1:n.sex){
         # longline/fixed gear post-IFQ fishery age comps in numbers , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
         #specify another comp sample size here
-        sample_age_comps(harvest.n[h,y-1,,2,m,i]*selex$fish$USfixed_postIFQ[m,h,], Nsamp=LLfishAC_sampsize, cpar=NULL, seed=c(y+i+134)) #does this need to include selectivity?
+        sample_age_comps(harvest.n[h,y-1,,2,m,i]*selex$fish$USfixed_postIFQ[m,h,], Nsamp=LLfishAC_sampsize, cpar=1, seed=c(y+i+134)) #does this need to include selectivity?
         Fish.AC[h,y-1,,m,i] <- obs.comp
         
         # longline survey age comps in numbers (not proportions yet) single sex, can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
         #specify another comp sample size here
-        sample_age_comps(N[h,y-1,,m,i]*selex$surv$USLongline[h,], Nsamp=LLsurvAC_sampsize, cpar=NULL, seed=c(y+i+135)) #true.props, Nsamp, cpar
+        sample_age_comps(N[h,y-1,,m,i]*selex$surv$USLongline[h,], Nsamp=LLsurvAC_sampsize, cpar=1, seed=c(y+i+135)) #true.props, Nsamp, cpar
         Surv.AC[h,y-1,,m,i] <- obs.comp
       } #close sex
     } #next area m
@@ -1012,7 +1018,7 @@ for(i in 1:n.sims) {
       } 
       
       if (apport.opt==10) { 
-      ABC_TS[y,,i] <- termLL_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,y,,,i]) 
+      ABC_TS[y+1,,i] <- termLL_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,y,,,i]) 
       } 
       
       if (apport.opt==11) {
@@ -1103,9 +1109,9 @@ for(i in 1:n.sims) {
     EM_TRcatchatage[2,y,,2:y,,i] <- get_catchatage$TRcatchatage_m
     EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
     EM_F_full[y,2:y,i] <- get_ABC$Fully_selected_F
-    if(y=n.year){
-    EM_natage[1,y,,i] <- get_Natage$natage_f 
-    EM_natage[2,y,,i] <- get_Natage$natage_m    
+    if(y==n.year){
+    EM_natage[1,,,i] <- get_Natage$natage_f 
+    EM_natage[2,,,i] <- get_Natage$natage_m    
     }
     ### side notes:
     # No Recruitment relationship  Can we change this so it reads in a rec value from a separate file which draws N simulations * N years worth of rec values all 

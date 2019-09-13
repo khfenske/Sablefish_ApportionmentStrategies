@@ -15,7 +15,6 @@
 saveFerris <- function() {
 #save all the things from the OM space and EM output
 setwd(dir.output)
-
 #save the generic things to the output folder  
 saveRDS(n.year,"n.year.rds")
 saveRDS(years,"years.rds")
@@ -34,6 +33,7 @@ saveRDS(n.fish,"n.fish.rds")
 saveRDS(fish,"fish.rds")
 saveRDS(n.surv,"n.surv.rds")
 saveRDS(surv.name,"surv.name.rds")
+saveRDS(cond.rec$Recruitment,"conditioning_rec.rds")
 
 
 setwd(paste0(dir.output,"/Apport.Option_",apport.opt)) #switch to WD where we want to save the files
@@ -61,6 +61,7 @@ saveRDS(va_surv,"va_surv.rds" )
 saveRDS(q_fish,"q_fish.rds")
 saveRDS(q_surv,"q_surv.rds")
 saveRDS(apportioned_C,"apportioned_C.rds")
+saveRDS(ABC_TS,"abc_TS.rds")
 
 #save the apportionment-specific EM things to an apportionment folder
 saveRDS(max_grads,"maxgrads.rds")

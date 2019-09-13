@@ -1,7 +1,7 @@
 ---
-title: "Apportionment simulations"
+title: "Preliminary evaluation of alternative sablefishapportionment strategies"
 author: "Kari Fenske, Curry Cunningham, Dana Hanselman"
-date: "August 16, 2019"
+date: "September 9, 2019"
 output: html_document
 ---
 
@@ -21,14 +21,14 @@ require(gtools)
 require(PBSmodelling)
 require(R2admb)
 
-###THESE ITEMS NEED MANUAL INPUT!!!###
-n.apports <- 6 #number of apportionment options that have been run and are to be compiled here
-apports <- c(1,2,3,4,5,6)#,7,8,9,10,11) #the folder numbers of the apportionment options to be compiled
+###THESE ITEMS NEED MANUAL INPUT!!!####################################################
+n.apports <- 2 #number of apportionment options that have been run and are to be compiled here
+apports <- c(1,2)#,3,4,5,6,7,8,9,10)#,11) #the folder numbers of the apportionment options to be compiled
 #"Equal-1","Fixed-2","Equilibrium-3","NPFMC-4","Exp_survey_wt-5","Exp_fishery_wt-6","Non-Exp_NPFMC-7",
 #"Partial_fixed-8","Age_based-9","RandEff-10"","All_to_one-11","TermYear_biom-12","Penalized-13","Non-exp_Agebased-14"
-apport.names <- list("Equal","Fixed","Equilibrium","NPFMC","Exp_survey_wt","Exp_fishery_wt")#,"Non-Exp_NPFMC",
-#"Partial_fixed","Age_based","Term_LLsurv","All_to_one") #list the names of the apportionment options being compared
-
+apportion.names <- list("Equal","Fixed")#,"Equilibrium","NPFMC","Exp_survey_wt","Exp_fishery_wt","Non-Exp_NPFMC",
+#"Partial_fixed","Age_based","Term_LLsurv")#,"All_to_one") #list the names of the apportionment options being compared
+############################################################################################
 
 #read in the apportionment R object files for indexing
 wd <- ("C:/Repositories/Sablefish_ApportionmentStrategies") #may need to manually enter your wd here
@@ -53,13 +53,16 @@ n.fish <- readRDS(file.path(wd,"output","n.fish.rds"))
 fish <- readRDS(file.path(wd,"output","fish.rds"))
 n.surv <- readRDS(file.path(wd,"output","n.surv.rds"))
 surv.name <- readRDS(file.path(wd,"output","surv.name.rds"))
+cond_rec <- readRDS(file.path(wd,"output","conditioning_rec.rds"))
 
 #plotting things
 forproj.styr <- 44 #define the year (y) where EM is first run 
 OMyears <- c(1977:2018) #conditioning period years for OM
-rpn_years <- c(15:43) #LL survey index years
-rpw_years <- c(15:42) #fixed gear fishery years
+area.names <- c("BS","AI","WGOA","CGOA","WY","EY-SEO")
+#rpn_years <- c(15:43) #LL survey index years
+#rpw_years <- c(15:42) #fixed gear fishery years
 mgmt_rep_years <- c(1960:2018) # these are the years for management EM data (for comparison plotting)
+
 
 #read in data from single area management model/Kari's single model (it's sort of hybrid data)
 mgmt_dat <- readList(file.path(dir.admb,"Single_area/permanant_tem_single2018.dat"))
@@ -68,32 +71,197 @@ mgmt_rep <- readList(file.path(dir.admb,"Management/tem_simplified.rep"))
 #read in data from the conditioning OM years
 OM <- readList(file.path(dir.admb,"Single_area/tem_single2018.dat"))
 
-#read in OM objects as you use them below
-#read in EM objects as you use them below
+#read in OM and EM objects 
+#create arrays for the apportionments
+AM_EM_abc <- array(data=NA,dim=c(n.year,n.fish,n.area,n.sims,n.apports),dimnames=list(years,fish,areas,sims,apportion.names))
+AM_EM_spbiom <- array(data=NA,dim=c(n.year,n.year,n.sims,n.apports),dimnames=list(years,years,sims,apportion.names))
+OM_ssb <- array(data=NA,dim=c(n.sex,n.age,n.year,n.area,n.sims,length(1:n.apports)),dimnames=list(sexes,ages,years,areas,sims,apportion.names))
+AM_EM_B40 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+AM_EM_SBF40 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+AM_EM_SBF35 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+AM_EM_SBF0 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+AM_EM_depletion1 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+AM_EM_depletion2 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+AM_max_grads <- array(data=NA, dim=c(n.year,n.sims,length(1:n.apports)), dimnames=list(years,sims,apportion.names)) 
+AM_ofv <- array(data=NA, dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apportion.names))  
+AM_sprpen <- array(data=NA, dim=c(n.year,n.sims,length(1:n.apports)), dimnames=list(c(1976:(1976+n.year-1)),sims,apportion.names))
+AM_pred.sel.preifq <- array(data=NA,dim=c(n.year,n.age,n.sex,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),ages,sexes,sims,apportion.names))
+AM_pred.sel.postifq <- array(data=NA,dim=c(n.year,n.age,n.sex,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),ages,sexes,sims,apportion.names))
+AM_pred.sel.trawl <- array(data=NA,dim=c(n.year,n.age,n.sex,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),ages,sexes,sims,apportion.names))
+AM_pred.sel.LLsurv <- array(data=NA,dim=c(n.year,n.age,n.sex,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),ages,sexes,sims,apportion.names))
+AM_EM_q.LLsurv <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apportion.names))
+AM_EM_q.USJPsurv <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apportion.names))
+AM_EM_q.preifqfish <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apportion.names))
+AM_EM_q.postifqfish <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apportion.names))
+AM_EM_q.forfish <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apportion.names))
+OM_q_fish <- array(data=NA,dim=c(n.fish,n.area,n.apports),dimnames=list(fish,areas,apportion.names))
+OM_q_surv <- array(data=NA,dim=c(n.surv,n.area,n.apports),dimnames=list(surv.name,areas,apportion.names))
+AM_EM_pred.srvRPN <- array(data=NA,dim=c(n.year,n.year,n.sims,length(1:n.apports)),dimnames=list(years,years,sims,apportion.names))
+AM_EM_pred.fishRPW <- array(data=NA,dim=c(n.year,n.year,n.sims,length(1:n.apports)),dimnames=list(years,years,sims,apportion.names))
+OM.Surv.RPN <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+OM.Fish.RPW <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+AM_EM_predrec <- array(data=NA,dim=c(n.year,n.year,n.sims,length(1:n.apports)),dimnames=list(years,years,sims,apportion.names))
+OM.predrec <- array(data=NA,dim=c(n.year,n.area,n.sims,length(1:n.apports)),dimnames=list(years,areas,sims,apportion.names))
+OM_N <- array(data=NA,dim=c(n.sex,n.year,n.age,n.area,n.sims,length(1:n.apports)),dimnames=list(sexes,years,ages,areas,sims,apportion.names))
+
+
+#then read them all in
+for(b in 1:n.apports){
+dir.temp <- paste0(dir.output,"/Apport.Option_",b)
+AM_EM_abc[,,,,b] <- readRDS(file.path(dir.temp,"apportioned_C.rds")) 
+AM_EM_spbiom[,,,b] <- readRDS(file.path(dir.temp,"EM_spbiom.rds")) 
+OM_ssb[,,,,,b] <- readRDS(file.path(dir.temp,"ssb.rds")) 
+AM_EM_B40[,,b] <- readRDS(file.path(dir.temp,"EM_B40.rds")) 
+AM_EM_SBF40[,,b] <- readRDS(file.path(dir.temp,"EM_SBF40.rds")) 
+AM_EM_SBF35[,,b] <- readRDS(file.path(dir.temp,"EM_SBF35.rds")) 
+AM_EM_SBF0[,,b] <- readRDS(file.path(dir.temp,"EM_SBF0.rds")) 
+AM_EM_depletion1[,,b] <- readRDS(file.path(dir.temp,"EM_depletion1.rds")) 
+AM_EM_depletion2[,,b] <- readRDS(file.path(dir.temp,"EM_depletion2.rds")) 
+N <- readRDS(file.path(dir.temp,"N.rds")) #OM conditioning period N 
+B <- readRDS(file.path(dir.temp,"B.rds")) 
+ssb <- readRDS(file.path(dir.temp,"ssb.rds"))
+temp.catchnumbiom <- readRDS(file.path(dir.temp,"temp.catchnumbiom.rds"))
+C.b <- readRDS(file.path(dir.temp,"C.b.rds"))
+harvest.b <- readRDS(file.path(dir.temp,"harvest.b.rds"))
+cond.rec <- readRDS(file.path(dir.temp,"cond.Recruitment.rds"))
+recruits.area <- readRDS(file.path(dir.temp,"recruits.area.rds"))
+va <- readRDS(file.path(dir.temp,"va.rds"))
+va_surv <- readRDS(file.path(dir.temp,"va_surv.rds"))
+AM_max_grads[,,b] <- readRDS(file.path(dir.temp,"maxgrads.rds")) 
+AM_ofv[,,b] <- readRDS(file.path(dir.temp,"obj_fun_vals.rds")) 
+AM_sprpen[,,b] <- readRDS(file.path(dir.temp,"spr_penalty.rds")) 
+AM_pred.sel.preifq[,,,,b] <- readRDS(file.path(dir.temp,"EM_pred.sel.preifqfish.rds")) 
+AM_pred.sel.postifq[,,,,b] <- readRDS(file.path(dir.temp,"EM_pred.sel.postifqfish.rds")) 
+AM_pred.sel.trawl[,,,,b] <- readRDS(file.path(dir.temp,"EM_pred.sel.trawlfish.rds")) 
+AM_pred.sel.LLsurv[,,,,b] <- readRDS(file.path(dir.temp,"EM_pred.sel.LLsurv.rds")) 
+AM_EM_q.LLsurv[,,b] <- readRDS(file.path(dir.temp,"EM_q.LLsurv.rds")) 
+AM_EM_q.USJPsurv[,,b] <- readRDS(file.path(dir.temp,"EM_q.USJPsurv.rds")) 
+AM_EM_q.preifqfish[,,b] <- readRDS(file.path(dir.temp,"EM_q.preifqfish.rds")) 
+AM_EM_q.postifqfish[,,b] <- readRDS(file.path(dir.temp,"EM_q.postifqfish.rds")) 
+AM_EM_q.forfish[,,b] <- readRDS(file.path(dir.temp,"EM_q.forfish.rds"))
+OM_q_fish[,,b] <- readRDS(file.path(dir.temp,"q_fish.rds"))
+OM_q_surv[,,b] <- readRDS(file.path(dir.temp,"q_surv.rds"))
+AM_EM_pred.srvRPN[,,,b] <- readRDS(file.path(dir.temp,"EM_pred.srvRPN.rds")) 
+AM_EM_pred.fishRPW[,,,b] <- readRDS(file.path(dir.temp,"EM_pred.fishRPW.rds")) 
+OM.Surv.RPN[,,b] <- readRDS(file.path(dir.temp,"OM_Surv.RPN.rds")) 
+OM.Fish.RPW[,,b] <- readRDS(file.path(dir.temp,"OM_Fish.RPW.rds")) 
+AM_EM_predrec[,,,b] <- readRDS(file.path(dir.temp,"EM_predrec.rds")) 
+OM.predrec[,,,b] <- readRDS(file.path(dir.temp,"recruits.area.rds")) 
+OM_N[,,,,,b] <- readRDS(file.path(dir.temp,"N.rds"))
+}
+```
+
+```{r,echo=FALSE}
+test_ofv <- array(data=NA,dim=c(length(1:n.year),n.sims,n.apports),dimnames=list(years,sims,apportion.names))
+for(b in 1:n.apports){
+for(i in 1:n.sims){
+  for(y in 1:43){
+    test_ofv[y,i,b] <- 0
+  }
+for(y in 44:n.year){  
+  if(AM_ofv[y,i,b] == "nan"){
+      test_ofv[(y),i,b]<-0
+    } else{
+      test_ofv[(y),i,b]<-1
+    }
+  }
+}}
+
+#apply(test_ofv[forproj.styr:n.year,,],c(1,3),sum) #if value = n.sims, then all years and apportionments ran (not necessarily converged)
+#apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum) #if value = length(44:n.year), then all years and apportionments ran (not necessarily converged)
+
+ofv.equalvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,1]<(n.year-43)))
+ofv.fixedvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,2]<(n.year-43)))
+ofv.equilibvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,3]<(n.year-43)))
+ofv.NPFMCvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,4]<(n.year-43)))
+ofv.ExpSurvWtvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,5]<(n.year-43)))
+ofv.ExpFishWtvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,6]<(n.year-43)))
+ofv.NonExpNPFMCvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,7]<(n.year-43)))
+ofv.partfixedvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,8]<(n.year-43)))
+ofv.agebasedvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,9]<(n.year-43)))
+ofv.termLLsurvvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,10]<(n.year-43)))
+ofv.alltoonevec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,11]<(n.year-43)))
+
+head(AM_EM_abc)
+AM_EM_abc[44:n.year, 2, 1,,]
+AM_EM_abc[44:n.year, 2, 1,,1]
+AM_EM_abc[44:n.year, 2, 1,equalvec,1] <- NA
+
+AM_EM_abc[44:n.year, 2, 1,,1] %>% 
+  data.frame %>% 
+  gather(sim,value) %>% 
+  ggplot(aes(value,fill=sim)) +
+  geom_density()
+#this sums across apportionments - so a value of 11 means all the apportioment types in a given year/sim had non-crashing models.  Lower numbers mean some crashed.
+#dim(test_ofv)
+#apply(test_ofv[forproj.styr:n.year,,],c(1,3),sum) #if value = n.sims, then all years and apportionments ran (not necessarily converged)
+retainedprops <- apply(test_ofv[forproj.styr:n.year,,],3,sum)/(length(forproj.styr:n.year)*n.sims) #proportion retained sims (where all years ran/didn't crash)
+
+
+##now looking at max convergence criteria for removal of runs
+#AM_max_grads
+mgc_val <- 0.1
+conv_num <- array(data=NA, dim=c(n.year,n.sims,n.apports), dimnames=list(years,sims,apportion.names))
+for(b in 1:n.apports){
+  for(i in 1:n.sims){
+    for(y in 44:n.year){
+      if(abs(AM_max_grads[y,i,b]) < mgc_val) {
+        conv_num[y,i,b] <- 1      
+      } else {
+        conv_num[y,i,b] <- 0      
+      }
+    }
+  }
+}
+#conv_num[1:43,,] <- 0
+#conv_num[44:n.year,,]
+retainedprops2 <- apply(conv_num[forproj.styr:n.year,,],3,sum)/(length(forproj.styr:n.year)*n.sims) #proportion retained 
+mgc.equalvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,1]<(n.year-43)))
+mgc.fixedvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,2]<(n.year-43)))
+mgc.equilibvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,3]<(n.year-43)))
+mgc.NPFMCvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,4]<(n.year-43)))
+mgc.ExpSurvWtvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,5]<(n.year-43)))
+mgc.ExpFishWtvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,6]<(n.year-43)))
+mgc.NonExpNPFMCvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,7]<(n.year-43)))
+mgc.partfixedvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,8]<(n.year-43)))
+mgc.agebasedvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,9]<(n.year-43)))
+mgc.termLLsurvvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,10]<(n.year-43)))
+mgc.alltoonevec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,11]<(n.year-43)))
+
 
 ```
 
-# General information
-Apportionment of sablefish ABC to management regions has been fixed at 2013 ratios since 2014. An objective of the analyses presented here is to examine pros and cons of a suite of sablefish ABC apportionment methods. This document presents the apportionment simulation work to date. This is a work in progress and we are seeking feedback on OM and EM set up, alternative performance metrics that would be useful in making apportionment method recommendations, and any other suggestions for simulation and model performance. Bonus points if you can suggest better ways to graph things.
+# Introduction and methods overview
+Sablefish (Anoplopoma fimbria) in Alaska are managed on an Alaska-wide scale because movement rates among management regions are high and exploitation rates are sufficiently low. Each year the sablefish stock assessment model estimates ABC and OFL values that are subsequently apportioned to IFQ shareholders in six management regions. The combined ABC has been apportioned to regions using weighted moving average methods since 1993; these methods are intended to reduce the magnitude of inter-annual changes in the apportionment. However, apportionment of sablefish ABC among management regions has been fixed at 2013 recommended proportions since 2014 because the objective to reduce variability in apportionment was not being achieved.  To evaluate apportionment strategies, we developed a spatial model to examine responses in sablefish biomass when different fishing mortalities occur among management regions.  
 
-These apportionment simulation analyses contain two primary components, a 6-area operating model (OM) and a 1-area estimation model (EM). The OM is spatial so that potential spatial dynamics in fleet or fish behavior (via catchability, selectivity, and fish movement) may be simulated. The OM simulates data in two periods - a deterministic conditioning period which occurs for years 1977-2018 and is the same across simulations, and a stochastic forward projecting portion which runs for years 2019-`r 1976+n.year-1`. The EM is similar to the EM used for sablefish management, but begins in 1977 instead of 1960, does not include length compositions, and does not fit a trawl survey. After the conditioning period data is generated in the OM, the OM population is sampled, and simulated data from the OM is combined into a single area dataset which is passed to the EM.  
+An objective of the analyses presented in this document is to examine the performance of a suite of sablefish ABC apportionment methods. This document presents our apportionment simulation work to date. This is a work in progress and we are seeking feedback on operating model (OM) and estimation model (EM) design, alternative performance metrics that would be useful in comparing apportionment methods, developing recommendations, and any other suggestions for simulation and model performance.  
 
-In the forward projecting period, the OM-EM is iterative, looping through years. The order of operations for year y are: OM - Read in previous year's apportioned ABC by area, estimate the F required to catch ABC for each area, apply F and M to OM population, move fish between areas, sample the population for fishery and longline survey abundance indices and for longline survey and fixed gear fishery age compositions, build the .dat file and pass it to the EM in ADMB, run the EM and get an estimate of the next year's ABC (then repeat for the next year).
+These apportionment simulation analyses contain two primary components, a 6-area OM and a 1-area EM. The six areas correspond to the six sablefish management areas. The OM is written in R, and is spatial so that potential spatial dynamics in fleet or fish behavior (via catchability, selectivity, and fish movement) may be simulated. The OM simulates data in two periods - a deterministic conditioning period which occurs for years 1977-2018 and is the same across simulations, and a stochastic forward projecting portion which runs for years 2019-`r 1976+n.year-1`. The EM is similar to the EM used for sablefish management, but begins in 1977 instead of 1960, does not include length compositions, and does not fit a trawl survey. After the conditioning period data is generated by the OM, the OM population is sampled, and the simulated data is combined into a single area dataset which is passed to the EM.  
 
-At present for each apportionment method we examine, we are running `r n.sims` simulations covering years 1977-`r 1976+n.year-1`. For November, we hope to present results for 100 (or more) simulated datasets each looping over years 2019-2049 (30 years for forward looping years).
+In the forward projecting period, the OM-EM is iterative, looping through years. The order of operations for year y are:  
+1. OM - Read in previous year's apportioned ABC by area   
+2. estimate the F required to catch ABC for each area  
+3. apply F and M to OM population  
+4. move fish between areas  
+5. sample the population for fishery and longline survey abundance indices and for longline survey and fixed gear fishery age compositions  
+6. build the data file and pass it to the EM in AD Model Builder  
+7. run the EM (fit the simplified assessment model to simulated data) and get an estimate of the next year's ABC (then repeat for the next year).
 
-There are some inherent assumptions in this simulation we would like to present up front:
+For each apportionment method examined, we are running `r n.sims` simulations covering years 1977-`r 1976+n.year-1`. For November, we hope to present results for 100 (or more) simulated datasets each looping over years 2019-2049, which will provide a 30-year forward outlook.
+
+There are some assumptions in these simulations:  
 1) We assume ABC=TAC and 100% of apportioned ABC is caught in each region.  
 2) We do not correct for whale depredation in the ABC or survey index.  
-3) Recruitment occurs at age 2 and recruitment is split equally between males and females.  
+3) Recruitment occurs at age 2 and recruitment is split equally between males and females.  Recruitment draws for the incoming recruitment classes during the forward projections are capped at 50 million for the 2014 year class has been reduced in the conditioning period from 150 million fish to 50 million. This includes the 2014 year class, which has been reduced in the conditioning period from 150 million fish to 50 million fish. This was done to improve EM convergence and reduce crashing.    
+4) The NPFMC Tier 3 harvest control rules are still in place and used for determining ABC in the EM, we are only simulating different methods for apportioning ABC to management areas.  
      
 
-# Alternative apportionment scenarios 
-In the analyses presented in this document we examine `r n.apports` apportion methods: `r apport.names`. A shorthand summary of what each apportioment method does is below.
+## Alternative apportionment scenarios examined   
+In the analyses presented in this document we examine `r n.apports` apportionment methods: `r apportion.names`. A summary of each apportioment method is below.  
 1 - Equal: Each region receives 1/6 of the ABC.  
 2 - Fixed: The apportionment proportions from the 2013 assessment that have been applied as fixed proportions for 2014-2018.   
-3 - Equilibrium: Based on the stationary distribution of the movement rates.  
-4 - NPFMC: A 5-yr exponentially weighted moving average of fishery and survey indices; survey weight is 2x fishery weight.    
+3 - Equilibrium: Proportions in each area are based on the stationary distribution of the movement rates.  
+4 - NPFMC: A 5-yr exponentially weighted moving average of fishery and survey indices; survey weight is 2x fishery weight (NPFMC accepted method, used 2000-2013).    
 5 - Exp_survey_wt: Similar to ‘NPFMC’ option but using survey index only.  
 6 - Exp_fishery_wt: Similar to ‘NPFMC’ option but using fishery index only.   
 7 - Non-Exp_NPFMC: A 5-yr moving average of fishery and survey indices.  
@@ -110,12 +278,398 @@ In the analyses presented in this document we examine `r n.apports` apportion me
 #14 - Non-exp_Agebased  
 ```
 
+## Performance metrics and simulation summary results
+Please note that these results are PRELIMINARY and should not be used for decision-making. OM and EM specifications are still being refined based on Plan Team and other feedback.
+
+There are several key concerns regarding apportionment which we are examining and they can be loosely grouped into broader (yet still related) categories of 1) sustainability, 2) stability, and 3) value. 
+
+### Sustainability
+The sustainability of the sablefish population is a primary concern and we evaluate how different methods of apportioning perform with respect to a B40 biological reference point.
+
+For each year, simulation, and apportionment method we calculate the SSB(end_year)/B40 from the EM. The NPFMC harvest control rule is designed to limit fishing mortality when SSB(end_year)/B40 falls below 1. The apportionment methods all perform similarly with respect to SSB(end_year)/B40, which suggests the harvest control rule is functioning as intended. The large number of outliers may be due simulations which are crashing or not converging (and have not been removed from analyses at this point). 
+
+```{r, echo=FALSE}
+#calc SSB(endyr)/B40 for each year, sim, apport
+B40_ratio <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apportion.names))
+
+for(y in 1:n.year){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+      B40_ratio[y,i,b] <- AM_EM_spbiom[y,y,i,b]/AM_EM_B40[y,i,b] #take the EM spbiom from the terminal year of each iteration of EM over years
+    }
+  }
+}
+#mean and median and CIs for B40_ratio across years and sim by apportionment method
+B40_ratio_mean <- vector()
+B40_ratio_median <- vector()
+B40_ratio_sd <- vector()
+B40_ratio_mean <- apply(B40_ratio[forproj.styr:n.year,,],3,mean)
+B40_ratio_median <- apply(B40_ratio[forproj.styr:n.year,,],3,median) 
+for(b in 1:n.apports){
+B40_ratio_sd[b] <- sd(B40_ratio[forproj.styr:n.year,,b])
+}
+melted_B40ratio <- melt(B40_ratio[forproj.styr:n.year,,],value.name="SSB.B40")
+
+#ggplot(melted_B40ratio,aes(x=Var3,y=SSB.B40)) +#,fill=Apportionment)) + 
+#           geom_boxplot()+
+# coord_cartesian(ylim=c(0,3))
+
+#mean and median and CIs forB40_ratio across sims by year and apportionment method
+B40_ratio_mean2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
+B40_ratio_median2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
+B40_ratio_mean2 <- apply(B40_ratio[forproj.styr:n.year,,],c(1,3),mean)
+B40_ratio_median2 <- apply(B40_ratio[forproj.styr:n.year,,],c(1,3),median) 
+melted_B40ratio2 <- melt(B40_ratio[forproj.styr:n.year,,],value.name="SSB.B40")
+names(melted_B40ratio2) <- c("Year","Sim","Apportionment.Method","SSB.B40")
+
+#melted_B40ratio2 %>%
+#ggplot(aes(x=factor(Apportionment.Method),y=SSB.B40,fill=factor(Year))) + 
+#           geom_boxplot()+
+#    coord_cartesian(ylim=c(0,3))
+
+melted_B40ratio2 %>%
+ggplot(aes(x=factor(Year),y=SSB.B40,fill=factor(Apportionment.Method))) + 
+           geom_boxplot()+
+    coord_cartesian(ylim=c(0.5,1.5))
+
+melted_B40ratio2 %>%
+ggplot(aes(x=factor(Year),y=SSB.B40,fill=factor(Apportionment.Method))) + 
+           geom_boxplot()+
+    coord_cartesian(ylim=c(0.5,1.5),xlim=10)
+
+#now calculate the proportion of years SSB/b40 >1
+B40_props <- array(data=NA,dim=c(length(forproj.styr:n.year),n.sims,n.apports),dimnames=list(forproj.styr:n.year,sims,apportion.names))
+for(y in forproj.styr:n.year){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+      if(B40_ratio[y,i,b] < 1.0) {
+        B40_props[(y-44),i,b] <- 0
+      } else{
+        B40_props[(y-44),i,b] <- 1 
+      }
+      }
+  }}
+#B40_props
+#proportions
+B40_props2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
+B40_props2 <- apply(B40_props[,,],c(1,3),sum)
+B40_props3 <- B40_props2/(n.sims)
+#proportion of sims where SSB_enyr (EM, all areas) > B40 for each forward year and apportionment option is:
+#B40_props3
+
+#proportions apportionment methods where sims and years were > 1:
+B40_props4 <- vector()
+B40_props4 <- apply(B40_props[,,],3,sum)
+B40_props5 <- B40_props4/(n.sims*length(forproj.styr:n.year))
+#proportion of sims where SSB_enyr (EM, all areas) > B40 for each forward year and apportionment option is:
+#B40_props5
+```
+
+Depletion, as used here, is defined as the spawning biomass in the terminal year of each EM run relative to the spawning biomass in the EM starting year. For these simulations, the EM starting year is 1977 and end years range from 2019-`r (n.year+2019-44)`. Note that 1977 is not virgin biomass so 'depletion' in this context provides relative information between methods, but should not be confused as a reduction from an unfished state.   
+```{r,echo=FALSE}
+#AM_EM_depletion1
+apply(AM_EM_depletion1[44:n.year,,],c(1,3),median)
+melted_depletion1 <- melt(AM_EM_depletion1[forproj.styr:n.year,,],value.name="Depletion")
+names(melted_depletion1) <- c("Year","Sim","Apportionment.Method","Depletion")
+
+#melted_depletion1 %>%
+#ggplot(aes(x=factor(Apportionment.Method),y=Depletion,fill=factor(Year))) + 
+#           geom_boxplot()+
+#   coord_cartesian(ylim=c(0,2))
+
+melted_depletion1 %>%
+ggplot(aes(x=factor(Year),y=Depletion,fill=factor(Apportionment.Method))) + 
+           geom_boxplot()+
+    coord_cartesian(ylim=c(0.25,0.65))
+
+melted_depletion1 %>%
+ggplot(aes(x=factor(Year),y=Depletion,fill=factor(Apportionment.Method))) + 
+           geom_boxplot()+
+    coord_cartesian(ylim=c(0.25,0.65),xlim=c(10,10))
+```
+
+
+Because we have a single area stock assessment, we do not currently have estimates of sablefish biomass or spawning stock biomass in each management area, though the longline survey may give us a reasonable estimate. Since this is a simulation, we can, however, examine how well each apportionment method tracks the 'true' (simulated) population's spawning stock biomass in each management area.   
+``` {r, echo=FALSE}
+for(f in 1:n.fish){
+  for(m in 1:n.area){
+    for(b in 1:n.apports){
+     AM_EM_abc[44:n.year, f, m,ofv.equalvec,b] <- NA 
+    }
+  }
+}
+
+
+
+AM_EM_abc[44:n.year, 2, 1,,1] %>% 
+  data.frame %>% 
+  gather(sim,value) %>% 
+  ggplot(aes(value,fill=sim)) +
+  geom_density()
+
+
+#calc abc proportion by area by year and by sim and by apportionment type
+temp_abc <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum,na.rm=TRUE) #sum ABC from EM over gears
+ABC_prop_1 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apportion.names))
+for(y in 1:(length(forproj.styr:n.year))){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+    ABC_prop_1[y,,i,b] <- prop.table(temp_abc[y,,i,b]) #calc proportions
+}}}
+
+#calc proportions OM ssbiomass by area and year
+temp_abc2 <- apply(OM_ssb[,,forproj.styr:n.year,,,],c(3,4,5,6),sum,na.rm=TRUE) #sum OM SSB over ages and sexes
+ABC_prop_2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apportion.names))
+for(y in 1:(length(forproj.styr:n.year))){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+    ABC_prop_2[y,,i,b] <- prop.table(temp_abc2[y,,i,b]) #calc proportions
+}}}
+
+#residuals abs relative % diff 
+resid.biomApport <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apportion.names))
+for(y in 1:(length(forproj.styr:n.year))){
+  for(i in 1:n.sims){
+    for(b in 1:n.apports){
+      for(m in 1:n.area){
+        resid.biomApport[y,m,i,b] <- ((ABC_prop_1[y,m,i,b]-ABC_prop_2[y,m,i,b])/((ABC_prop_1[y,m,i,b]+ABC_prop_2[y,m,i,b])/2))*100
+      }}}}
+#resid.biomApport
+#means of em abc and OM biomass residuals and of proportions
+variable.blable <- apply(resid.biomApport,c(2,4),mean,na.rm=TRUE) #mean absolute relative % difference between 'true' SSB and apportioned ABC by area for each apport method (low is good if we want apportionment to track true ssb)
+rownames(variable.blable)<-area.names
+```
+This is the mean relative percent difference between 'true' spawning stock biomass proportions and proportion of ABC by area for each apportionment method. Low values are good if we want apportionment to track the underlying population spawning stock biomass by area.    
+```{r, echo=FALSE}
+round(variable.blable,digits=1)
+vb1<- melt(variable.blable,value.name="Difference")
+#ggplot(vb1,aes(x=Var2,y=Difference))+
+#eom_point(aes(color=Var1))
+```
+
+Taking the average across spatial areas gives a single value for how well each apportionment method matches underlying spawning stock biomass. Again, lower values mean a better match to 'true' spawning population. If there are benefits to maintaining spawning biomass in all spatial areas (i.e. if there were spatial differences in fecundity that we are not aware of), an apportionment method with a low value here would be better.  
+```{r, echo=FALSE}
+round(apply(variable.blable,2,mean),digits=1)
+#vb2 <- as.vector(apply(variable.blable,2,mean))
+#lot(vb2~c(1:n.apports),pch=16,ylab=c("Apportionment Type"),xlab=c("Percent difference"))
+```
+
+[some discussion of results here when we have final results]
+
+
+### Variability in ABC from year to year  
+Total ABC and the proportion of ABC apportioned to management areas can change each year, and individual management area ABC may not move in the same direction or proportion as overall ABC. In 2013, the year-to-year change in ABC apportioned to each management area was higher than desired and prompted the recommendation to freeze ABC proportions to management regions for the next several years. CHECK THESE CALCS.  
+``` {r, echo=FALSE}
+AM_EM_abc_sum3 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum,na.rm=TRUE)
+diff_apport <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,1:n.area,1:n.sims,apportion.names))
+for(b in 1:n.apports){
+  for(i in 1:n.sims){
+    for(m in 1:n.area){
+      for(y in 1:length(forproj.styr:(n.year-1))){
+    diff_apport[y,m,i,b] <- ((AM_EM_abc_sum3[y,m,i,b]-AM_EM_abc_sum3[y+1,m,i,b])/((AM_EM_abc_sum3[y,m,i,b]+AM_EM_abc_sum3[y+1,m,i,b])/2))*100
+      }}}}
+
+AM_EM_abc_sum3 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum,na.rm=TRUE)
+diff_apport2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,1:n.area,1:n.sims,apportion.names))
+for(b in 1:n.apports){
+  for(i in 1:n.sims){
+    for(m in 1:n.area){
+      for(y in 1:length(forproj.styr:(n.year-1))){
+    diff_apport2[y,m,i,b] <- (AM_EM_abc_sum3[y,m,i,b]-AM_EM_abc_sum3[y+1,m,i,b])
+      }}}}
+#diff_apport
+pct_chg1 <- apply(diff_apport,c(1,2,4),mean,na.rm=TRUE) #mean across sims
+pct_chg2 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],c(2,4),mean,na.rm=TRUE) #mean across sims and years
+rownames(pct_chg2) <- area.names
+pct_chg3 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],4,mean,na.rm=TRUE)#mean across sims, areas, years
+
+#using raw differences
+pc2 <- apply(diff_apport2[1:length(forproj.styr:(n.year-1)),,,],c(2,4),mean,na.rm=TRUE)
+pc3 <- apply(diff_apport2[1:length(forproj.styr:(n.year-1)),,,],4,mean,na.rm=TRUE)
+```
+The mean absolute percent change in ABC for each apportionment method, reflects the inherent variability in ABC from year to year.  
+```{r, echo=FALSE}
+round(pct_chg3,digits=2)
+```
+
+  
+Drilling down further, the mean absolute percent change in ABC for each area and apportionment method is  
+```{r, echo=FALSE}
+round(pct_chg2,digits=2)
+```
+This reflects what an individual management area may experience in terms of average change in ABC from year to year for each apportionment method. Higher values mean more change in ABC from year to year.
+
+[some discussion of results here when we have final results]
+
+
+### Sablefish value and other considerations (*from a non economist)  
+   
+The standardized mean ABC for each apportionment method combines data across years, fleets (a.k.a. gears), areas, and simulations for 2019-`r 1976+n.year-1`.  
+``` {r,echo=FALSE}
+abc_allmean <- apply(apply(AM_EM_abc[44:n.year,,,,],c(1,3,4,5),sum),4,mean)
+abc_allmed <- apply(apply(AM_EM_abc[44:n.year,,,,],c(1,3,4,5),sum),4,median)
+(rel_abc_allmean <- (abc_allmean)/(mean(abc_allmean)))
+```
+For this set of runs (noting that non-converged and crashed runs are still being included) there are relatively small differences in mean ABC between the different apportionment methods.  
+
+Mean ABC apportioned to each management area (mean of all years and simulations) under the different apportionment methods is a key output of interest. The next figure shows mean ABC values, by area, for each apportionment method.     
+``` {r,echo=FALSE}
+tempabc_sum <- apply(AM_EM_abc,c(1,3,4,5),sum,na.rm=TRUE) #abc summed over gears/fisheries
+melted_ABC <- melt(tempabc_sum[(forproj.styr+1):n.year,,,], value.name="ABC")
+names(melted_ABC) <- c("Year","Area","Sim","AppMethod","ABC")
+#melted_ABC %>% 
+#ggplot(aes(x=factor(Area),y=ABC,fill=factor(Apportionment.Method))) + 
+#          geom_boxplot()+
+#          coord_cartesian(ylim=c(0,10))#+
+          #facet_wrap(~Apportionment.Method,ncol=1)
+#subset(subset(joined_abc2,Year==c(forproj.styr:n.year)), CrashCode != "NA") %>%
+melted_ABC %>% 
+ggplot(aes(x=factor(AppMethod),y=ABC,fill=factor(Area))) + 
+          geom_boxplot()+
+          coord_cartesian(ylim=c(0,10))
+```
+    
+``` {r, echo=FALSE}
+threshold_allA <- 12.0 #value in kilotons
+threshold <- 2.0
+```
+Next we examine the proportion of years and simulations where apportioned ABC summed over areas is above a specified threshold value. It is simple to change the threshold value being evaluated; the present value of the ABC threshold for management areas combined is `r threshold_allA` kilotons.  
+
+The proportion of years and simulations where total ABC is above the all-area threshold (`r threshold_allA` kt) is:
+``` {r,echo=FALSE}
+AM_EM_abc_sum <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,4,5),sum)
+dimnames(AM_EM_abc_sum)<-list(forproj.styr:n.year,sims,apportion.names)
+app_num <- array(data=NA,dim=c(length(forproj.styr:n.year),n.sims,n.apports),dimnames=list(forproj.styr:n.year,sims,apportion.names))
+for(b in 1:n.apports){
+  for(i in 1:n.sims){
+    for(y in 1:length(forproj.styr:n.year)){
+      if(AM_EM_abc_sum[y,i,b] < threshold_allA) { #0 if below threshold
+        app_num[y,i,b] <- 0      
+      } else {
+      app_num[y,i,b] <- 1        #if above threshold
+      }
+    }
+  }
+}
+#proportion years in each area above threshold across all years and sims 
+temp_a <- vector() 
+temp_a <- apply(app_num[,,],3,sum)
+temp_a1 <- temp_a/(n.sims*(length(forproj.styr:n.year)))
+round(temp_a1,digits=2) 
+
+```
+  
+
+It may also be of value to set a threshold for individual management areas. We are presenting results for a threshold of `r threshold` kilotons for each management area.
+``` {r, echo=FALSE}
+AM_EM_abc_sum2 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum,na.rm=TRUE)
+dimnames(AM_EM_abc_sum2)<-list(forproj.styr:n.year,areas,sims,apportion.names)
+app_num2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,c("BS","AI","WG","CG","WY","EY/SEO"),sims,apportion.names))
+for(b in 1:n.apports){
+  for(m in 1:n.area){
+    for(i in 1:n.sims){
+      for(y in 1:length(forproj.styr:n.year)){
+      if(AM_EM_abc_sum2[y,m,i,b] < threshold) { #0 if below threshold
+        app_num2[y,m,i,b] <- 0      
+      } else {
+      app_num2[y,m,i,b] <- 1        #if above threshold
+      }
+    }
+  }
+}}
+#proportion years in each area above threshold across all years and sims 
+temp_b <- matrix(data=NA,nrow=c(n.area),ncol=c(n.apports)) 
+temp_b <- apply(app_num2,c(2,4),sum)
+temp_b1 <- temp_b/(n.sims*(length(forproj.styr:n.year))) 
+round(temp_b1,digits=2)
+```
+  
+Other metrics of interest that are not yet coded include:  
+mean age of fish in each management area (from the OM)   
+mean age of catch in each management area (from the OM data)  
+value of catch in each management area (using apportioned ABC, OM fishery age comp for each area to convert catch biomass to size, some estimate of mean 'price' or 'value' at size)  
+``` {r,echo=FALSE}
+aa <- apply(OM_N,c(2,3,4,5,6),sum) #sum N over sexes
+dim(aa)
+melted_aa <- melt(aa,value.name = "Abundance")
+names(melted_aa)<- c("Year","Age","Area","Sim","Apport","Abundance")
+bb<- array(data=NA,dim=c(n.year,n.age,n.area,n.sims,n.apports))
+for(y in 1:n.year){
+  for(a in 1:n.age){
+    for(m in 1:n.area){
+      for(i in 1:n.sims){
+        for(b in 1:n.apports){
+          bb[y,a,m,i,b] <- aa[y,a,m,i,b]*(a+1)
+        }
+      }
+    }
+  }
+}
+cc <- array(data=NA,dim=c(n.year,n.area,n.sims,n.apports))
+cc <- apply(bb,c(1,3,4,5),sum)/apply(aa,c(1,3,4,5),sum)
+#take mean over sims
+cc2 <- apply(cc,c(1,2,4),mean)
+
+meltedcc2 <- melt(cc2, value.name = "MeanAge")
+names(meltedcc2) <- c("Year","Area","Apport","MeanAge")
+#meltedcc2 %>%
+#ggplot()+
+#         geom_point(aes(x=factor(Year),y=MeanAge,color=factor(Area)))+
+# facet_wrap(~factor(Apport))+
+#  coord_cartesian(xlim=c(44,n.year),ylim=c(4,10))
+
+cc3 <- apply(cc2[44:n.year,,],c(2,3),mean)
+meltedcc3 <- melt(cc3, value.name = "MeanAge")
+names(meltedcc3) <- c("Area","Apport","MeanAge")
+
+#meltedcc3 %>%
+#ggplot()+
+#         geom_point(aes(x=factor(Area),y=MeanAge,color=factor(Apport)),size=4)#+
+  #geom_jitter(aes(width=0.5,height=0))
+
+meltedcc3 %>%
+ggplot()+
+         geom_point(aes(x=factor(Apport),y=MeanAge,color=factor(Area)),size=4)#+
+  #geom_jitter(aes(width=0.5,height=0))
+#figure of when non-convergence and when ofv NAN is occuring. one panel per apportionment alternative with open/closed points where each row is a sim and each col (element in the row) is a year? 
+
+#ABC/TAC by area across time, under the different apportionment alternatives. 
+#You might think about having a figure where each panel is an apportionment alternative, with stacked bars for ABC with different colors in the stack for area. Each stacked bar would be a year. This would make it easy to see how total catch varies across time, as well as how it is broken down by area. 
+
+#average age of fish in all areas (and by area) - 
+
+#extrapolating from age of fish in areas to value in area
+
+#Proportion years/sims where of the catch in area x is more than 50% (or a changeable value) fish younger than the age @50% mature  
+#test.age <- 4  
+
+#Mean, median (+CIs) of age and length (converted from age?) for catches (apportioned TAC) in each EM area across years and sims  
+
+#some sort of value/monetary measurement/performance metric  
+
+## For each apportionment option, what is the proportion of years*sims where EM F/F40<1?
+#this needs to be coded after I get a new exe that spits out the values I need
+
+#what proportion of years and sims end with a crashed SSB (below some small number/biomass)
+```
+
+
+    
+What are additional metrics that should be included in analyses for November Plan Team?  
+
+  
+  
+  
+  
+  
+  
+# Further details on OM and EM, model validation figures, and more output
 # OM Conditioning period
-The OM model set up begins by establishing initial numbers at age for each area in 1976. Initial N for 1976 is input as the 2018 management EM totaly abundance estimated for 1977. This is split into `r n.area` spatial areas using the proportion of abundance by area from the longline survey abundance estimate and split into initial age and sex proportions using proportion by sex and age from 2018 management EM for 1976 numbers at age. Numbers at age are conveted to biomass at age using the age-weight relationship as described in the sablefish 2018 SAFE report.
+The OM model begins by establishing initial numbers at age for each area in 1976. Initial N for 1976 is input as the 2018 management EM total abundance estimated for 1977. This is split into `r n.area` spatial areas using the proportion of abundance by area from the longline survey abundance estimate and split into initial age and sex proportions using proportion by sex and age from 2018 management EM for 1976 numbers at age. Numbers at age are converted to biomass at age using the age-weight relationship as described in the sablefish 2018 SAFE report.
 
-OM conditioning period is deterministic and the same for all simulation iterations. Movement is specified between `r n.area` and the OM is set up to accommodate age-based movement; however, at present movement is un-varying over ages. During the OM conditioning period recruitment is input from the EM, and catch is input and the F which generated that catch estimated and applied to the population. Please see the Appendix for OM population dynamics equations.  
+The OM conditioning period is deterministic and thus is the same for all simulations. Movement rates are specified between all `r n.area` areas and the OM is set up to accommodate age-based movement, however, at present movement is age-invariant. During the OM conditioning period, recruitment is input as values from the management EM, catch is input, and the F which generated that catch is estimated and applied to the population. Please see the Appendix 2 for OM population dynamics equations.    
 
-Movement rates used in the OM are externally generated and based on the Hanselman et al. (2015) sablefish movement paper. The model described in the paper was re-run for `r n.area` areas and those movement values are input. 
+Movement rates used in the OM are externally estimated using the methods from the Hanselman et al. (2015) sablefish movement paper, which uses 30+ years of tag release and recapture data. The model described in the paper was re-run for `r n.area` areas and those movement values are input to the OM. 
 
 Table 1: Movement rates used in the OM are based on 30+ years of tag release and recapture data, as detailed in Hanselman et al. (2015). 
 ```{r, echo=FALSE}
@@ -127,26 +681,14 @@ movement_sample[3,] <- c(0.108443,0.193604,0.486216,0.162973,0.026394,0.022370)
 movement_sample[4,] <- c(0.037484,0.120964,0.320461,0.290733,0.122029,0.108328)
 movement_sample[5,] <- c(0.005357,0.031088,0.092290,0.215184,0.627622,0.028460)
 movement_sample[6,] <- c(0.002495,0.014990,0.045060,0.113111,0.046442,0.777902)
-movement_sample
+round(movement_sample,digits=2)
 ```
   
 
-# Conditioning period validation
-The figures and tables below are presented to show the ability of the spatial OM conditioning period to match the current EM historical data and to further describe the methods for setting up the OM. In general, the conditioning period matches very well to the EM. However some differences exist due to movement, the initial conditions specification, and spatial OM parameters which differ from the management EM. Because this isn't a full MSE, alternative states of nature and alternative realities are not the examamined here. 
-```{r, echo=FALSE}
-dir.temp <- paste0(dir.output,"/Apport.Option_",1) #OM for conditioning period is the same across apportionment options, so pulling conditioning period output from folder 1
-N <- readRDS(file.path(dir.temp,"N.rds")) #OM conditioning period N 
-B <- readRDS(file.path(dir.temp,"B.rds")) 
-ssb <- readRDS(file.path(dir.temp,"ssb.rds"))
-temp.catchnumbiom <- readRDS(file.path(dir.temp,"temp.catchnumbiom.rds"))
-C.b <- readRDS(file.path(dir.temp,"C.b.rds"))
-harvest.b <- readRDS(file.path(dir.temp,"harvest.b.rds"))
-cond.rec <- readRDS(file.path(dir.temp,"cond.Recruitment.rds"))
-recruits.area <- readRDS(file.path(dir.temp,"recruits.area.rds"))
-va <- readRDS(file.path(dir.temp,"va.rds"))
-va_surv <- readRDS(file.path(dir.temp,"va_surv.rds"))
-```
-Abundance in numbers, biomass, and spawning biomass generated from the OM generally matches the Management model EM quite closely (Figures 1-3).   
+## Conditioning period validation
+The figures and tables below are presented to show the ability of the spatial OM within the conditioning period to match the current EM historical data, and to further describe the methods for setting up the OM. In general, the OM results for the conditioning period provide a good match to estimates from the most recent stock assessment ("Management EM", Hanselman et al. 2018). However some differences exist due to movement, the initial conditions specification, and spatial OM parameters which differ from the management EM. Because this isn't a full MSE, alternative states of nature are not examamined here. 
+
+Abundance in numbers, biomass, and spawning biomass generated from the OM generally matches the Management model EM quite closely (Figures 1-3). However, the current runs being shown reduce the 2014 OM recruitment from 150 million recruits to 50 million recruits to help improve model convergence and to reduce incidences of crashing. This reduction is evident in the comparison figures below.    
 ``` {r, echo=FALSE}
 #management N, by year (summed across ages, sexes) for 1960-2018 is:
 mgmtN <- c(227.569424,225.133078,214.348775,202.312974,234.635297,228.675439,
@@ -191,11 +733,19 @@ plot(mgmt_rep$SpBiom~mgmt_rep_years, ylim=c(0,300),typ="l",lwd=3,col="red",xlab=
 lines(simssb_sum[2:43]~OMyears,typ="l",lwd=3,col="black") 
 legend("bottomleft", legend=c("Management EM", "Conditioning OM"),lty=c(1,1),lwd=c(3,3), col=c("red","black"))
 
+
+#relative difference for OM-EM at age for B and ssb
+a<-(simssb_sum[2:43]-mgmt_rep$SpBiom[18:59])/(simssb_sum[2:43]+mgmt_rep$SpBiom[18:59])
+b<-(simB_sum[2:43]-mgmt_rep$Tot_biom[18:59])/(simB_sum[2:43]+mgmt_rep$Tot_biom[18:59])
+par(mfrow=c(1,1))
+#plot(a~c(2:43))
+#lines(b~c(2:43))
+
 ```
   
 Figure 3: Spawning biomass (kt, summed over areas) generated from the OM compared to the Management model EM.  
 
-OM catch was designed to match EM observed catch. An F-solving function in the OM takes input catch by gear/fleet, area, and year and estimates the fishing mortality required to take that catch, using OM numbers at age and selectivity. The estimated F rate is then used to calculate abundance for the OM.  
+OM catch was designed to match Management EM observed catch. An F-solving function in the OM takes input catch by gear/fleet, area, and year and estimates the fishing mortality required to realize that level of catch, using OM numbers at age and selectivity. The estimated F rate is then used to simulate abundance in the next year of an OM iteration.  
 ```{r, echo=FALSE}
 mgmtCatch <- mgmt_rep$Obs_CatchTrawl + mgmt_rep$Obs_CatchFixedGear #total catch from mgmt EM
 read.in.catch <- apply(temp.catchnumbiom,1,sum)
@@ -212,11 +762,12 @@ plot(mgmtCatch~mgmt_rep_years, ylim=c(0,55),typ="l",lwd=3,col="red",xlab="Year",
 lines(read.in.catch[2:(length(OMyears)+1)]~OMyears,typ="l",lwd=3,col="black")
 lines(sim_C.b_sum[2:(length(OMyears)+1)]~OMyears,typ="l",lwd=3,col="blue")
 legend("topright", legend=c("Management EM Catch", "Conditioning OM Input Catch", "Conditioning OM Est. Catch"),lty=c(1,1,1),lwd=c(3,3,3), col=c("red","black","blue"))
+
 ```
   
-Figure 4: Catch (kt) for the management EM, the input catch values for the OM, and the estimated OM catch values.  
+Figure 4: Catch (kt) for the Management EM, the input catch values for the OM, and the estimated OM catch values.  
 
-OM recruitment for the conditioning period was designed to match EM recruitment. Management EM recruitment values (in numbers) for 1977-2018 are input and split into `r n.area` areas based on the proportion of age-2 sablefish in the longline survey in each area, and also split equally between males and females (see equations in appendix).  
+OM recruitment for the conditioning period was designed to match EM recruitment. Management EM recruitment values (in numbers) for 1977-2018 are input and split into `r n.area` areas based on the average proportion of age-2 sablefish in each area of the longline survey, and also split equally between males and females (see equations in Appendix 2).  
 ``` {r, echo=FALSE}
 mgmt_rep_recruitment <- c(122.9618,20.0246,15.45504,16.50548,57.0088,18.69596,18.98642,36.665,21.0668,15.71956,
        17.67248,16.18402,9.21424,7.10778,8.0244,16.61306,9.04232,4.41974,5.29922,86.386,25.42,9.9051,
@@ -231,14 +782,14 @@ legend("topleft", legend=c("Management EM Recruitment", "Conditioning OM Recruit
 
 ```
   
-Figure 5: OM and EM recruitment for the conditioning period (in millions of fish) for all management areas summed are identical by design.  
+Figure 5: OM and EM recruitment for the conditioning period (in millions of fish) for all management areas summed are identical by design, except for the 2014 year class which we reduced in the OM to improve convergence in the forward simulation period.
 
 Table 2: These values for age-2 proportions by area from the longline survey are used to split recruitment into spatial areas.   
 ``` {r, echo=FALSE}
 #conditioning recruitment by area
 rec.by.area.props <- vector()
 rec.by.area.props <- c(0.14,0.07,0.14,0.43,0.14,0.09)
-names(rec.by.area.props) <- c("BS","AI","WG","CG","WY","EY/SEO")
+names(rec.by.area.props) <- area.names
 rec.by.area.props
 ```
   
@@ -246,19 +797,20 @@ rec.by.area.props
 ``` {r, echo=FALSE}
 sum_c.rec1 <- apply(N[,2:43,1,,1],c(2,3),sum) #recruitment by year and area
 sum_c.rec2 <- apply(N[,2:43,1,,1],2,sum) #recruitment by year
-plot(sum_c.rec1[,1]~OMyears,typ="l",lwd=4,col="black",ylim=c(0,55),ylab="Recruitment @ age 2 (millions)", xlab="Year",lty=1)
+par(mfrow=c(1,1))
+plot(sum_c.rec1[,1]~OMyears,typ="l",lwd=4,col="black",ylim=c(0,35),ylab="Recruitment @ age 2 (millions)", xlab="Year",lty=1)
 lines(sum_c.rec1[,2]~OMyears,typ="l",lwd=4,col="green",lty=2)
 lines(sum_c.rec1[,3]~OMyears,typ="l",lwd=4,col="red",lty=1)
 lines(sum_c.rec1[,4]~OMyears,typ="l",lwd=4,col="grey",lty=1)
 lines(sum_c.rec1[,5]~OMyears,typ="l",lwd=4,col="orange",lty=3)
 lines(sum_c.rec1[,6]~OMyears,typ="l",lwd=4,col="blue",lty=3)
-legend("topleft", legend=c("BS", "AI","WG", "CG","WY", "EY/SEO"),lty=c(1,2,1,1,3,3),lwd=c(3,3,3,3,3,3), col=c("black","green","red","grey","orange","blue"))
+legend("top", legend=c("BS", "AI","WG", "CG","WY", "EY/SEO"),lty=c(1,2,1,1,3,3),lwd=c(3,3,3,3,3,3), col=c("black","green","red","grey","orange","blue"))
 
 ```
   
 Figure 6: The resulting recruitment of age-2 fish to each management area for the conditioning period, after splitting into spatial areas using the proportions in Table 2.  
 
-Recruitment for the forward projecting period is the same across apportionment simulations and does not have a stock recruitment relationship. Using the same suite of recruitment draws across each apportionment method allows for a more similar comparison of results. Recruitment for n.years x n.sims is drawn once (from a multinomial distribution with mu=16.5 and sigma=1) and used for all apportionment methods. Mean recruitment (mu; average log-recruitment) and recruitment standard deviation (sigma) for the multinomial are input from the management EM. Recruitment in each year is divided into OM spatial areas based on the mean proportion of age-2 (recruitment age) sablefish in each area from the longline survey for 1977-2018, as described above.  
+Recruitment for the forward projecting period is the same across apportionment simulations and does not assume a stock recruitment relationship. Using the same suite of recruitment draws across each apportionment method allows for a more similar comparison of results. Recruitment for n.years x n.sims is drawn once (from a multinomial distribution with mu=16.5 and sigma=0.8 and with autocorrelation parameter = 0.2) and used for all apportionment methods. Recruitment is also capped at 100 million recruits; any simulated values greater than that value are reduced to 100 million. Mean recruitment (mu; average log-recruitment) and recruitment standard deviation (sigma) for the multinomial are input from the management EM. Recruitment in each year is divided into OM spatial areas based on the mean proportion of age-2 (recruitment age) sablefish in each area from the longline survey for 1977-2018, as described above.  
 
 ```{r, echo=FALSE}
 sum.rec.area <- apply(recruits.area,c(1,3),sum)
@@ -270,23 +822,21 @@ lines(sum.rec.area[c(1:43),i]~c(1976:2018),typ="l",lwd=1,col="black")
 legend("topleft", legend=c("Management EM Recruitment", "Simulated OM Recruitments"),lty=c(1,1),lwd=c(3,1), col=c("red","black"))
 ```
   
-Figure 7: For comparison, the conditioning period recruitment draws for `r n.sims` compared to management EM estimated recruitment is shown here, though note that these values ARE NOT USED in the conditioning period. 
+Figure 7: For comparison, the conditioning period recruitment draws for `r n.sims` simulations compared to management EM estimated recruitment is shown here, though note that these values ARE NOT USED in the conditioning period. 
 
 ```{r, echo=FALSE}
 plot(mgmt_rep_recruitment~mgmt_rep_years,xlim=c(1960,2020),typ="l",lwd=3,col="red",ylab="Recruitment @ age 2 (millions)", xlab="Year")
-lines(sum.rec.area[c(1:43),1]~c(1976:2018),typ="l",lwd=1,col="blue")
-lines(sum.rec.area[c(1:43),15]~c(1976:2018),typ="l",lwd=1,col="green")
-lines(sum.rec.area[c(1:43),33]~c(1976:2018),typ="l",lwd=1,col="black")
-lines(sum.rec.area[c(1:43),47]~c(1976:2018),typ="l",lwd=1,col="orange")
+lines(sum.rec.area[c(1:43),1]~c(1976:2018),typ="l",lwd=3,col="blue")
+lines(sum.rec.area[c(1:43),15]~c(1976:2018),typ="l",lwd=3,col="green")
+lines(sum.rec.area[c(1:43),33]~c(1976:2018),typ="l",lwd=3,col="black")
+lines(sum.rec.area[c(1:43),47]~c(1976:2018),typ="l",lwd=3,col="orange")
+legend("topleft", legend=c("Management EM Recruitment", "Simulated OM Recruitments"),lty=c(1,1),lwd=c(3,3), col=c("red","black"))
 ```
   
-Bonus figure 7b: this shows a few individual simulations of recruitment to better view the individual variability and scale of simulated recruitment.    
+Figure 8: this shows a few individual simulations of recruitment to better view the individual variability and scale of simulated recruitment.    
 
 ## Selectivity in OM  
 The following figures show the selectivity at age and for each area used in the OM. These are used for all years of the OM, not just the conditioning period.  
-
-SIDE QUESTION FOR DANA, CHRIS, CURRY, ET AL.: DO WE WANT/NEED TO CHANGE ANY OF THE OM SELECTIVITY VALUES?
- 
 ```{r, echo=FALSE}
 #selectivty OM vs Mgmt EM
 #by fleet for fishery
@@ -303,8 +853,7 @@ legend("bottomright", legend=c("Management EM Female", "Management EM Male","Sim
 
 ```
   
-Figure 8: US fixed gear pre-IFQ selectivity for each area has a logistic form.  US fixed gear pre-IFQ selectivity is sex-specific but does not differ between spatial areas; OM values are the the same as the values estimated from the spatial 'research' EM which is under development and has been reported on to the PT in the past.  [COAUTHORS - DO WE WANT TO CHANGE THESE VALUES FOR FUTURE RUNS? THINK ABOUT THAT WHEN YOU SEE FITS TO SELECTIVITY IN THE FORWARD PROJECTING OUTPUTS]  
-  
+Figure 9: US fixed gear pre-IFQ selectivity for each area has a logistic form.  US fixed gear pre-IFQ selectivity is sex-specific but does not differ between spatial areas; OM values are the same as the values estimated from the spatial 'research' EM which is under development and has been reported on in the past.   
 ```{r, echo=FALSE}  
 #US fixed gear post IFQ
 par(mfrow=c(3,2),mar=c(4,4,2,2))
@@ -319,22 +868,22 @@ legend("bottomright", legend=c("Management EM Female", "Management EM Male","Sim
 
 ```  
   
-Figure 9: US fixed gear post-IFQ selectivity for each area has a logistic form. The values are sex-specific and there are some spatial differences for some areas. OM values for each area are based on the estimated selectivity values from the spatial 'reseach' EM.  
+Figure 10: US fixed gear post-IFQ selectivity for each area has a logistic form. The values are sex-specific and there are some spatial differences for some areas. OM values for each area are based on the estimated selectivity values from the spatial 'research' EM.  
 
 ```{r, echo=FALSE}
 #US trawl fish
 par(mfrow=c(3,2),mar=c(4,4,2,2))
 for(m in 1:n.area){
-plot(va[3,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1),ylab="Selectivity",xlab="Age")
+plot(va[3,m,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1),ylab="Selectivity",xlab="Age",lty=1)
 lines(va[3,m,2,]~ages,typ="l",col="black",lwd=3,lty=3)
-lines(mgmt_rep$Fishery_sel3~ages,typ="l",col="red",lwd=3,lty=1)
+lines(mgmt_rep$Fishery_sel3~ages,typ="l",col="red",lwd=3,lty=3)
 title(paste("Area",m,"Fishery",fish[3]))
 } 
-legend("topright", legend=c("Management EM Female", "Management EM Male","Simulated OM Female","Simulated OM Male"),lty=c(1,3,1,3),lwd=c(3,3,3,3), col=c("red","red","black","black"),cex=0.75)
+legend("topright", legend=c("Simulated OM Female","Simulated OM Male","Management EM Female"),lty=c(1,3,3),lwd=c(3,3,3), col=c("black","black","red"),cex=0.75)
 
 ```  
   
-Figure 10: US trawl fishery selectivity for the OM has a domed shape. The values are sex specific and do not vary spatially. Values are from the 'research' spatial EM.    
+Figure 11: US trawl fishery selectivity for the OM has a domed shape. The values are sex specific and do not vary spatially. Values are from the 'research' spatial EM.    
 ```{r, echo=FALSE}  
 #US fixed gear foreign
 #par(mfrow=c(3,2),mar=c(4,4,2,2))
@@ -352,29 +901,29 @@ Figure 10: US trawl fishery selectivity for the OM has a domed shape. The values
 ```{r, echo=FALSE}  
 #US ll survey
 par(mfrow=c(1,1),mar=c(4,4,2,2))
-plot(va_surv[1,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1),ylab="Selectivity",xlab="Age")
+plot(va_surv[1,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1),ylab="Selectivity",xlab="Age",lty=1)
 lines(va_surv[1,2,]~ages,typ="l",col="black",lwd=3,lty=3)
 lines(mgmt_rep$Survey_sel1Female~ages,typ="l",col="red",lwd=3,lty=1)
-lines(mgmt_rep$Survey_sel1male~ages,typ="l",col="orange",lwd=3,lty=3)
+lines(mgmt_rep$Survey_sel1male~ages,typ="l",col="red",lwd=3,lty=4)
 title(paste("Area","Survey","US LL"))
-legend("bottomright", legend=c("Management EM Female", "Management EM Male","Simulated OM Female","Simulated OM Male"),lty=c(1,3,1,3),lwd=c(3,3,3,3), col=c("red","red","black","black"),cex=0.75)
+legend("bottomright", legend=c("Management EM Female", "Management EM Male","Simulated OM Female","Simulated OM Male"),lty=c(1,4,1,3),lwd=c(3,3,3,3), col=c("red","red","black","black"),cex=0.75)
 ```
   
-Figure 11: US longline survey selectivity parameters are not spatial but are sex specific and are based on the spatial 'research' EM values.  
+Figure 12: US longline survey selectivity parameters are not spatial but are sex specific and are based on the spatial 'research' EM values.  
 
 ```{r, echo=FALSE}  
 #USJP ll coop survey
 par(mfrow=c(1,1),mar=c(4,4,2,2))
-plot(va_surv[2,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1),ylab="Selectivity",xlab="Age")
-lines(va_surv[2,2,]~ages,typ="l",col="black",lwd=3,lty=3)
-lines(mgmt_rep$Survey_sel2Female~ages,typ="l",col="red",lwd=3,lty=1)
+plot(va_surv[2,1,]~ages,typ="l",col="black",lwd=3,ylim=c(0,1),ylab="Selectivity",xlab="Age",lty=1)
+lines(va_surv[2,2,]~ages,typ="l",col="black",lwd=3,lty=1)
+lines(mgmt_rep$Survey_sel2Female~ages,typ="l",col="red",lwd=3,lty=3)
 lines(mgmt_rep$Survey_sel2male~ages,typ="l",col="orange",lwd=3,lty=3)
 title(paste("Area","Survey", "USJP coop"))
-legend("bottomright", legend=c("Management EM Female", "Management EM Male","Simulated OM Female","Simulated OM Male"),lty=c(1,3,1,3),lwd=c(3,3,3,3), col=c("red","red","black","black"),cex=0.75)
+legend("bottomright", legend=c("Management EM Female", "Management EM Male","Simulated OM Female","Simulated OM Male"),lty=c(3,3,1,1),lwd=c(3,3,3,3), col=c("red","orange","black","black"),cex=0.75)
 
 ```
   
-Figure 12: The USJP ll cooperative survey selectivity parameters are not spatial but are sex specific and values are based on the management EM values.  
+Figure 13: The USJP longline cooperative survey selectivity parameters are not spatial but are sex specific and values are based on the management EM values.  
   
     
 ## Sampling OM population for abundance indices, age comps  
@@ -382,27 +931,70 @@ The EM requires a longline survey abundance index, a fishery CPUE index, and sur
 
 Age compositions are sampled from each spatial OM regional abundance using Dirichlet multinomial error and a sample size of 200. Age compositions are combined across spatial errors (weighted by catch/survey abundance in each area) to a single set of survey and a single set of fishery age comps that are not sex specific. 
 
+
+```{r, echo=FALSE}
+# Some temporary code examining the transition between 2018 and 2019 (OM conditioning and first year of EM)
+#read in things
+
+#dir.temp <- paste0(dir.output,"/Apport.Option_",1)
+#AM_EM_natage <- readRDS(file.path(dir.temp,"EM_natage.rds")) 
+#M_EM_survrpn <- readRDS(file.path(dir.temp,"EM_pred.srvRPN.rds"))
+#M_EM_fishrpw <- readRDS(file.path(dir.temp,"EM_pred.fishRPW.rds"))
+#M_EM_fishac <- readRDS(file.path(dir.temp,"EM_predAC.fish.rds"))
+#AM_EM_survac <- readRDS(file.path(dir.temp,"EM_predAC.surv.rds"))
+#OM_srpn <- readRDS(file.path(dir.temp,"Surv.RPN.rds"))
+#OM_frpw <- readRDS(file.path(dir.temp,"Fish.RPW.rds"))
+#OM_sac <- readRDS(file.path(dir.temp,"OM_Surv.RPN.age.rds"))
+#OM_fac <- readRDS(file.path(dir.temp,"OM_Fish.RPW.age.rds"))
+
+#aa <- apply(N,c(2,3),sum)
+#bb <- apply(AM_EM_natage,c(2,3),sum)
+#plot(aa[45,]~ages,ylim=c(0,120)) #45 in OM is 2018
+#lines(bb[44,]~ages)
+#lines(aa[44,]~ages,col="red")
+#lines(bb[43,]~ages,col="red",lty=3)
+
+#plot(OM_sac[42,,]~ages,col="black",lty=1,typ="l",ylim=c(0,1)) #2017
+#lines(OM_sac[43,,]~ages,col="pink") #2018
+#lines(OM_sac[44,,]~ages,col="red")
+#lines(OM_sac[45,,]~ages,col="blue")
+#lines(OM_sac[46,,]~ages,col="green")
+
+#plot(OM_fac[42,,]~ages,col="black",lty=1,typ="l",ylim=c(0,1))
+#lines(OM_fac[43,,]~ages,col="pink")
+#lines(OM_fac[44,,]~ages,col="red")
+#lines(OM_fac[45,,]~ages,col="blue")
+#lines(OM_fac[46,,]~ages,col="green")
+
+#cc<-apply(OM_srpn,c(2,3),sum)
+#plot(cc[44,]~ages)
+#lines(cc[45,]~ages)
+
+#dd<-apply(OM_srpn,c(2),sum)
+#plot(AM_EM_survrpn[44,15:44,1]~c(15:44))
+#lines(dd[15:44]~c(15:44))
+#lines(AM_EM_survrpn[45,15:44,1]~c(15:44))
+#lines(AM_EM_survrpn[46,15:44,1]~c(15:44))
+```
+
+
 #EM specifications  
-For 2019 onward, the EM is run at every annual step using data 'sampled' from the OM population. As a reminder the order of operations for year y are: OM - Read in previous year's apportioned ABC by area (from the EM), estimate the F required to catch ABC for each area, apply F and M to OM population, move fish between areas, sample the population for fishery and longline survey abundance indices and for longline survey and fixed gear fishery age compositions, build the .dat file and pass it to the EM in ADMB, run the EM and get an estimate of the next year's ABC (then repeat for the next year).
+For 2019 onward in each annual time step, the EM is fit to data 'sampled' from the OM population, or to simulated population attributes with added observation error. As a reminder the order of operations for year y are: OM - Read in previous year's apportioned ABC by area (from the EM), estimate the F required to catch ABC for each area, apply F and M to OM population, move fish between areas, sample the population for fishery and longline survey abundance indices and for longline survey and fixed gear fishery age compositions, add observation error to these data types, update the .dat file with new data for the simulation year, and fit the EM in ADMB to the updated data (.dat file), and return the EM and get an estimate of the next year's ABC (then repeat for the next year).
 
-# Forward looping model output
+## Forward looping model output
 
-## EM Convergence  
+### EM Convergence  
 ```{r,echo=FALSE}
 mgc_val <- 0.01
 ```
-First, we look at the proportion of years within a simulation and apportionment scenario which converged. At present, non-converged models/years/sims ARE NOT removed from the following analyses. For these simulations, a model was considered 'converged' for a given year if the max gradient component was < `r mgc_val`.  
+First, we look at the proportion of years within a simulation and apportionment scenario which converged. Non-converged models/years/sims ARE NOT removed from the following analyses. For these simulations, a model was considered 'converged' for a given year if the max gradient component was < `r mgc_val`. It is important to note that in the real world, a stock assessment scientist would have several options for improving convergence, first and foremost by iteratively adjusting both starting values and estimation phase for key model parameters. Non-convergence in this simulation exercise may be resulting from specific iterations (alternative states of nature) wherein the sablefish population is outside the range of what has been observed historically and where manual tuning of the EM would be required, a process that has not been replicated here.  
   
-Table x. The proportion of sims which converged for each year for each apportionment method are:  
+Table 3. The proportion of simulations which converged for each year for each apportionment method.    
 ```{r, echo=FALSE}
-AM_max_grads <- array(data=NA, dim=c(n.year,n.sims,length(1:n.apports)), dimnames=list(years,sims,apports)) #Apportionment Master (AM) file for analyses
-for(b in 1:n.apports){
-  dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-AM_max_grads[,,b] <- readRDS(file.path(dir.temp,"maxgrads.rds")) 
-}
+
 #proportion of years in a sim that converged
 #average proportion of years in all sims that converged for each apportionment option
-conv_num <- array(data=NA, dim=c(n.year,n.sims,n.apports), dimnames=list(years,sims,apport.names))
+conv_num <- array(data=NA, dim=c(n.year,n.sims,n.apports), dimnames=list(years,sims,apportion.names))
 #max_grads <- (format(max_grads,scientific=FALSE))
 for(b in 1:n.apports){
   for(i in 1:n.sims){
@@ -419,65 +1011,507 @@ for(b in 1:n.apports){
 #(proportion of sims that converged in year y) for each apportionment type
 temp_a <- apply(conv_num[forproj.styr:n.year,,],c(1,3),sum)
 temp_a1 <- temp_a/n.sims 
-rownames(temp_a1) <- c(2019:(2019+(n.year-44)))
+#rownames(temp_a1) <- c(2020:(2020+(n.year-45)))
 temp_a1
 ```
   
-Table x. The proportion of years which converged for each sims and apportionment method are:  
 ```{r, echo=FALSE}
-#(proportion of years that converged in each sim i)
+#Table x. The proportion of years which converged for each sim and apportionment method are: #(proportion of years that converged in each sim i)
 temp_b <- apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)
 temp_b1 <- temp_b/length(forproj.styr:n.year)
-temp_b1
+#temp_b1
 ```
 
-Finally, the overall proportion of years x sims that converged for each apportionment method are below. Note that for now, all models (converged or not) are included in the following output figures and performance metric calculations.  
-Table x.  The proportion of years x sims which converged.  
+Table 4. The overall proportion of years and simulations that converged for each apportionment method.    
 ```{r, echo=FALSE} 
 #proportion of sims and years that converged
+temp_c <- vector()
 for(b in 1:n.apports){
-temp_c <- sum(temp_b[,b])/(length(forproj.styr:n.year)*n.sims) 
-#dimnames(temp_c) <- (apport.names)
-print(temp_c)
+temp_c[b] <- sum(temp_b[,b])/(length(forproj.styr:n.year)*n.sims) 
+#dimnames(temp_c) <- (apportion.names)
+#print(round(temp_c,digits=3))
 }
+names(temp_c)<-apportion.names
+temp_c
 ```
+  
+### Objective function values for EM   
+Model convergence isn't the only metric worth examining. It is useful to know which years and simulations (across apportionment methods) had models crash completely (where the objective function value is 'nan'). A crashed model tends to have a domino effect on performance of models (in both convergence and crashing) in subsequent years. The following table shows the percentage of all years and simulations for which the EM produced an objective function value (the model ran to completion, though it may still have not adequately converged based on our defined convergence criteria).  
 
-## Objective function values  [these are likely just for diagnostics...I don't think we need these in the version that goes to the plan team...]   I also collect and could output the SPR penalty values, but they aren't very interesting or useful.  
-The objective function values for each sim and year iteration of the EM were:  
-``` {r, echo=FALSE}
-#Apportionment Master (AM) file of objective function values
-AM_ofv <- array(data=NA, dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apport.names))  
-#Apportionment Master (AM) file of SPR penalty values
-AM_sprpen <- array(data=NA, dim=c(n.year,n.sims,length(1:n.apports)), dimnames=list(c(1976:(1976+n.year-1)),sims,apport.names))
-#read them in:
-#for(b in 1:n.apports){
-#  dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-#AM_ofv[,,b] <- readRDS(file.path(dir.temp,"obj_fun_vals.rds")) 
-#AM_sprpen[,,b] <- readRDS(file.path(dir.temp,"spr_penalty.rds")) 
-#}
-#AM_ofv[44:n.year,,]
-#AM_sprpen[44:n.year,,]
+Table 5. The percentage of years and simulations which resulted in a crashed model ('nan' for the objective function value) for each apportionment method.  
+```{r, echo=FALSE}
+(crashes <- round(1-apply(test_ofv[44:n.year,,],3,sum)/(n.sims*length(44:n.year)),digits=2))
+
 ```
   
-## EM Selectivity  
-The next series of figures shows the EM estimated selectivity alongside the OM selectivity for each fishery and survey.  
-``` {r,echo=FALSE}
-#create arrays for the selectivities across sims
-AM_pred.sel.preifq <- array(data=NA,dim=c(n.year,n.age,n.sex,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),ages,sexes,sims,apport.names))
-AM_pred.sel.postifq <- array(data=NA,dim=c(n.year,n.age,n.sex,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),ages,sexes,sims,apport.names))
-AM_pred.sel.trawl <- array(data=NA,dim=c(n.year,n.age,n.sex,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),ages,sexes,sims,apport.names))
-AM_pred.sel.LLsurv <- array(data=NA,dim=c(n.year,n.age,n.sex,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),ages,sexes,sims,apport.names))
-#then read them all in
+    
+```{r,echo=FALSE}
+#look at where there were 'nan' for ofv - this is a sign the model crashed completely.
+#AM_ofv[45,41,]
+#test_ofv<-array(data=NA,dim=c(11,n.sims,n.apports),dimnames=list(c(1:11),sims,apportion.names))
+#for(b in 1:n.apports){
+#for(y in 44:n.year){
+#  for(i in 1:n.sims){
+#    if(AM_ofv[y,i,b] == "nan"){
+#      test_ofv[(y-43),i,b]<-0
+#    } else{
+#      test_ofv[(y-43),i,b]<-1
+#    }
+#  }
+#}}
+#this sums across apportionments - so a value of 11 means all the apportioment types in a given year/sim had non-crashing models.  Lower numbers mean some crashed.
+#apply(test_ofv,c(1,2),sum)
+```
+  
+### EM Selectivity  
+The next series of figures shows the EM estimated selectivity alongside the OM selectivity for the post-IFQ fixed gear fishery and the longline survey. Additional selectivity figures showing pre-IFQ selectivity are available in Appendix 1.   
+  
+#### Longline fishery Post-IFQ  
+```{r, echo=FALSE}
+if(n.apports==1){
+par(mfrow=c(1,1))
+}
+if(n.apports==2){
+par(mfrow=c(1,2))
+}
+if(n.apports>3){
+par(mfrow=c(2,2))
+}
+#females
 for(b in 1:n.apports){
-  dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-AM_pred.sel.preifq[,,,,b] <- readRDS(file.path(dir.temp,"EM_pred.sel.preifqfish.rds")) 
-AM_pred.sel.postifq[,,,,b] <- readRDS(file.path(dir.temp,"EM_pred.sel.postifqfish.rds")) 
-AM_pred.sel.trawl[,,,,b] <- readRDS(file.path(dir.temp,"EM_pred.sel.trawlfish.rds")) 
-AM_pred.sel.LLsurv[,,,,b] <- readRDS(file.path(dir.temp,"EM_pred.sel.LLsurv.rds")) 
+plot(va[2,1,1,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apportion.names[b],", Female LL Post-IFQ")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
+lines(va[2,2,1,]~ages,typ="l",lwd=4)
+lines(va[2,3,1,]~ages,typ="l",lwd=4)
+lines(va[2,4,1,]~ages,typ="l",lwd=4)
+lines(va[2,5,1,]~ages,typ="l",lwd=4)
+lines(va[2,6,1,]~ages,typ="l",lwd=4)
+for(y in forproj.styr:n.year){
+for(i in 1:n.sims){
+lines(AM_pred.sel.postifq[y,,1,i,b]~ages,typ="l",lwd=2, col="red")
+}}
+legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
+}
+#males
+for(b in 1:n.apports){
+plot(va[2,1,2,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apportion.names[b],", Male LL Post-IFQ")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
+lines(va[2,2,2,]~ages,typ="l",lwd=4)
+lines(va[2,3,2,]~ages,typ="l",lwd=4)
+lines(va[2,4,2,]~ages,typ="l",lwd=4)
+lines(va[2,5,2,]~ages,typ="l",lwd=4)
+lines(va[2,6,2,]~ages,typ="l",lwd=4)
+for(y in forproj.styr:n.year){
+for(i in 1:n.sims){
+lines(AM_pred.sel.postifq[y,,2,i,b]~ages,typ="l",lwd=2, col="red")
+}}
+legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
 }
 ```
   
-### Longline fishery Pre-IFQ selectivity
+Figure 14. EM estimated selectivity for the longline fishery, Post-IFQ years for each sex and apportionment method. Each red line in a single figure panel represents a different simulation and year. Selectivity does differ over some  spatial areas in the OM, but cannot be estimated spatially in the single-area EM.   
+  
+#### Longline survey  
+```{r, echo=FALSE}
+if(n.apports==1){
+par(mfrow=c(1,1))
+}
+if(n.apports==2){
+par(mfrow=c(1,2))
+}
+if(n.apports>3){
+par(mfrow=c(2,2))
+}
+#females
+for(b in 1:n.apports){
+plot(va_surv[1,1,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apportion.names[b],", Female LL Survey")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
+for(y in forproj.styr:n.year){
+for(i in 1:n.sims){
+lines(AM_pred.sel.LLsurv[y,,1,i,b]~ages,typ="l",lwd=2, col="red")
+}}
+legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
+}
+#males
+for(b in 1:n.apports){
+plot(va_surv[1,2,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apportion.names[b],", Male LL Survey")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
+for(y in forproj.styr:n.year){
+for(i in 1:n.sims){
+lines(AM_pred.sel.LLsurv[y,,2,i,b]~ages,typ="l",lwd=2, col="red")
+}}
+legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
+}
+```
+  
+Figure 15. EM estimated selectivity for the longline survey, for each sex and apportionment method. Each red line in a single figure panel represents a different simulation and year. Selectivity does not differ over spatial areas in the OM.   
+
+### Catchability  
+The distribution of catchability (q) parameter estimates from the EM is shown below as boxplots. For each apportionment option (x axis) the box shows the median (thick line inside the box) and the 25th and 75th percentile interquartile range (box lower and upper border) of EM q estimates across all years and simulations. The vertical bars represent the largest and smallest values within 1.5 times the interquartile range, and any values outside these ranges are shown as points. The red line is the OM value of catchability.  
+
+  
+#### Fixed gear fishery, foreign years  
+```{r,echo=FALSE}
+melted_EMq.forfish <- melt(AM_EM_q.forfish[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
+ggplot(melted_EMq.forfish,aes(x=Var3,y=Catchability)) +
+  geom_boxplot() +
+  geom_hline(yintercept=OM_q_fish[4,1,1],linetype="solid",color="red",size=2) 
+coord_cartesian(ylim=c(0,20))
+```
+  
+Figure 16. Catchability (q) parameter estimates from the EM (black) for each apportionment method. The red line is the OM value of q.  
+   
+#### Longline fishery Pre-IFQ  
+For the boxplots below, the dashed red line is OM q for BS, AI, and WG. The solid red line is OM q for CG, and the dotted line is OM q for WY and EY/SEO.   
+```{r,echo=FALSE}
+melted_EMq.preifq <- melt(AM_EM_q.preifqfish[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
+ggplot(melted_EMq.preifq,aes(x=Var3,y=Catchability)) +
+  geom_boxplot() +
+  geom_hline(yintercept=OM_q_fish[1,1,1],linetype="dashed",color="red",size=2) +
+  geom_hline(yintercept=OM_q_fish[1,2,1],linetype="dashed",color="red",size=2) +
+  geom_hline(yintercept=OM_q_fish[1,3,1],linetype="dashed",color="red",size=2) + 
+  geom_hline(yintercept=OM_q_fish[1,4,1],linetype="solid",color="red",size=2) + 
+  geom_hline(yintercept=OM_q_fish[1,5,1],linetype="dotted",color="red",size=2) +
+  geom_hline(yintercept=OM_q_fish[1,6,1],linetype="dotted",color="red",size=2) +
+  coord_cartesian(ylim=c(0,20))
+```
+  
+Figure 17. Catchability (q) parameter estimates from the EM (black) for each apportionment method. The red line is the OM value of q.   
+   
+#### Longline fishery Post-IFQ  
+For the boxplots below, the dashed red line is OM q for BS, AI, and WG. The solid red line is OM q for CG, and the dotted line is OM q for WY and EY/SEO.    
+```{r,echo=FALSE}
+melted_EMq.postifq <- melt(AM_EM_q.postifqfish[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
+ggplot(melted_EMq.postifq,aes(x=Var3,y=Catchability)) +
+  geom_boxplot() +
+  geom_hline(yintercept=OM_q_fish[2,1,1],linetype="dashed",color="red",size=2) +
+  geom_hline(yintercept=OM_q_fish[2,2,1],linetype="dashed",color="red",size=2) +
+  geom_hline(yintercept=OM_q_fish[2,3,1],linetype="dashed",color="red",size=2) + 
+  geom_hline(yintercept=OM_q_fish[2,4,1],linetype="solid",color="red",size=2) + 
+  geom_hline(yintercept=OM_q_fish[2,5,1],linetype="dotted",color="red",size=2) +
+  geom_hline(yintercept=OM_q_fish[2,6,1],linetype="dotted",color="red",size=2) 
+```
+  
+Figure 18. Catchability (q) parameter estimates from the EM (black) for each apportionment method. The red line is the OM value of q.  
+
+#### Longline survey (US years)     
+```{r,echo=FALSE}
+melted_EMq.LLsurv <- melt(AM_EM_q.LLsurv[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
+ggplot(melted_EMq.LLsurv,aes(x=Var3,y=Catchability)) +
+  geom_boxplot() +
+  geom_hline(yintercept=OM_q_surv[1,1,1],linetype="dashed",color="red",size=3)
+coord_cartesian(ylim=c(0,20))
+```
+  
+Figure 19. Catchability (q) parameter estimates from the EM (black) for each apportionment method. The red line is the OM value of q.  
+    
+#### Longline survey (USJP years)  
+```{r,echo=FALSE}
+melted_EMq.USJPsurv <- melt(AM_EM_q.USJPsurv[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
+ggplot(melted_EMq.USJPsurv,aes(x=Var3,y=Catchability)) +
+  geom_boxplot() +
+  geom_hline(yintercept=OM_q_surv[2,1,1],linetype="dashed",color="red",size=3)
+
+```
+  
+Figure 20. Catchability (q) parameter estimates from the EM (black) for each apportionment method. The red line is the OM value of q.     
+  
+### Indices  
+#### US longline survey index (RPN)   
+The OM ('true') and EM estimates for the longline survey abundance index are shown below for each apportionment method.    
+``` {r, echo=FALSE}
+#melted_EM_pred.srvRPN <- melt(AM_EM_pred.srvRPN,na.rm=TRUE,value.name="EM.RPN") 
+#Plot EM and OM RPN terminal year only, across sims
+if(n.apports==1){
+par(mfrow=c(1,1))
+}
+if(n.apports==2){
+par(mfrow=c(1,2))
+}
+if(n.apports>3){
+par(mfrow=c(2,2))
+}
+for(b in 1:n.apports){
+plot(AM_EM_pred.srvRPN[n.year,15:n.year,1,b]~c(15:n.year),typ="l",ylim=c(0,2000),ylab="Survey RPN",xlab="Year",col="red",main=apportion.names[b])
+#for(y in forproj.styr:n.year){
+  for(i in 1:n.sims){
+    lines(AM_EM_pred.srvRPN[n.year,15:n.year,i,b]~c(15:n.year),typ="l",col="red")
+  }
+for(i in 1:n.sims){
+  lines(OM.Surv.RPN[15:n.year,i,b]~c(15:n.year),typ="l",col="black")
+}
+  legend("topleft",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
+}
+
+```
+  
+Figure 21. US longline survey indices for all years and simulations. Note that the forward projecting period begins in year 44 (2019), prior to that the Conditioning period is deterministic.    
+``` {r, echo=FALSE}
+#OM-EM Residuals - these are the residuals between estimated EM and 'true' EM survey index for each apportionment method, using all years and sims (not just the terminal year EM run index estimates)
+#resid.RPN <- array(data=NA, dim=c(n.year,n.year,n.sims,n.apports),dimnames=list(years,years,sims,apportion.names))
+#for(b in 1:n.apports) {
+#for (y in 1:n.year) {
+#for(k in 1:n.year) {
+# for(i in 1:n.sims) {
+#resid.RPN[y,k,i,b] <- OM.Surv.RPN[y,i,b] - AM_EM_pred.srvRPN[y,k,i,b]
+#}}}}
+#melt_resid.rpn <- melt(resid.RPN,na.rm=TRUE,value.name="resid")
+#ggplot(melt_resid.rpn,aes(x=Var4,y=resid))+
+#geom_boxplot()
+
+```
+  
+``` {r, echo=FALSE}
+resid.RPN2 <- array(data=NA, dim=c(n.year,n.sims,n.apports),dimnames=list(years,sims,apportion.names))
+for(b in 1:n.apports) {
+#for (y in 1:n.year) {
+  for(k in 1:n.year) {
+  for(i in 1:n.sims) {
+    resid.RPN2[k,i,b] <- OM.Surv.RPN[k,i,b] - AM_EM_pred.srvRPN[n.year,k,i,b]
+  }}}#}
+#resid.RPN[forproj.styr:n.year,15:n.year,,]
+melt_resid.rpn2 <- melt(resid.RPN2,na.rm=TRUE,value.name="resid")
+ggplot(melt_resid.rpn2,aes(x=Var3,y=resid))+
+  geom_boxplot()
+
+```
+  
+Figure 22. These boxplots are showing the residuals between the EM and OM for EM terminal year (`r (n.year+-44+2019)`) for all simulations and each apportionment method.   
+
+#### US longline fishery index (RPW)  
+The OM ('true') and EM estimates for the longline fishery abundance index are shown below for each apportionment method.   
+``` {r, echo=FALSE}
+#melted_EM_pred.srvRPN <- melt(AM_EM_pred.srvRPN,na.rm=TRUE,value.name="EM.RPN") 
+#Plot EM and OM RPN terminal year only, across sims
+if(n.apports==1){
+par(mfrow=c(1,1))
+}
+if(n.apports==2){
+par(mfrow=c(1,2))
+}
+if(n.apports>3){
+par(mfrow=c(2,2))
+}
+for(b in 1:n.apports){
+plot(AM_EM_pred.fishRPW[n.year,15:n.year,1,b]~c(15:n.year),typ="l",ylim=c(500,2200),ylab="Fishery RPW",xlab="Year",col="red",main=apportion.names[b])
+#for(y in forproj.styr:n.year){
+  for(i in 1:n.sims){
+    lines(AM_EM_pred.fishRPW[n.year,15:n.year,i,b]~c(15:n.year),typ="l",col="red")
+  }
+for(i in 1:n.sims){
+  lines(OM.Fish.RPW[15:n.year,i,b]~c(15:n.year),typ="l",col="black")
+}
+  legend("topleft",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
+}
+
+```
+  
+Figure 23. US fixed gear fishery index for all years and simulations. Note that the forward projecting period begins in year 44 (2019), prior to that the Conditioning period is deterministic.   
+  
+``` {r, echo=FALSE}
+resid.RPW2 <- array(data=NA, dim=c(n.year,n.sims,n.apports),dimnames=list(years,sims,apportion.names))
+for(b in 1:n.apports) {
+#for (y in 1:n.year) {
+  for(k in 1:n.year) {
+  for(i in 1:n.sims) {
+    resid.RPW2[k,i,b] <- OM.Fish.RPW[k,i,b] - AM_EM_pred.fishRPW[n.year,k,i,b]
+  }}}#}
+#resid.RPN[forproj.styr:n.year,15:n.year,,]
+melt_resid.rpw2 <- melt(resid.RPW2,na.rm=TRUE,value.name="resid")
+ggplot(melt_resid.rpw2,aes(x=Var3,y=resid))+
+  geom_boxplot()
+
+```
+  
+Figure 24. These boxplots are showing the residuals between the EM and OM for EM terminal year of the fishery index (`r (n.year+-44+2019)`) for all simulations and each apportionment method. 
+
+### Recruitment  
+``` {r, echo=FALSE}
+#First look at all OM and EM recruitment draws by apportionment scenario:
+sum_OM.predrec <- apply(OM.predrec,c(1,3,4),sum) #sum OM predicted recruitment across areas
+#if(n.apports==1){
+#par(mfrow=c(1,1))
+#}
+#if(n.apports==2){
+#par(mfrow=c(1,2))
+#}
+#if(n.apports>3){
+#par(mfrow=c(2,2))
+#}
+#for(b in 1:n.apports){
+#plot(AM_EM_predrec[n.year,,1,b]~years,col="red",lwd=1,typ="l", ylab="Predicted Recruitment (millions)",xlab="Year",main=apportion.names[b])
+#  for(i in 1:n.sims){
+#  lines(AM_EM_predrec[n.year,,i,b]~years,col="red",lwd=1,typ="l")
+#    lines(sum_OM.predrec[,i,b]~years,col="black",lwd=1,typ="l")
+#  }
+#  legend("topleft",legend=c("EM","OM"),lwd=c(1,1),col=c("red","black"),cex=0.5)
+#  }
+```
+The min and max OM recruitment values (over all simulations and years) are:  
+Min: `r min(sum_OM.predrec)`   
+Max: `r max(sum_OM.predrec)`  
+  
+The min and max EM recruitment values (over all simulations and years) are:  
+Min: `r min(AM_EM_predrec,na.rm=TRUE)`  
+Max: `r max(AM_EM_predrec,na.rm=TRUE)`    
+
+``` {r, echo=FALSE}
+EM_recmed <- apply(AM_EM_predrec[n.year,,,],c(1,3),median)
+OM_recmed <- apply(sum_OM.predrec,c(1,3),median)
+#min(sum_OM.predrec)
+#max(sum_OM.predrec)
+#min(AM_EM_predrec,na.rm=TRUE)
+#max(AM_EM_predrec,na.rm=TRUE)
+#fig_colors <- c("blue","green","orange","brown","pink","limegreen","magenta","purple","red","grey","olivegreen")
+par(mfrow=c(1,1))
+plot(OM_recmed[,1]~years,col="black",lwd=3,typ="l",main="Median recruitment",ylab="Recruitment (millions)",xlab="Year",ylim=c(0,50),xlim=c(44,n.year))
+lines(EM_recmed[,1]~years,col="red",lwd=3,typ="l")
+lines(EM_recmed[,2]~years,col="blue",lwd=3,typ="l")
+#lines(EM_recmed[,3]~years,col="green",lwd=3,typ="l")
+#lines(EM_recmed[,4]~years,col="orange",lwd=3,typ="l")
+#lines(EM_recmed[,5]~years,col="brown",lwd=3,typ="l")
+#lines(EM_recmed[,6]~years,col="pink",lwd=3,typ="l")
+#lines(EM_recmed[,7]~years,col="darkgreen",lwd=3,typ="l")
+#lines(EM_recmed[,8]~years,col="darkgrey",lwd=3,typ="l")
+#lines(EM_recmed[,9]~years,col="magenta",lwd=3,typ="l")
+#lines(EM_recmed[,10]~years,col="purple",lwd=3,typ="l")
+legend("topleft",legend=c("OM",apportion.names),lwd=c(3,3,3,3,3,3,3,3,3,3,3),col=c("black","red","blue","green","orange","brown","pink","darkgreen","darkgrey","magenta","purple"),cex=0.5)
+
+```
+  
+Figure 25. Median EM estimated recruitment and the OM recruitment, across all simulations. Recall that OM recruitment (black line) is the same across apportionment methods and it is only the estimated recruitment from the EM for each apportionment method that will vary.     
+
+Then look at the mean EM and mean OM recruitment draws by apport scenario. There is something very wrong with these EM mean values (right now).  
+``` {r, echo=FALSE}
+par(mfrow=c(1,1))
+EM_recmean <- apply(AM_EM_predrec[n.year,,,],c(1,3),mean)
+OM_recmean <- apply(sum_OM.predrec,c(1,3),mean)
+plot(OM_recmean[,1]~years,col="black",lwd=3,typ="l",main="Median recruitment",ylab="Recruitment (millions)",xlab="Year",ylim=c(0,50),xlim=c(44,n.year))
+lines(EM_recmean[,1]~years,col="red",lwd=3,typ="l")
+lines(EM_recmean[,2]~years,col="blue",lwd=3,typ="l")
+#lines(EM_recmean[,3]~years,col="green",lwd=3,typ="l")
+#lines(EM_recmean[,4]~years,col="orange",lwd=3,typ="l")
+#lines(EM_recmean[,5]~years,col="brown",lwd=3,typ="l")
+#lines(EM_recmean[,6]~years,col="pink",lwd=3,typ="l")
+#lines(EM_recmean[,7]~years,col="darkgreen",lwd=3,typ="l")
+#lines(EM_recmean[,8]~years,col="darkgrey",lwd=3,typ="l")
+#lines(EM_recmean[,9]~years,col="magenta",lwd=3,typ="l")
+#lines(EM_recmean[,10]~years,col="purple",lwd=3,typ="l")
+legend("topleft",legend=c("OM",apportion.names),lwd=c(3,3,3,3,3,3,3,3,3,3,3),col=c("black","red","blue","green","orange","brown","pink","darkgreen","darkgrey","magenta","purple"),cex=0.5)
+
+```
+  
+Figure 26. Mean EM estimated recruitment and the OM recruitment, across all simulations. Recall that OM recruitment (black line) is the same across apportionment methods and it is only the estimated recruitment from the EM for each apportionment method that will vary.  
+
+``` {r, echo=FALSE}
+#Then look at mean EM recruitment, mean OM recruitment, and OM N at age 2.
+#Why is the EM estimating such high recruitments in the projection years (years 44+) when it doesn't seem to be coming from the OM?  What would be driving that?  Look at residuals next.
+
+sum_OM_N <- apply(OM_N[,,1,,,],c(2,4,5),sum) #N at age 2, summed over areas
+#par(mfrow=c(2,2))
+#par(mfrow=c(1,1))
+#i=1
+#for(b in 1:n.apports){
+#plot(AM_EM_predrec[n.year,,1,b]~years,col="red",lwd=1,typ="l", ylab="Predicted Recruitment (millions)",xlab="Year",main=apportion.names[b],xlim=c(44,n.year),ylim=c(0,100))
+#  for(i in 1:n.sims){
+#  lines(AM_EM_predrec[n.year,,i,b]~years,col="red",lwd=3,typ="l")
+#  lines(sum_OM.predrec[forproj.styr:n.year,i,b]~c(forproj.styr:n.year),col="black",lwd=5,lty=1)
+#  lines(sum_OM_N[forproj.styr:n.year,i,b]~c(forproj.styr:n.year), col="green",lwd=3,lty=3)
+#  }
+#  legend("topleft",legend=c("EM pred rec","OM rec","OM N at age 2"),lwd=c(3,3,3),col=c("red","black","green"),cex=0.5)
+#  }
+```
+  
+``` {r, echo=FALSE}
+resid.rec2 <- array(data=NA, dim=c(n.year,n.sims,n.apports),dimnames=list(years,sims,apportion.names))
+for(b in 1:n.apports) {
+#for (y in 1:n.year) {
+  for(k in 1:n.year) {
+  for(i in 1:n.sims) {
+    resid.rec2[k,i,b] <- sum_OM_N[k,i,b] - AM_EM_predrec[n.year,k,i,b]
+  }}}#}
+#resid.RPN[forproj.styr:n.year,15:n.year,,]
+melt_resid.rec2 <- melt(resid.rec2,na.rm=TRUE,value.name="resid")
+ggplot(melt_resid.rec2,aes(x=Var3,y=resid))+
+  geom_boxplot()+
+  coord_cartesian(ylim=c(-100,100))
+```
+  
+Figure 27. This shows the OM-EM residual distribution for each apportionment method.  
+
+### SSB time series  
+``` {r, echo=FALSE}
+sum_OM_ssb <- apply(OM_ssb,c(3,5,6),sum)
+
+par(mfrow=c(2,2))
+
+for(b in 1:n.apports){
+plot(sum_OM_ssb[,1,b]~years,col="black",lwd=1,typ="l",ylim=c(0,300),ylab=c("SSB(kt)"),xlab=c("Year"),main=apportion.names[b])
+for(i in 1:n.sims){
+lines(AM_EM_spbiom[n.year,,i,b]~years,col="red",lwd=1,typ="l")
+lines(sum_OM_ssb[,i,b]~years,col="black",,lwd=1,typ="l")
+legend("topright",legend=c("EM SSB","OM SSB"),lwd=c(3,3),col=c("red","black"),cex=0.5)
+}}
+```
+  
+Figure 28. SSB for the OM (black) and EM (red); each line is a separate simulation. Recall that the conditioning period (years 0-43 which are equivalent to 1977-2018) is deterministic for the OM and is the same for all simulations.  
+  
+SSB residuals  
+These are the OM ssb - EM ssb residuals for all years and simulations, for each apportionment method.   
+```{r,echo=FALSE}
+resid.ssb2 <- array(data=NA, dim=c(n.year,n.sims,n.apports),dimnames=list(years,sims,apportion.names))
+for(b in 1:n.apports) {
+#for (y in 1:n.year) {
+  for(k in 1:n.year) {
+  for(i in 1:n.sims) {
+    resid.ssb2[k,i,b] <- sum_OM_ssb[k,i,b] - AM_EM_spbiom[n.year,k,i,b]
+  }}}#}
+#resid.RPN[forproj.styr:n.year,15:n.year,,]
+melt_resid.ssb2 <- melt(resid.ssb2,na.rm=TRUE,value.name="resid")
+names(melt_resid.ssb2) <- c("Year","Sim","Apportionment","Resid")
+ggplot(melt_resid.ssb2,aes(x=Apportionment,y=Resid))+
+  geom_boxplot()
+```
+  
+Figure 29. This shows the OM-EM SSB residual distribution for each apportionment method.  
+
+```{r,echo=FALSE}
+#These are the same residuals, shown in a different way: 
+#melt_resid.ssb2 %>% 
+#  ggplot(aes(x=factor(Year),y=Resid,fill=Apportionment)) + 
+#           geom_boxplot()
+
+```
+  
+ 
+```{r, echo=FALSE}
+#SSB by area and B by area 
+#OM_ssb
+#AM_EM_abc
+OM_ssb_area <- apply(OM_ssb,c(3,4,5,6),sum)
+melt_OM_ssb_area <- melt(OM_ssb_area[forproj.styr:n.year,,,],na.rm=TRUE,value.name="ssb")
+names(melt_OM_ssb_area) <- c("Year","Area","Sim","Apportionment","ssb")
+#ggplot(melt_OM_ssb_area,aes(x=Apportionment,y=ssb,fill=factor(Year)))+
+#  geom_boxplot()
+ggplot(melt_OM_ssb_area,aes(x=factor(Year),y=ssb))+
+  geom_boxplot(aes(fill=factor(Area)))+
+  facet_wrap(~Apportionment,ncol=2)+
+  coord_cartesian(ylim=c(5,40))
+```
+  
+Figure 30. Spawning stock biomass (kt) for the OM population by area and apportionment method.
+
+
+# Appendix 1 - additional information and figures  
+### Apportionment specifics   
+Several apportionment methods have fixed or input specifications.  
+For 'Fixed' apportionment, the proportions of ABC by area (in order Bering Sea, Aleutian Islands, Western GOA, Central GOA, West Yakutat, East Yakutat/SEO) are: 10%, 13%, 11%, 34%, 11%, 21%.  
+
+For 'Equilibrium' apportionment, the proportions of ABC under the stationary distribution of the movement rates (areas in same order as above): 9%, 14%, 13%, 27%, 14%, 23%.  
+
+For 'Fixed' apportionment, Bering Sea and Aleutian Islands each receive 10% of the ABC. This value can be easily changed if desired.  
+
+For 'A_L.mat' apportionment, the age at 50% maturity is assumed to be age-5 (it is really closer to age 5.5 but we cannot use half ages).  
+
+### Selectivity
+There are no length comps in the EM and only age comps for 1999 forward for the longline survey and the fixed gear fishery. As such, there's no data informing selectivity for the pre-IFQ fishery or trawl fishery in the EM. However, figures below show EM estimates and OM values for selectivity for these fisheries.  
+#### Longline fishery Pre-IFQ selectivity
   
 ```{r, echo=FALSE}
 if(n.apports==1){
@@ -491,7 +1525,7 @@ par(mfrow=c(2,2))
 }
 #females
 for(b in 1:n.apports){
-plot(va[1,1,1,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apport.names[b],", Female LL Pre-IFQ")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
+plot(va[1,1,1,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apportion.names[b],", Female LL Pre-IFQ")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
 lines(va[1,2,1,]~ages,typ="l",lwd=4)
 lines(va[1,3,1,]~ages,typ="l",lwd=4)
 lines(va[1,4,1,]~ages,typ="l",lwd=4)
@@ -505,7 +1539,7 @@ legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5
 }
 #males
 for(b in 1:n.apports){
-plot(va[1,1,2,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apport.names[b],", Male LL Pre-IFQ")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
+plot(va[1,1,2,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apportion.names[b],", Male LL Pre-IFQ")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
 lines(va[1,2,2,]~ages,typ="l",lwd=4)
 lines(va[1,3,2,]~ages,typ="l",lwd=4)
 lines(va[1,4,2,]~ages,typ="l",lwd=4)
@@ -521,8 +1555,8 @@ legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5
 ```
   
 Figure x. EM estimated selectivity for the longline fishery, Pre-IFQ years for each sex and apportionment method. Each red line in a single figure panel represents a different simulation and year. Pre-IFQ selectivity does not differ over spatial areas in the OM.  
-  
-### Longline fishery Post-IFQ  
+
+#### Trawl fishery  
 ```{r, echo=FALSE}
 if(n.apports==1){
 par(mfrow=c(1,1))
@@ -535,50 +1569,7 @@ par(mfrow=c(2,2))
 }
 #females
 for(b in 1:n.apports){
-plot(va[2,1,1,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apport.names[b],", Female LL Post-IFQ")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
-lines(va[2,2,1,]~ages,typ="l",lwd=4)
-lines(va[2,3,1,]~ages,typ="l",lwd=4)
-lines(va[2,4,1,]~ages,typ="l",lwd=4)
-lines(va[2,5,1,]~ages,typ="l",lwd=4)
-lines(va[2,6,1,]~ages,typ="l",lwd=4)
-for(y in forproj.styr:n.year){
-for(i in 1:n.sims){
-lines(AM_pred.sel.postifq[y,,1,i,b]~ages,typ="l",lwd=2, col="red")
-}}
-legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
-}
-#males
-for(b in 1:n.apports){
-plot(va[2,1,2,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apport.names[b],", Male LL Post-IFQ")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
-lines(va[2,2,2,]~ages,typ="l",lwd=4)
-lines(va[2,3,2,]~ages,typ="l",lwd=4)
-lines(va[2,4,2,]~ages,typ="l",lwd=4)
-lines(va[2,5,2,]~ages,typ="l",lwd=4)
-lines(va[2,6,2,]~ages,typ="l",lwd=4)
-for(y in forproj.styr:n.year){
-for(i in 1:n.sims){
-lines(AM_pred.sel.postifq[y,,2,i,b]~ages,typ="l",lwd=2, col="red")
-}}
-legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
-}
-```
-  
-Figure x. EM estimated selectivity for the longline fishery, Post-IFQ years for each sex and apportionment method. Each red line in a single figure panel represents a different simulation and year. Selectivity does differ over some  spatial areas in the OM, but cannot be estimated spatially in the single-area EM.   
-  
-### Trawl fishery  
-```{r, echo=FALSE}
-if(n.apports==1){
-par(mfrow=c(1,1))
-}
-if(n.apports==2){
-par(mfrow=c(1,2))
-}
-if(n.apports>3){
-par(mfrow=c(2,2))
-}
-#females
-for(b in 1:n.apports){
-plot(va[3,1,1,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apport.names[b],", Female LL Trawl")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
+plot(va[3,1,1,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apportion.names[b],", Female LL Trawl")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
 lines(va[3,2,1,]~ages,typ="l",lwd=4)
 lines(va[3,3,1,]~ages,typ="l",lwd=4)
 lines(va[3,4,1,]~ages,typ="l",lwd=4)
@@ -592,7 +1583,7 @@ legend("topright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
 }
 #males
 for(b in 1:n.apports){
-plot(va[3,1,2,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apport.names[b],", Male LL Trawl")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
+plot(va[3,1,2,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apportion.names[b],", Male LL Trawl")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
 lines(va[3,2,2,]~ages,typ="l",lwd=4)
 lines(va[3,3,2,]~ages,typ="l",lwd=4)
 lines(va[3,4,2,]~ages,typ="l",lwd=4)
@@ -606,905 +1597,71 @@ legend("topright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
 }
 ```
  
-Figure x. EM estimated selectivity for the trawl fishery, for each sex and apportionment method. Each red line in a single figure panel represents a different simulation and year. Selectivity does not differ over spatial areas in the OM.   
- 
-### Longline survey  
+Figure x. EM estimated selectivity for the trawl fishery, for each sex and apportionment method. Each red line in a single figure panel represents a different simulation and year. Selectivity does not differ over spatial areas in the OM. 
+  
+Recruitment from the Management EM is used during the conditioning period for the OM, and it has a small amount of autocorrelation (in its 'uncorrected' form, before we reduce 2014 from 150 million recruits to 50 million recruits). For the simulations shown here, we have used an autocorrelation parameter of 0.2 when generating OM recruitment.  With the 2014 high recruitment removed, there does not appear to be any appreciable autocorrelation in recruitment:  
 ```{r, echo=FALSE}
-if(n.apports==1){
-par(mfrow=c(1,1))
-}
-if(n.apports==2){
-par(mfrow=c(1,2))
-}
-if(n.apports>3){
-par(mfrow=c(2,2))
-}
-#females
-for(b in 1:n.apports){
-plot(va_surv[1,1,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apport.names[b],", Female LL Survey")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
-for(y in forproj.styr:n.year){
-for(i in 1:n.sims){
-lines(AM_pred.sel.LLsurv[y,,1,i,b]~ages,typ="l",lwd=2, col="red")
-}}
-legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
-}
-#males
-for(b in 1:n.apports){
-plot(va_surv[1,2,]~ages,typ="l",lwd=4,ylim=c(0,1),main=c(paste0("Apportionment: ",apport.names[b],", Male LL Survey")),ylab="Selectivity",xlab="Age",cex.main=0.75)  #OM selectivity
-for(y in forproj.styr:n.year){
-for(i in 1:n.sims){
-lines(AM_pred.sel.LLsurv[y,,2,i,b]~ages,typ="l",lwd=2, col="red")
-}}
-legend("bottomright",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
-}
+acf(cond_rec)
 ```
-  
-Figure x. EM estimated selectivity for the longline survey, for each sex and apportionment method. Each red line in a single figure panel represents a different simulation and year. Selectivity does not differ over spatial areas in the OM.   
 
-## Catchability  
-Catchability for the EM is shown below in a series of boxplots. For each apportionment option (x axis) the box shows the median (thick line inside the box) and the 25th and 75th percentile interquartile range (box lower and upper border) of EM q estimates across all years and sims. The vertical bars represent the largest and smallest values within 1.5 times the interquartile range, and any values outside these ranges are shown as points. The dashed red line is the OM value of catchability.  
-```{r, echo=FALSE}
-#create matrices to hold q values from EM for all apportionments
-AM_EM_q.LLsurv <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apport.names))
-AM_EM_q.USJPsurv <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apport.names))
-AM_EM_q.preifqfish <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apport.names))
-AM_EM_q.postifqfish <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apport.names))
-AM_EM_q.forfish <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(c(1976:(1976+n.year-1)),sims,apport.names))
-OM_q_fish <- array(data=NA,dim=c(n.fish,n.area,n.apports),dimnames=list(fish,areas,apport.names))
-OM_q_surv <- array(data=NA,dim=c(n.surv,n.area,n.apports),dimnames=list(surv.name,areas,apport.names))
 
-#then read them all in
-for(b in 1:n.apports){
-dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-AM_EM_q.LLsurv[,,b] <- readRDS(file.path(dir.temp,"EM_q.LLsurv.rds")) 
-AM_EM_q.USJPsurv[,,b] <- readRDS(file.path(dir.temp,"EM_q.USJPsurv.rds")) 
-AM_EM_q.preifqfish[,,b] <- readRDS(file.path(dir.temp,"EM_q.preifqfish.rds")) 
-AM_EM_q.postifqfish[,,b] <- readRDS(file.path(dir.temp,"EM_q.postifqfish.rds")) 
-AM_EM_q.forfish[,,b] <- readRDS(file.path(dir.temp,"EM_q.forfish.rds"))
-OM_q_fish[,,b] <- readRDS(file.path(dir.temp,"q_fish.rds"))
-OM_q_surv[,,b] <- readRDS(file.path(dir.temp,"q_surv.rds"))
-}
-
-```
-  
-### Fixed gear fishery, foreign years  
 ```{r,echo=FALSE}
-melted_EMq.forfish <- melt(AM_EM_q.forfish[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
-ggplot(melted_EMq.forfish,aes(x=Var3,y=Catchability)) +
-  geom_boxplot() +
-  geom_hline(yintercept=OM_q_fish[4,1,1],linetype="solid",color="red",size=2) 
-```
-   
-### Longline fishery Pre-IFQ  
-For the boxplots below, the dashed red line is OM q for BS, AI, and WG. The solid red line is OM q for CG, and the dotted line is OM q for WY and EY/SEO.   
-  
-```{r,echo=FALSE}
-melted_EMq.preifq <- melt(AM_EM_q.preifqfish[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
-ggplot(melted_EMq.preifq,aes(x=Var3,y=Catchability)) +
-  geom_boxplot() +
-  geom_hline(yintercept=OM_q_fish[1,1,1],linetype="dashed",color="red",size=2) +
-  geom_hline(yintercept=OM_q_fish[1,2,1],linetype="dashed",color="red",size=2) +
-  geom_hline(yintercept=OM_q_fish[1,3,1],linetype="dashed",color="red",size=2) + 
-  geom_hline(yintercept=OM_q_fish[1,4,1],linetype="solid",color="red",size=2) + 
-  geom_hline(yintercept=OM_q_fish[1,5,1],linetype="dotted",color="red",size=2) +
-  geom_hline(yintercept=OM_q_fish[1,6,1],linetype="dotted",color="red",size=2) +
-  coord_cartesian(ylim=c(0,20))
-```
-   
-### Longline fishery Post-IFQ  
-For the boxplots below, the dashed red line is OM q for BS, AI, and WG. The solid red line is OM q for CG, and the dotted line is OM q for WY and EY/SEO.    
-```{r,echo=FALSE}
-melted_EMq.postifq <- melt(AM_EM_q.postifqfish[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
-ggplot(melted_EMq.postifq,aes(x=Var3,y=Catchability)) +
-  geom_boxplot() +
-  geom_hline(yintercept=OM_q_fish[2,1,1],linetype="dashed",color="red",size=2) +
-  geom_hline(yintercept=OM_q_fish[2,2,1],linetype="dashed",color="red",size=2) +
-  geom_hline(yintercept=OM_q_fish[2,3,1],linetype="dashed",color="red",size=2) + 
-  geom_hline(yintercept=OM_q_fish[2,4,1],linetype="solid",color="red",size=2) + 
-  geom_hline(yintercept=OM_q_fish[2,5,1],linetype="dotted",color="red",size=2) +
-  geom_hline(yintercept=OM_q_fish[2,6,1],linetype="dotted",color="red",size=2) 
-```
-   
-### Longline survey (US years)     
-```{r,echo=FALSE}
-melted_EMq.LLsurv <- melt(AM_EM_q.LLsurv[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
-ggplot(melted_EMq.LLsurv,aes(x=Var3,y=Catchability)) +
-  geom_boxplot() +
-  geom_hline(yintercept=OM_q_surv[1,1,1],linetype="dashed",color="red",size=3)
-
-```
-    
-### Longline survey (USJP years)
-```{r,echo=FALSE}
-melted_EMq.USJPsurv <- melt(AM_EM_q.USJPsurv[forproj.styr:n.year,,],na.rm=FALSE,value.name="Catchability")
-ggplot(melted_EMq.USJPsurv,aes(x=Var3,y=Catchability)) +
-  geom_boxplot() +
-  geom_hline(yintercept=OM_q_surv[2,1,1],linetype="dashed",color="red",size=3)
-
-```
-   
-
-## Indices  
-``` {r, echo=FALSE}
-#create arrays to hold indices
-AM_EM_pred.srvRPN <- array(data=NA,dim=c(n.year,n.year,n.sims,length(1:n.apports)),dimnames=list(years,years,sims,apport.names))
-AM_EM_pred.fishRPW <- array(data=NA,dim=c(n.year,n.year,n.sims,length(1:n.apports)),dimnames=list(years,years,sims,apport.names))
-OM.Surv.RPN <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-OM.Fish.RPW <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-#read in the index predictions from the EM and OM
-for(b in 1:n.apports){
-dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-AM_EM_pred.srvRPN[,,,b] <- readRDS(file.path(dir.temp,"EM_pred.srvRPN.rds")) 
-AM_EM_pred.fishRPW[,,,b] <- readRDS(file.path(dir.temp,"EM_pred.fishRPW.rds")) 
-OM.Surv.RPN[,,b] <- readRDS(file.path(dir.temp,"OM_Surv.RPN.rds")) 
-OM.Fish.RPW[,,b] <- readRDS(file.path(dir.temp,"OM_Fish.RPW.rds")) 
-}
-```
- 
-### US longline survey index (RPN)   
-The OM ('true') and EM fits to the longline survey abundance index are shown below for each apportionment method. While this is interesting, it's probably not the best way to show things. Keep or discard this for the PT?   
-``` {r, echo=FALSE}
-#melted_EM_pred.srvRPN <- melt(AM_EM_pred.srvRPN,na.rm=TRUE,value.name="EM.RPN") 
-#Plot EM and OM RPN terminal year only, across sims
-if(n.apports==1){
-par(mfrow=c(1,1))
-}
-if(n.apports==2){
-par(mfrow=c(1,2))
-}
-if(n.apports>3){
-par(mfrow=c(2,2))
-}
-for(b in 1:n.apports){
-plot(AM_EM_pred.srvRPN[n.year,15:n.year,1,b]~c(15:n.year),typ="l",ylim=c(0,2000),ylab="Survey RPN",xlab="Year",col="red",main=apport.names[b])
-#for(y in forproj.styr:n.year){
-  for(i in 1:n.sims){
-    lines(AM_EM_pred.srvRPN[n.year,15:n.year,i,b]~c(15:n.year),typ="l",col="red")
-  }
-for(i in 1:n.sims){
-  lines(OM.Surv.RPN[15:n.year,i,b]~c(15:n.year),typ="l",col="black")
-}
-  legend("topleft",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
-}
-
-```
-  
-
-``` {r, echo=FALSE}
-#OM-EM Residuals - these are the residuals between estimated EM and 'true' EM survey index for each apportionment method, using all years and sims (not just the terminal year EM run index estimates)
-#resid.RPN <- array(data=NA, dim=c(n.year,n.year,n.sims,n.apports),dimnames=list(years,years,sims,apport.names))
-#for(b in 1:n.apports) {
-#for (y in 1:n.year) {
-#for(k in 1:n.year) {
-# for(i in 1:n.sims) {
-#resid.RPN[y,k,i,b] <- OM.Surv.RPN[y,i,b] - AM_EM_pred.srvRPN[y,k,i,b]
-#}}}}
-#melt_resid.rpn <- melt(resid.RPN,na.rm=TRUE,value.name="resid")
-#ggplot(melt_resid.rpn,aes(x=Var4,y=resid))+
-#geom_boxplot()
-
-```
-  
-These boxplots are skowing the terminal year EM run residuals from OM, for all sims.  Do these make sense??  Are they a good way to show how well (not well) the EM is fitting the OM for the longline survey?
-``` {r, echo=FALSE}
-resid.RPN2 <- array(data=NA, dim=c(n.year,n.sims,n.apports),dimnames=list(years,sims,apport.names))
-for(b in 1:n.apports) {
-#for (y in 1:n.year) {
-  for(k in 1:n.year) {
-  for(i in 1:n.sims) {
-    resid.RPN2[k,i,b] <- OM.Surv.RPN[k,i,b] - AM_EM_pred.srvRPN[n.year,k,i,b]
-  }}}#}
-#resid.RPN[forproj.styr:n.year,15:n.year,,]
-melt_resid.rpn2 <- melt(resid.RPN2,na.rm=TRUE,value.name="resid")
-ggplot(melt_resid.rpn2,aes(x=Var3,y=resid))+
-  geom_boxplot()
-
-```
-  
-### US longline fishery index (RPW)  
-The OM ('true') and EM fits to the longline fishery abundance index are shown below for each apportionment method. Why doesn't the OM want to get as high(for samples) as the EM? Recruitment??
-``` {r, echo=FALSE}
-#melted_EM_pred.srvRPN <- melt(AM_EM_pred.srvRPN,na.rm=TRUE,value.name="EM.RPN") 
-#Plot EM and OM RPN terminal year only, across sims
-if(n.apports==1){
-par(mfrow=c(1,1))
-}
-if(n.apports==2){
-par(mfrow=c(1,2))
-}
-if(n.apports>3){
-par(mfrow=c(2,2))
-}
-for(b in 1:n.apports){
-plot(AM_EM_pred.fishRPW[n.year,15:n.year,1,b]~c(15:n.year),typ="l",ylim=c(500,2200),ylab="Fishery RPW",xlab="Year",col="red",main=apport.names[b])
-#for(y in forproj.styr:n.year){
-  for(i in 1:n.sims){
-    lines(AM_EM_pred.fishRPW[n.year,15:n.year,i,b]~c(15:n.year),typ="l",col="red")
-  }
-for(i in 1:n.sims){
-  lines(OM.Fish.RPW[15:n.year,i,b]~c(15:n.year),typ="l",col="black")
-}
-  legend("topleft",legend=c("EM","OM"),lwd=c(2,4),col=c("red","black"),cex=0.5)
-}
-
-```
-  
-These boxplots are skowing the terminal year EM run residuals from OM, for all sims.  Do these make sense??  Are they a good way to show how well (not well) the EM is fitting the OM for the longline survey? 
-``` {r, echo=FALSE}
-resid.RPW2 <- array(data=NA, dim=c(n.year,n.sims,n.apports),dimnames=list(years,sims,apport.names))
-for(b in 1:n.apports) {
-#for (y in 1:n.year) {
-  for(k in 1:n.year) {
-  for(i in 1:n.sims) {
-    resid.RPW2[k,i,b] <- OM.Fish.RPW[k,i,b] - AM_EM_pred.fishRPW[n.year,k,i,b]
-  }}}#}
-#resid.RPN[forproj.styr:n.year,15:n.year,,]
-melt_resid.rpw2 <- melt(resid.RPW2,na.rm=TRUE,value.name="resid")
-ggplot(melt_resid.rpw2,aes(x=Var3,y=resid))+
-  geom_boxplot()
-
-```
-  
-## Recruitment  
-``` {r,echo=FALSE}
-#create arrays to hold indices
-AM_EM_predrec <- array(data=NA,dim=c(n.year,n.year,n.sims,length(1:n.apports)),dimnames=list(years,years,sims,apport.names))
-OM.predrec <- array(data=NA,dim=c(n.year,n.area,n.sims,length(1:n.apports)),dimnames=list(years,areas,sims,apport.names))
-OM_N <- array(data=NA,dim=c(n.sex,n.year,n.age,n.area,n.sims,length(1:n.apports)),dimnames=list(sexes,years,ages,areas,sims,apport.names))
-#read in the index predictions from the EM and OM
-for(b in 1:n.apports){
-dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-AM_EM_predrec[,,,b] <- readRDS(file.path(dir.temp,"EM_predrec.rds")) 
-OM.predrec[,,,b] <- readRDS(file.path(dir.temp,"recruits.area.rds")) 
-OM_N[,,,,,b] <- readRDS(file.path(dir.temp,"N.rds"))
-}
-```
-The min and max OM recruitment values (over all sims and years) are:  
-Min - `r min(sum_OM.predrec)`   
-Max - `r max(sum_OM.predrec)`  
-  
-The min and max EM recruitment values (over all sims and years) are:  
-Min - `r min(AM_EM_predrec,na.rm=TRUE)`  
-Max - `r max(AM_EM_predrec,na.rm=TRUE)`  
-      
-``` {r, echo=FALSE}
-#First look at all OM and EM recruitment draws by apportionment scenario:
-sum_OM.predrec <- apply(OM.predrec,c(1,3,4),sum) #sum OM predicted recruitment across areas
-#if(n.apports==1){
+#When is non-convergence occuring?
 #par(mfrow=c(1,1))
-#}
-#if(n.apports==2){
-#par(mfrow=c(1,2))
-#}
-#if(n.apports>3){
-#par(mfrow=c(2,2))
-#}
-#for(b in 1:n.apports){
-#plot(AM_EM_predrec[n.year,,1,b]~years,col="red",lwd=1,typ="l", ylab="Predicted Recruitment (millions)",xlab="Year",main=apport.names[b])
-#  for(i in 1:n.sims){
-#  lines(AM_EM_predrec[n.year,,i,b]~years,col="red",lwd=1,typ="l")
-#    lines(sum_OM.predrec[,i,b]~years,col="black",lwd=1,typ="l")
-#  }
-#  legend("topleft",legend=c("EM","OM"),lwd=c(1,1),col=c("red","black"),cex=0.5)
-#  }
-```
-  
-Recall that OM recruitment  (black line) is the same across apportionment methods. These are the median EM (red lines) and OM recruitment values, across all sims and years, that are used for each apportionment method. Individual EM medians for an apportionment method are not labeled.  
-``` {r, echo=FALSE}
-EM_recmed <- apply(AM_EM_predrec[n.year,,,],c(1,3),median)
-OM_recmed <- apply(sum_OM.predrec,c(1,3),median)
-#min(sum_OM.predrec)
-#max(sum_OM.predrec)
-#min(AM_EM_predrec,na.rm=TRUE)
-#max(AM_EM_predrec,na.rm=TRUE)
-#if(n.apports==1){
-par(mfrow=c(1,1))
-#}
-#for(b in 1:n.apports){
-plot(OM_recmed[,1]~years,col="black",lwd=3,typ="l",main="Median recruitment",ylab="Recruitment (millions)",xlab="Year",ylim=c(0,15),xlim=c(44,n.year))
-lines(EM_recmed[,1]~years,col="red",lwd=1,typ="l")
-lines(EM_recmed[,2]~years,col="red",lwd=1,typ="l")
-lines(EM_recmed[,3]~years,col="red",lwd=1,typ="l")
-lines(EM_recmed[,4]~years,col="red",lwd=1,typ="l")
-lines(EM_recmed[,5]~years,col="red",lwd=1,typ="l")
-lines(EM_recmed[,6]~years,col="red",lwd=1,typ="l")
-legend("topleft",legend=c("EM","OM"),lwd=c(1,1),col=c("red","black"),cex=0.5)
-#}
-```
-  
+#conv_num
+#melt_conv_num <- melt(conv_num[44:n.year,,],na.rm=FALSE,value.name="Conv")
+#names(melt_conv_num) <- c("Year","Sim","Apportionment","Conv")
 
-Then look at the mean EM and mean OM recruitment draws by apport scenario. There is something very wrong with these EM mean values (right now).  
-``` {r, echo=FALSE}
-#if(n.apports==1){
-par(mfrow=c(1,1))
-#}
-EM_recmean <- apply(AM_EM_predrec[n.year,,,],c(1,3),mean)
-OM_recmean <- apply(sum_OM.predrec,c(1,3),mean)
-#for(b in 1:n.apports){
-plot(EM_recmean[,1]~years,col="red",lwd=1,typ="l",main="Mean recruitment",ylab="Recruitment (millions)",xlab="Year",xlim=c(44,n.year),ylim=c(0,100))
-lines(EM_recmean[,2]~years,col="red",lwd=1,typ="l")
-lines(EM_recmean[,3]~years,col="red",lwd=1,typ="l")
-lines(EM_recmean[,4]~years,col="red",lwd=1,typ="l")
-lines(EM_recmean[,5]~years,col="red",lwd=1,typ="l")
-lines(EM_recmean[,6]~years,col="red",lwd=1,typ="l")
-lines(OM_recmean[,1]~years,col="black",lwd=3,typ="l")
-legend("topleft",legend=c("EM","OM"),lwd=c(1,1),col=c("red","black"),cex=0.5)
-#}
-```
-  
-Then look at mean EM recruitment, mean OM recruitment, and OM N at age 2.
-Why is the EM estimating such high recruitments in the projection years (years 44+) when it doesn't seem to be coming from the OM?  What would be driving that?  Look at residuals next.
-``` {r, echo=FALSE}
-sum_OM_N <- apply(OM_N[,,1,,,],c(2,4,5),sum) #N at age 2, summed over areas
-if(n.apports==1){
-par(mfrow=c(1,1))
-}
-if(n.apports==2){
-par(mfrow=c(1,2))
-}
-if(n.apports>3){
-par(mfrow=c(2,2))
-}
-#par(mfrow=c(1,1))
-i=1
-for(b in 1:n.apports){
-plot(AM_EM_predrec[n.year,,1,b]~years,col="red",lwd=1,typ="l", ylab="Predicted Recruitment (millions)",xlab="Year",main=apport.names[b],xlim=c(44,n.year))
-  for(i in 1:n.sims){
-  lines(AM_EM_predrec[n.year,,i,b]~years,col="red",lwd=3,typ="l")
-  lines(sum_OM.predrec[forproj.styr:n.year,i,b]~c(forproj.styr:n.year),col="black",lwd=5,lty=1)
-  lines(sum_OM_N[forproj.styr:n.year,i,b]~c(forproj.styr:n.year), col="green",lwd=3,lty=3)
-  }
-  legend("topleft",legend=c("EM pred rec","OM rec","OM N at age 2"),lwd=c(3,3,3),col=c("red","black","green"),cex=0.5)
-  }
-```
+#not a useful figure.
+#convnum_sum2 <- apply(conv_num[44:n.year,,],c(1,2),sum)
+#meltconv2 <- melt(convnum_sum2,na.rm=FALSE,value.name = "Conv")
+#names(meltconv2) <- c("Year","Sim","Conv")
+#ggplot(meltconv2,aes(y=Sim,x=factor(Year),color=Conv))+
+#geom_point()
 
-Then look at EM-OM residuals  
-``` {r, echo=FALSE}
-resid.rec2 <- array(data=NA, dim=c(n.year,n.sims,n.apports),dimnames=list(years,sims,apport.names))
-for(b in 1:n.apports) {
-#for (y in 1:n.year) {
-  for(k in 1:n.year) {
-  for(i in 1:n.sims) {
-    resid.rec2[k,i,b] <- sum_OM_N[k,i,b] - AM_EM_predrec[n.year,k,i,b]
-  }}}#}
-#resid.RPN[forproj.styr:n.year,15:n.year,,]
-melt_resid.rec2 <- melt(resid.rec2,na.rm=TRUE,value.name="resid")
-ggplot(melt_resid.rec2,aes(x=Var3,y=resid))+
-  geom_boxplot()
-```
-  
-What are other ways of looking at recruitment that might be interesting?
-  
+#plot lines for the number (of 50) of sims that converged in a year across different apportionment types - each apportion is a diff color/pattern line
+#convnum_sum <- apply(conv_num[44:n.year,,],c(1,3),sum)
+#plot(convnum_sum[,1]~c(44:n.year),typ="l",lty=1,col="black",ylim=c(25,50),lwd=3)
+#lines(convnum_sum[,2]~c(44:n.year),typ="l",lty=1,col="red",lwd=3)
+#ines(convnum_sum[,3]~c(44:n.year),typ="l",lty=1,col="green",lwd=3)
+#ines(convnum_sum[,4]~c(44:n.year),typ="l",lty=1,col="blue",lwd=3)
+#lines(convnum_sum[,5]~c(44:n.year),typ="l",lty=1,col="orange",lwd=3)
+#lines(convnum_sum[,6]~c(44:n.year),typ="l",lty=3,col="black",lwd=3)
+#lines(convnum_sum[,7]~c(44:n.year),typ="l",lty=3,col="red",lwd=3)
+#lines(convnum_sum[,8]~c(44:n.year),typ="l",lty=3,col="green",lwd=3)
+#lines(convnum_sum[,9]~c(44:n.year),typ="l",lty=3,col="blue",lwd=3)
+#lines(convnum_sum[,10]~c(44:n.year),typ="l",lty=1,col="pink",lwd=3)
+#lines(convnum_sum[,11]~c(44:n.year),typ="l",lty=1,col="purple",lwd=3)
 
-## SSB time series  
-``` {r, echo=FALSE}
-#create arrays for the selectivities across sims
-AM_EM_spbiom <- array(data=NA,dim=c(n.year,n.year,n.sims,n.apports),dimnames=list(years,years,sims,apport.names))
-OM_ssb <- array(data=NA,dim=c(n.sex,n.age,n.year,n.area,n.sims,length(1:n.apports)),dimnames=list(sexes,ages,years,areas,sims,apport.names))
-#then read them all in
-for(b in 1:n.apports){
-  dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-AM_EM_spbiom[,,,b] <- readRDS(file.path(dir.temp,"EM_spbiom.rds")) 
-OM_ssb[,,,,,b] <- readRDS(file.path(dir.temp,"ssb.rds")) 
-}
-```
-  
-Plot OM spawning biomass vs EM spawning biomass (for all the terminal sim years and sims), for each apportionment method  
-``` {r, echo=FALSE}
-sum_OM_ssb <- apply(OM_ssb,c(3,5,6),sum)
-if(n.apports==1){
-par(mfrow=c(1,1))
-}
-if(n.apports==2){
-par(mfrow=c(1,2))
-}
-if(n.apports>3){
-par(mfrow=c(2,2))
-}
-for(b in 1:n.apports){
-plot(sum_OM_ssb[,1,b]~years,col="black",lwd=1,typ="l",ylim=c(0,300),ylab=c("SSB(kt)"),xlab=c("Year"),main=apport.names[b])
-for(i in 1:n.sims){
-lines(AM_EM_spbiom[n.year,,i,b]~years,col="red",lwd=1,typ="l")
-legend("topright",legend=c("EM SSB","OM SSB"),lwd=c(3,3),col=c("red","black"),cex=0.5)
-}}
-```
 
-SSB residuals 
-Two ways.  
-```{r,echo=FALSE}
-resid.ssb2 <- array(data=NA, dim=c(n.year,n.sims,n.apports),dimnames=list(years,sims,apport.names))
-for(b in 1:n.apports) {
-#for (y in 1:n.year) {
-  for(k in 1:n.year) {
-  for(i in 1:n.sims) {
-    resid.ssb2[k,i,b] <- sum_OM_ssb[k,i,b] - AM_EM_spbiom[n.year,k,i,b]
-  }}}#}
-#resid.RPN[forproj.styr:n.year,15:n.year,,]
-melt_resid.ssb2 <- melt(resid.ssb2,na.rm=TRUE,value.name="resid")
-names(melt_resid.ssb2) <- c("Year","Sim","Apportionment","Resid")
-ggplot(melt_resid.ssb2,aes(x=Apportionment,y=Resid))+
-  geom_boxplot()
+#look at recruitment for year 44 for sim 1,8,26,43,45,46 for which none of the sims converged
+#plot(sum.rec.area[44,]~c(1:n.sims),ylab=c("Recruitment summed over areas"),xlab="Sim", main=c("Year 44"))
+#points(sum.rec.area[44,1]~c(1),pch=16)
+#points(sum.rec.area[44,8]~c(8),pch=16)
+#points(sum.rec.area[44,13]~c(13),pch=16)
+#points(sum.rec.area[44,18]~c(18),pch=16)
+#points(sum.rec.area[44,21]~c(21),pch=16)
+#points(sum.rec.area[44,23]~c(23),pch=16)
+#points(sum.rec.area[44,26]~c(26),pch=16)
+#points(sum.rec.area[44,32]~c(32),pch=16)
+#points(sum.rec.area[44,35]~c(35),pch=16)
+#points(sum.rec.area[44,41]~c(41),pch=16)
+#points(sum.rec.area[44,42]~c(42),pch=16)
+#points(sum.rec.area[44,43]~c(43),pch=16)
+#points(sum.rec.area[44,45]~c(45),pch=16)
+#points(sum.rec.area[44,46]~c(46),pch=16)
+#points(sum.rec.area[44,49]~c(49),pch=16)
+#legend("topleft",legend=c("converged","non-converged"),pch=c(1,16))
+#however all the year 44 sims with 'non-converged' mgc did acually converge...none resulted in NAN for objective function values. 
 
-melt_resid.ssb2 %>% 
-  ggplot(aes(x=factor(Year),y=Resid,fill=Apportionment)) + 
-           geom_boxplot()
+#this sums across apportionments - so a value of 11 means all the apportioment types in a given year/sim had non-crashing models.  Lower numbers mean some crashed.
+#apply(test_ofv,c(1,2),sum)
+
+#plot(sum.rec.area[45,]~c(1:50))
+#points(sum.rec.area[45,41]~c(41),pch=16)
+#for those sims that have no convergence (for any apport) for year 44 - look at RPW, RPN, and age comps samples...anything weird about those?
+#AM_EM_pred.srvRPN[45,,41,]
+#plot(AM_EM_pred.srvRPN[45,15:45,41,1]~c(15:45))
+#lines.default(AM_EM_pred.srvRPN[45,15:45,41,2]~c(15:45))
 
 ```
-
-  
-# Performance metrics
-As you read the things below, I could use help thinking about ways to combine a suite of interesting (relevant) performance metrics in a table or (maybe) figure that would be a single source of info for comparison. Which of the items below (or that need to be added) would be included?  
-```{r,echo=FALSE}
-#create arrays for the apportionments
-AM_EM_abc <- array(data=NA,dim=c(n.year,n.fish,n.area,n.sims,n.apports),dimnames=list(years,fish,areas,sims,apport.names))
-#then read them all in
-for(b in 1:n.apports){
-  dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-AM_EM_abc[,,,,b] <- readRDS(file.path(dir.temp,"apportioned_C.rds")) 
-}
-```
-
-The overall mean and median (combines: areas, gears, years, sims) for 2019-`r 1976+n.year-1`.  
-``` {r,echo=FALSE}
-abc_allmean <- apply(AM_EM_abc[44:n.year,,,,],5,mean)
-abc_allmed <- apply(AM_EM_abc[44:n.year,,,,],5,median)
-abc_allmean
-abc_allmed
-
-allmean_sd <- vector()
-allmean_uci <- vector()
-allmean_lci <- vector()
-for(b in 1:n.apports){
-allmean_sd[b] <- sd(AM_EM_abc[44:n.year,,,,b])
-allmean_uci[b] <- abc_allmean[b] + (1.92*allmean_sd[b])
-allmean_lci[b] <- abc_allmean[b] - (1.92*allmean_sd[b])
-}
-
-#make a matrix of means, medians, uci, lci
-all_abc <- matrix(data=NA,nrow=n.apports,ncol=4)
-colnames(all_abc) <- c("Mean","Median","UCI","LCI")
-rownames(all_abc) <- c(apport.names)
-for(b in 1:n.apports){
-all_abc[b,1] <- abc_allmean[b]
-all_abc[b,2] <- abc_allmed[b]
-all_abc[b,3] <- allmean_uci[b]
-all_abc[b,4] <- allmean_lci[b]
-}
-
-melted_ABC <- melt(AM_EM_abc[44:n.year,,,,], value.name="ABC")
-names(melted_ABC) <- c("Year","Fishery","Area","Sim","Apportionment.Method","ABC")
-melted_ABC %>% 
-ggplot(aes(x=factor(Apportionment.Method),y=ABC)) +#,fill=Apportionment)) + 
-           geom_boxplot()
-
-```
-  
-  
-Median and mean apportioned ABC by area and year (combines: gears, sims) for 2019-`r 1976+n.year-1`.  
-```{r,echo=FALSE}
-#set up objects to hold secondary products
-mean_ABC <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
-median_ABC <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
-meanABC_uci <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
-meanABC_lci <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
-#medianABC_uci <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
-#medianABC_lci <- array(data=NA,dim=c(n.year,n.area,n.apports),dimnames=list(years,areas,apport.names))
-sd_1 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.apports),dimnames=list(years[forproj.styr:n.year],areas,apport.names))
-tempsd <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(years[forproj.styr:n.year],areas,sims,apport.names))
-#calculate things
-mean_ABC <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,5),mean)
-median_ABC <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,5),median)
-tempsd <-apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum)
-#calc sd 
-for(y in 1:length(forproj.styr:n.year)){
-  for(m in 1:n.area) {
-    for(b in 1:n.apports){
-      sd_1[y,m,b] <- sd(tempsd[y,m,,b])
-    }}}
-#then fill in uci and lci 
-for(y in 1:length(forproj.styr:n.year)){
-  for(m in 1:n.area) {
-    for(b in 1:n.apports){
-meanABC_lci[y,m,b] <- mean_ABC[y,m,b] - (1.96*sd_1[y,m,b])
-meanABC_uci[y,m,b] <- mean_ABC[y,m,b] + (1.96*sd_1[y,m,b])
-    }}}  
-#then plot
-par(mfrow=c(3,2))
-for(b in 1:n.apports){
-  for(m in 1:n.area){
-plot(mean_ABC[,m,b]~years[forproj.styr:n.year],typ="l",col="black",lwd=3,ylim=c(0,6),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
-lines(median_ABC[,m,b]~years[forproj.styr:n.year],typ="l",col="red",lwd=3)
-lines(meanABC_uci[,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-lines(meanABC_lci[,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-legend("topright",legend=c("Mean ABC","Median ABC","Upper & Lower ~95% CI"),lwd=c(3,3),col=c("black","red","grey","grey"),cex=0.5)
-}}
-``` 
-
-Median and mean apportioned ABC by area, gear, and year (combines: sims) for 2019-`r 1976+n.year-1`.  
-``` {r,echo=FALSE}
-#set up objects to hold secondary products
-mean_ABC_gear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish, areas,apport.names))
-median_ABC_gear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish,areas,apport.names))
-meanABC_uci_gear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish,areas,apport.names))
-meanABC_lci_gear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish,areas,apport.names))
-sd_2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.area,n.apports),dimnames=list(years[forproj.styr:n.year],fish,areas,apport.names))
-#calculate things
-mean_ABC_gear <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,3,5),mean)
-median_ABC_gear <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,3,5),median)
-
-#calc sd 
-for(y in 1:length(forproj.styr:n.year)){
-  for(f in 1:n.fish){
-    for(m in 1:n.area) {
-      for(b in 1:n.apports){
-sd_2[y,f,m,b] <- sd(AM_EM_abc[y,f,m,,b])
-      }}}}
-#then fill in uci and lci 
-for(y in 1:length(forproj.styr:n.year)){
-  for(f in 1:n.fish){
-    for(m in 1:n.area) {
-      for(b in 1:n.apports){
-meanABC_lci_gear[y,f,m,b] <- mean_ABC_gear[y,f,m,b] - (1.96*sd_2[y,f,m,b])
-meanABC_uci_gear[y,f,m,b] <- mean_ABC_gear[y,f,m,b] + (1.96*sd_2[y,f,m,b])
-      }}}} 
-#then plot
-par(mfrow=c(3,2))
-for(b in 1:n.apports){
-  for(m in 1:n.area){
-plot(mean_ABC_gear[,2,m,b]~years[forproj.styr:n.year],typ="l",col="black",lwd=3,ylim=c(0,10),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
-  lines(mean_ABC_gear[,3,m,b]~years[forproj.styr:n.year],typ="l",col="blue",lwd=3)
-  lines(median_ABC_gear[,2,m,b]~years[forproj.styr:n.year],typ="l",col="red",lwd=3)
-  lines(median_ABC_gear[,3,m,b]~years[forproj.styr:n.year],lty=3,col="red",lwd=3)
-  lines(meanABC_uci_gear[,2,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-  lines(meanABC_lci_gear[,2,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-  lines(meanABC_uci_gear[,3,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-  lines(meanABC_lci_gear[,3,m,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-legend("topright",legend=c("Mean ABC Fixed Gear","Mean ABC Trawl Gear","Median ABC Fixed Gear","Median ABC Trawl Gear","Upper & Lower ~95% CI"),lwd=c(3,3,3,3,1,1),col=c("black","blue","red","red","grey","grey"),lty=c(1,1,1,3,1,1,1,1),cex=0.5)
-}}
-```
-
-Median and mean apportioned ABC by year (combines: areas, gears, sims) for 2019-`r 1976+n.year-1`.  
-``` {r,echo=FALSE}
-#set up objects to hold secondary products
-mean_ABC_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
-median_ABC_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
-meanABC_uci_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
-meanABC_lci_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
-medianABC_uci_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
-medianABC_lci_allA <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
-sd_3 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=c(n.apports),dimnames=list(years[forproj.styr:n.year],apport.names))
-
-#calculate things
-mean_ABC_allA <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,5),mean)
-median_ABC_allA <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,5),median)
-tempsd <-apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,4,5),sum)
-
-#calc sd 
-for(y in 1:length(forproj.styr:n.year)){
-  for(b in 1:n.apports){
-sd_3[y,b] <- sd(tempsd[y,,b])
-  }}
-#then fill in uci and lci 
-for(y in 1:length(forproj.styr:n.year)){
-  for(b in 1:n.apports){
-meanABC_lci_allA[y,b] <- meanABC_uci_allA[y,b] - (1.96*sd_3[y,b])
-meanABC_uci_allA[y,b] <- meanABC_uci_allA[y,b] + (1.96*sd_3[y,b])
-  }} 
-#then plot
-par(mfrow=c(3,2))
-for(b in 1:n.apports){
-  for(m in 1:n.area){
-plot(mean_ABC_allA[,b]~years[forproj.styr:n.year],typ="l",col="black",lwd=3,ylim=c(0,10),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
-  lines(median_ABC_allA[,b]~years[forproj.styr:n.year],typ="l",col="red",lwd=3)
-  lines(meanABC_uci_allA[,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-  lines(meanABC_lci_allA[,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-legend("topright",legend=c("Mean ABC","Median ABC","Upper & Lower ~95% CI"),lwd=c(3,3,1),col=c("black","red","grey"),cex=0.5)
-}}
-```
-
-Median and mean apportioned ABC by gear (combines: areas, sims) for 2019-`r 1976+n.year-1`.
-``` {r,echo=FALSE}
-mean_ABC_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
-median_ABC_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
-meanABC_uci_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
-meanABC_lci_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
-medianABC_uci_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
-medianABC_lci_allgear <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
-sd_4 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.fish,n.apports),dimnames=list(years[forproj.styr:n.year],fish,apport.names))
-#calculate things
-mean_ABC_allgear <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,5),mean)
-median_ABC_allgear <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,5),median)
-tempsd <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,2,4,5),sum)
-
-#calc sd 
-for(y in 1:length(forproj.styr:n.year)){
-  for(f in 1:n.fish){
-  for(b in 1:n.apports){
-sd_4[y,f,b] <- sd(tempsd[y,f,,b])
-  }}}
-#then fill in uci and lci 
-for(y in 1:length(forproj.styr:n.year)){
-  for(b in 1:n.apports){
-meanABC_lci_allgear[y,2,b] <- mean_ABC_allgear[y,2,b] - (1.96*sd_4[y,2,b])
-meanABC_uci_allgear[y,2,b] <- mean_ABC_allgear[y,2,b] + (1.96*sd_4[y,2,b])
-meanABC_lci_allgear[y,3,b] <- mean_ABC_allgear[y,3,b] - (1.96*sd_4[y,3,b])
-meanABC_uci_allgear[y,3,b] <- mean_ABC_allgear[y,3,b] + (1.96*sd_4[y,3,b])
-  }}
-#then plot
-par(mfrow=c(3,2))
-for(b in 1:n.apports){
-plot(mean_ABC_allgear[,2,b]~years[forproj.styr:n.year],typ="l",col="black",lwd=3,ylim=c(0,10),ylab=c("ABC (kt)"), xlab=c("Sim year"),main=paste(c(apport.names[b], "Area", areas[m])))
-  lines(mean_ABC_allgear[,3,b]~years[forproj.styr:n.year],typ="l",col="blue",lwd=3)
-  lines(median_ABC_allgear[,2,b]~years[forproj.styr:n.year],typ="l",col="red",lwd=3)
-  lines(median_ABC_allgear[,3,b]~years[forproj.styr:n.year],lty=3,col="red",lwd=3)
-  lines(meanABC_uci_allgear[,2,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-  lines(meanABC_lci_allgear[,2,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-  lines(meanABC_uci_allgear[,3,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-  lines(meanABC_lci_allgear[,3,b]~years[forproj.styr:n.year],lty=3,col="grey",lwd=1)
-legend("topright",legend=c("Mean ABC Fixed Gear","Mean ABC Trawl Gear","Median ABC Fixed Gear","Median ABC Trawl Gear","Upper & Lower ~95% CI"),lwd=c(3,3,3,3,1,1),col=c("black","blue","red","red","grey","grey"),lty=c(1,1,1,3,1,1,1,1),cex=0.5)
-}
-```
-  
-Next we examine the proportion of years (terminal year of EM runs) and sims where apportioned ABC summed over areas is above a specified threshold value. It is simple to change the threshold value being evaluated; the present value of the ABC threshold for management areas combined is:
-``` {r, echo=FALSE}
-threshold_allA <- 12.0 #value in kilotons
-threshold <- 2.0
-```
-`r threshold_allA` kilotons.  
-
-The proportion of years and simulations where total ABC is above the all-area threshold is
-``` {r,echo=FALSE}
-AM_EM_abc_sum <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,4,5),sum)
-dimnames(AM_EM_abc_sum)<-list(forproj.styr:n.year,sims,apport.names)
-app_num <- array(data=NA,dim=c(length(forproj.styr:n.year),n.sims,n.apports),dimnames=list(forproj.styr:n.year,sims,apport.names))
-for(b in 1:n.apports){
-  for(i in 1:n.sims){
-    for(y in 1:length(forproj.styr:n.year)){
-      if(AM_EM_abc_sum[y,i,b] < threshold_allA) { #0 if below threshold
-        app_num[y,i,b] <- 0      
-      } else {
-      app_num[y,i,b] <- 1        #if above threshold
-      }
-    }
-  }
-}
-#proportion years in each area above threshold across all years and sims 
-temp_a <- vector() 
-temp_a <- apply(app_num[,,],3,sum)
-(temp_a1 <- temp_a/(n.sims*(length(forproj.styr:n.year))) ) 
-```
-
-
-It may also be of value to set a threshold for individual management areas. We are presenting results for a threshold of `r threshold` kilotons.
-``` {r, echo=FALSE}
-AM_EM_abc_sum2 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum)
-dimnames(AM_EM_abc_sum2)<-list(forproj.styr:n.year,areas,sims,apport.names)
-app_num2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,c("BS","AI","WG","CG","WY","EY/SEO"),sims,apport.names))
-for(b in 1:n.apports){
-  for(m in 1:n.area){
-    for(i in 1:n.sims){
-      for(y in 1:length(forproj.styr:n.year)){
-      if(AM_EM_abc_sum2[y,m,i,b] < threshold) { #0 if below threshold
-        app_num2[y,m,i,b] <- 0      
-      } else {
-      app_num2[y,m,i,b] <- 1        #if above threshold
-      }
-    }
-  }
-}}
-#proportion years in each area above threshold across all years and sims 
-temp_b <- matrix(data=NA,nrow=c(n.area),ncol=c(n.apports)) 
-temp_b <- apply(app_num2,c(2,4),sum)
-(temp_b1 <- temp_b/(n.sims*(length(forproj.styr:n.year))) ) 
-
-```
-  
-## The stability of ABC apportionment to individual management areas and of ABC as a whole may be of interest. 
-``` {r, echo=FALSE}
-AM_EM_abc_sum3 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum)
-diff_apport <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,1:n.area,1:n.sims,apport.names))
-for(b in 1:n.apports){
-  for(i in 1:n.sims){
-    for(m in 1:n.area){
-      for(y in 1:length(forproj.styr:(n.year-1))){
-    diff_apport[y,m,i,b] <- (abs(AM_EM_abc_sum3[y,m,i,b]-AM_EM_abc_sum3[y+1,m,i,b])/(abs(AM_EM_abc_sum3[y,m,i,b]+AM_EM_abc_sum3[y+1,m,i,b])/2))*100
-      }}}}
-diff_apport
-pct_chg1 <- apply(diff_apport,c(1,2,4),mean) #mean across sims
-pct_chg2 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],c(2,4),mean) #mean across sims and years
-pct_chg3 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],4,mean)#mean across sims, areas, years
-##mean decrease?
-##mean increase?
-```
-The mean absolute percent change in ABC for each apportionment method is
-```{r, echo=FALSE}
-pct_chg3
-```
-This reflects the inherent variability in ABC from year to year.
-  
-Drilling down further, the mean absolute percent change in ABC for each area and apportionment method is
-```{r, echo=FALSE}
-pct_chg2
-```
-This reflects what an individual management area may experience in terms of average change in ABC from year to year.
-  
-
-## How well do apportionment methods track true (SSB) biomass proportions by area? Relative percent difference in OM biomass by area vs EM apportionment by area
-``` {r, echo=FALSE}
-#create arrays to hold indices
-#AM_EM_natage <- array(data=NA,dim=c(n.sex,n.year,n.age,n.year,n.age,n.sims,length(1:n.apports)),dimnames=list(sexes,years,ages,years,ages,sims,apport.names))
-#AM_EM_totbiomass <- array(data=NA,dim=c(n.year,n.year,n.sims,length(1:n.apports)),dimnames=list(years,years,sims,apport.names))
-#read in things
-#for(b in 1:n.apports){
-#dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-#AM_EM_natage[,,,,,,b] <- readRDS(file.path(dir.temp,"EM_natage.rds")) 
-#AM_EM_totbiomass[,,,b] <- readRDS(file.path(dir.temp,"EM_totbiomass.rds")) 
-#}
-#remember things we have read in before
-#AM_EM_spbiom
-#OM_ssb
-#calc abc proportion by area by year and by sim and by apportionment type
-temp_abc <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum)
-ABC_prop_1 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apport.names))
-for(y in 1:(length(forproj.styr:n.year))){
-  for(i in 1:n.sims){
-    for(b in 1:n.apports){
-    ABC_prop_1[y,,i,b] <- prop.table(temp_abc[y,,i,b])
-}}}
-
-#calc proportions OM ssbiomass by area and year
-temp_abc2 <- apply(OM_ssb[,,forproj.styr:n.year,,,],c(3,4,5,6),sum)
-ABC_prop_2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apport.names))
-for(y in 1:(length(forproj.styr:n.year))){
-  for(i in 1:n.sims){
-    for(b in 1:n.apports){
-    ABC_prop_2[y,,i,b] <- prop.table(temp_abc2[y,,i,b])
-}}}
-
-#residuals abs relative % diff (I think...lol)
-resid.biomApport <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,length(1:n.apports)),dimnames=list(forproj.styr:n.year,areas,sims,apport.names))
-for(y in 1:(length(forproj.styr:n.year))){
-  for(i in 1:n.sims){
-    for(b in 1:n.apports){
-      for(m in 1:n.area){
-        resid.biomApport[y,m,i,b] <- (abs(ABC_prop_1[y,m,i,b]-ABC_prop_2[y,m,i,b])/(abs(ABC_prop_1[y,m,i,b]+ABC_prop_2[y,m,i,b])/2))*100
-      }}}}
-resid.biomApport
-#means of em abc and OM biomass residuals and of proportions
-variable.blable <- apply(resid.biomApport,c(2,4),mean) #mean absolute relative % difference between 'true' and apportioned ABC by area for each apport method (low is good if we want apportionment to track true ssb)
-rownames(variable.blable)<-c("BS", "AI","WG", "CG","WY", "EY/SEO")
-```
-This is the mean absolute relative % difference between 'true' and apportioned ABC by area for each apport method (low is good if we want apportionment to track true ssb)
-```{r, echo=FALSE}
-variable.blable
-```
-
-## For each apportionment option, what is the proportion of years*sims where EM F/F40<1?
-this needs to be coded after I get a new exe that spits out the values I need
-
-## For each apportionment option, what is the proportion of years*sims where EM SSB(endyear)/B40>1? (not overfished) 
-```{r, echo=FALSE}
-#create arrays to hold indices
-AM_EM_B40 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-AM_EM_SBF40 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-AM_EM_SBF35 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-AM_EM_SBF0 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-AM_EM_depletion1 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-AM_EM_depletion2 <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-
-#read in things
-for(b in 1:n.apports){
-dir.temp <- paste0(dir.output,"/Apport.Option_",b)
-AM_EM_B40[,,b] <- readRDS(file.path(dir.temp,"EM_B40.rds")) 
-AM_EM_SBF40[,,b] <- readRDS(file.path(dir.temp,"EM_SBF40.rds")) 
-AM_EM_SBF35[,,b] <- readRDS(file.path(dir.temp,"EM_SBF35.rds")) 
-#AM_EM_SBF0[,,b] <- readRDS(file.path(dir.temp,"EM_SBF0.rds")) 
-AM_EM_depletion1[,,b] <- readRDS(file.path(dir.temp,"EM_depletion1.rds")) 
-AM_EM_depletion2[,,b] <- readRDS(file.path(dir.temp,"EM_depletion2.rds")) 
-}
-#remember things we have read in before
-#AM_EM_spbiom
-#OM_ssb
-```
-
-```{r, echo=FALSE}
-#calc SSB(endyr)/B40 for each year, sim, apport
-B40_ratio <- array(data=NA,dim=c(n.year,n.sims,length(1:n.apports)),dimnames=list(years,sims,apport.names))
-
-for(y in 1:n.year){
-  for(i in 1:n.sims){
-    for(b in 1:n.apports){
-      B40_ratio[y,i,b] <- AM_EM_spbiom[y,y,i,b]/AM_EM_B40[y,i,b] #take the EM spbiom from the terminal year of each iteration of EM over years
-    }
-  }
-}
-#mean and median and CIs for B40_ratio across years and sim by apportionment method
-B40_ratio_mean <- vector()
-B40_ratio_median <- vector()
-B40_ratio_sd <- vector()
-B40_ratio_mean <- apply(B40_ratio[forproj.styr:n.year,,],3,mean)
-B40_ratio_median <- apply(B40_ratio[forproj.styr:n.year,,],3,median) 
-for(b in 1:n.apports){
-B40_ratio_sd[b] <- sd(B40_ratio[forproj.styr:n.year,,b])
-}
-melted_B40ratio <- melt(B40_ratio[forproj.styr:n.year,,],value.name="SSB_B40")
-ggplot(melted_B40ratio,aes(x=Var3,y=SSB_B40)) +#,fill=Apportionment)) + 
-           geom_boxplot()
-
-#mean and median and CIs forB40_ratio across sims by year and apportionment method
-B40_ratio_mean2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
-B40_ratio_median2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
-B40_ratio_mean2 <- apply(B40_ratio[forproj.styr:n.year,,],c(1,3),mean)
-B40_ratio_median2 <- apply(B40_ratio[forproj.styr:n.year,,],c(1,3),median) 
-melted_B40ratio2 <- melt(B40_ratio[forproj.styr:n.year,,],value.name="SSB_B40")
-names(melted_B40ratio2) <- c("Year","Sim","Apportionment.Method","SSB_B40")
-
-melted_B40ratio2 %>%
-ggplot(aes(x=factor(Apportionment.Method),y=SSB_B40,fill=factor(Year))) + 
-           geom_boxplot()
-
-melted_B40ratio2 %>%
-ggplot(aes(x=factor(Year),y=SSB_B40,fill=factor(Apportionment.Method))) + 
-           geom_boxplot()
-
-#now calculate the proportion of years SSB/b40 >1
-B40_props <- array(data=NA,dim=c(length(forproj.styr:n.year),n.sims,n.apports),dimnames=list(forproj.styr:n.year,sims,apport.names))
-for(y in forproj.styr:n.year){
-  for(i in 1:n.sims){
-    for(b in 1:n.apports){
-      if(B40_ratio[y,i,b] < 1.0) {
-        B40_props[(y-43),i,b] <- 0
-      } else{
-        B40_props[(y-43),i,b] <- 1 
-      }
-      }
-  }}
-#B40_props
-#proportions
-B40_props2 <- matrix(data=NA,nrow=c(length(forproj.styr:n.year)),ncol=n.apports)
-B40_props2 <- apply(B40_props[,,],c(1,3),sum)
-B40_props3 <- B40_props2/(n.sims)
-#proportion of sims where SSB_enyr (EM, all areas) > B40 for each forward year and apportionment option is:
-B40_props3
-
-#proportions apportionment methods where sims and years were > 1:
-B40_props4 <- vector()
-B40_props4 <- apply(B40_props[,,],3,sum)
-B40_props5 <- B40_props4/(n.sims*length(forproj.styr:n.year))
-#proportion of sims where SSB_enyr (EM, all areas) > B40 for each forward year and apportionment option is:
-B40_props5
-```
-
-
-What is SSB_endyr/ssb_styr for each apportionment method?
-```{r,echo=FALSE}
-#AM_EM_depletion1
-melted_depletion1 <- melt(AM_EM_depletion1[forproj.styr:n.year,,],value.name="Depletion")
-names(melted_depletion1) <- c("Year","Sim","Apportionment.Method","Depletion")
-
-melted_depletion1 %>%
-ggplot(aes(x=factor(Apportionment.Method),y=Depletion,fill=factor(Year))) + 
-           geom_boxplot()
-
-melted_depletion1 %>%
-ggplot(aes(x=factor(Year),y=Depletion,fill=factor(Apportionment.Method))) + 
-           geom_boxplot()
-```
-
-## mean and median age at harvest from EM (all areas combined) (and roughly mapped to size)
-```{r, echo=FALSE}
-
-#AM_EM_natage
-#  EM_LLcatchatage <<- array(dim=c(n.sex,n.year,n.age, n.year,n.age,n.sims), dimnames=list(sexes,years,ages,years,ages,sims))
-#  EM_TRcatchatage <<- array(dim=c(n.sex,n.year,n.age, n.year,n.age,n.sims), dimnames=list(sexes,years,ages,years,ages,sims))
-
-```
-
-## mean and median catch/ABC for each area and overall
-
-#Proportion years/sims where of the catch in area x is more than 50% (or a changeable value) fish younger than the age @50% mature
-#test.age <- 4
-
-#Mean, median (+CIs) of age and length (converted from age?) for catches (apportioned TAC) in each EM area across years and sims
-
-
