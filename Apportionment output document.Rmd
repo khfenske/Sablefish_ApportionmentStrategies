@@ -22,12 +22,12 @@ require(PBSmodelling)
 require(R2admb)
 
 ###THESE ITEMS NEED MANUAL INPUT!!!####################################################
-n.apports <- 2 #number of apportionment options that have been run and are to be compiled here
-apports <- c(1,2)#,3,4,5,6,7,8,9,10)#,11) #the folder numbers of the apportionment options to be compiled
+n.apports <- 11 #number of apportionment options that have been run and are to be compiled here
+apports <- c(1,2,3,4,5,6,7,8,9,10,11) #the folder numbers of the apportionment options to be compiled
 #"Equal-1","Fixed-2","Equilibrium-3","NPFMC-4","Exp_survey_wt-5","Exp_fishery_wt-6","Non-Exp_NPFMC-7",
 #"Partial_fixed-8","Age_based-9","RandEff-10"","All_to_one-11","TermYear_biom-12","Penalized-13","Non-exp_Agebased-14"
-apportion.names <- list("Equal","Fixed")#,"Equilibrium","NPFMC","Exp_survey_wt","Exp_fishery_wt","Non-Exp_NPFMC",
-#"Partial_fixed","Age_based","Term_LLsurv")#,"All_to_one") #list the names of the apportionment options being compared
+apportion.names <- list("Equal","Fixed","Equilibrium","NPFMC","Exp_survey_wt","Exp_fishery_wt","Non-Exp_NPFMC",
+"Partial_fixed","Age_based","Term_LLsurv","All_to_one") #list the names of the apportionment options being compared
 ############################################################################################
 
 #read in the apportionment R object files for indexing
@@ -152,6 +152,7 @@ OM_N[,,,,,b] <- readRDS(file.path(dir.temp,"N.rds"))
 ```
 
 ```{r,echo=FALSE}
+#first look at runs to exclude (make NA) based on objective function values:
 test_ofv <- array(data=NA,dim=c(length(1:n.year),n.sims,n.apports),dimnames=list(years,sims,apportion.names))
 for(b in 1:n.apports){
 for(i in 1:n.sims){
@@ -160,15 +161,19 @@ for(i in 1:n.sims){
   }
 for(y in 44:n.year){  
   if(AM_ofv[y,i,b] == "nan"){
-      test_ofv[(y),i,b]<-0
+      test_ofv[y,i,b]<-0
     } else{
-      test_ofv[(y),i,b]<-1
+      test_ofv[y,i,b]<-1
     }
   }
 }}
-
-#apply(test_ofv[forproj.styr:n.year,,],c(1,3),sum) #if value = n.sims, then all years and apportionments ran (not necessarily converged)
-#apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum) #if value = length(44:n.year), then all years and apportionments ran (not necessarily converged)
+#melted_ofv <- melt(test_ofv[44:n.year,,],value.name = "ConvFlag")
+melt(test_ofv[44:n.year,,],value.name = "ConvFlag")%>%
+  ggplot()+
+  geom_point(aes(x=factor(Var2),y=Var1,color=factor(ConvFlag)))+
+  facet_wrap(~factor(Var3))+
+  labs(color="Convergence",x="Year",y="Simulation",title="OFV convergence")+
+  theme(legend.position="top")
 
 ofv.equalvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,1]<(n.year-43)))
 ofv.fixedvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,2]<(n.year-43)))
@@ -182,24 +187,35 @@ ofv.agebasedvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),
 ofv.termLLsurvvec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,10]<(n.year-43)))
 ofv.alltoonevec <- which(as.vector(apply(test_ofv[forproj.styr:n.year,,],c(2,3),sum)[,11]<(n.year-43)))
 
-head(AM_EM_abc)
-AM_EM_abc[44:n.year, 2, 1,,]
-AM_EM_abc[44:n.year, 2, 1,,1]
-AM_EM_abc[44:n.year, 2, 1,equalvec,1] <- NA
-
-AM_EM_abc[44:n.year, 2, 1,,1] %>% 
-  data.frame %>% 
-  gather(sim,value) %>% 
-  ggplot(aes(value,fill=sim)) +
-  geom_density()
-#this sums across apportionments - so a value of 11 means all the apportioment types in a given year/sim had non-crashing models.  Lower numbers mean some crashed.
-#dim(test_ofv)
-#apply(test_ofv[forproj.styr:n.year,,],c(1,3),sum) #if value = n.sims, then all years and apportionments ran (not necessarily converged)
 retainedprops <- apply(test_ofv[forproj.styr:n.year,,],3,sum)/(length(forproj.styr:n.year)*n.sims) #proportion retained sims (where all years ran/didn't crash)
 
+#head(AM_EM_abc)
+#AM_EM_abc[44:n.year, 2, 1,,]
+#AM_EM_abc[44:n.year, 2, 1,,1]
+#AM_EM_abc[44:n.year, 2, 1,equalvec,1] <- NA
+
+#AM_EM_abc[44:n.year, 2, 1,,1] %>% 
+#  data.frame %>% 
+#  gather(sim,value) %>% 
+#  ggplot(aes(value,fill=sim)) +
+#  geom_density()
+
+retainedsims<-vector()
+retainedsims[1] <- 1-(length(ofv.equalvec)/n.sims)
+retainedsims[2] <- 1-(length(ofv.fixedvec)/n.sims)
+retainedsims[3] <- 1-(length(ofv.equilibvec)/n.sims)
+retainedsims[4] <- 1-(length(ofv.NPFMCvec)/n.sims)
+retainedsims[5] <- 1-(length(ofv.ExpSurvWtvec)/n.sims)
+retainedsims[6] <- 1-(length(ofv.ExpFishWtvec)/n.sims)
+retainedsims[7] <- 1-(length(ofv.NonExpNPFMCvec)/n.sims)
+retainedsims[8] <- 1-(length(ofv.partfixedvec)/n.sims)
+retainedsims[9] <- 1-(length(ofv.agebasedvec)/n.sims)
+retainedsims[10] <- 1-(length(ofv.termLLsurvvec)/n.sims)
+retainedsims[11] <- 1-(length(ofv.alltoonevec)/n.sims)
+names(retainedsims)<- apportion.names
+retainedsims
 
 ##now looking at max convergence criteria for removal of runs
-#AM_max_grads
 mgc_val <- 0.1
 conv_num <- array(data=NA, dim=c(n.year,n.sims,n.apports), dimnames=list(years,sims,apportion.names))
 for(b in 1:n.apports){
@@ -213,8 +229,6 @@ for(b in 1:n.apports){
     }
   }
 }
-#conv_num[1:43,,] <- 0
-#conv_num[44:n.year,,]
 retainedprops2 <- apply(conv_num[forproj.styr:n.year,,],3,sum)/(length(forproj.styr:n.year)*n.sims) #proportion retained 
 mgc.equalvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,1]<(n.year-43)))
 mgc.fixedvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,2]<(n.year-43)))
@@ -228,7 +242,92 @@ mgc.agebasedvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),
 mgc.termLLsurvvec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,10]<(n.year-43)))
 mgc.alltoonevec <- which(as.vector(apply(conv_num[forproj.styr:n.year,,],c(2,3),sum)[,11]<(n.year-43)))
 
+retainedsims2<-vector()
+retainedsims2[1] <- 1-(length(mgc.equalvec)/n.sims)
+retainedsims2[2] <- 1-(length(mgc.fixedvec)/n.sims)
+retainedsims2[3] <- 1-(length(mgc.equilibvec)/n.sims)
+retainedsims2[4] <- 1-(length(mgc.NPFMCvec)/n.sims)
+retainedsims2[5] <- 1-(length(mgc.ExpSurvWtvec)/n.sims)
+retainedsims2[6] <- 1-(length(mgc.ExpFishWtvec)/n.sims)
+retainedsims2[7] <- 1-(length(mgc.NonExpNPFMCvec)/n.sims)
+retainedsims2[8] <- 1-(length(mgc.partfixedvec)/n.sims)
+retainedsims2[9] <- 1-(length(mgc.agebasedvec)/n.sims)
+retainedsims2[10] <- 1-(length(mgc.termLLsurvvec)/n.sims)
+retainedsims2[11] <- 1-(length(mgc.alltoonevec)/n.sims)
+names(retainedsims2)<- apportion.names
+retainedsims2
 
+melt(conv_num[44:n.year,,],value.name = "ConvFlag")%>%
+  ggplot()+
+  geom_point(aes(x=Var1,y=factor(Var2),color=factor(ConvFlag)))+
+  facet_wrap(~factor(Var3))+
+  labs(color="Convergence",x="Year",y="Simulation",title="MGC convergence")+
+  theme(legend.position="top")
+#melted_ofv <- melt(conv_num[44:n.year,,],value.name = "ConvFlag")
+melt(conv_num[44:n.year,,],value.name = "ConvFlag")%>%
+  ggplot()+
+  geom_point(aes(x=factor(Var2),y=Var1,color=factor(ConvFlag)))+
+  facet_wrap(~factor(Var3))+
+  labs(color="Convergence",x="Year",y="Simulation",title="MGC convergence")+
+  theme(legend.position="top")
+
+##now create an easy switch for selecting between MGC and OFV for sorting criteria for each of the outputs we want to examine.
+converge_id_list <- list()
+sort_criteria <- 2 #2  #1 means use OFV to sort, 2 means use MGC (be sure to check value being used for MGC)
+#if(sort_criteria == 1)  {
+#converge_id_list[[1]] <- data.frame(ofv.equalvec)
+#converge_id_list[[2]] <- data.frame(ofv.fixedvec)
+#converge_id_list[[3]] <- data.frame(ofv.equilibvec)
+#converge_id_list[[4]] <- data.frame(ofv.NPFMCvec)
+#converge_id_list[[5]] <- data.frame(ofv.ExpSurvWtvec)
+#converge_id_list[[6]] <- data.frame(ofv.ExpFishWtvec)
+#converge_id_list[[7]] <- data.frame(ofv.NonExpNPFMCvec)
+#converge_id_list[[8]] <- data.frame(ofv.partfixedvec)
+#converge_id_list[[9]] <- data.frame(ofv.agebasedvec)
+#converge_id_list[[10]] <- data.frame(ofv.termLLsurvvec)
+#converge_id_list[[11]] <- data.frame(ofv.alltoonevec)
+#} 
+#if(sort_criteria == 2) {
+#converge_id_list[[1]] <- data.frame(mgc.equalvec)
+#converge_id_list[[2]] <- data.frame(mgc.fixedvec)
+#converge_id_list[[3]] <- data.frame(mgc.equilibvec)
+#converge_id_list[[4]] <- data.frame(mgc.NPFMCvec)
+#converge_id_list[[5]] <- data.frame(mgc.ExpSurvWtvec)
+#converge_id_list[[6]] <- data.frame(mgc.ExpFishWtvec)
+#converge_id_list[[7]] <- data.frame(mgc.NonExpNPFMCvec)
+#converge_id_list[[8]] <- data.frame(mgc.partfixedvec)
+#converge_id_list[[9]] <- data.frame(mgc.agebasedvec)
+#converge_id_list[[10]] <- data.frame(mgc.termLLsurvvec)
+#converge_id_list[[11]] <- data.frame(mgc.alltoonevec)
+#}
+
+
+if(sort_criteria == 1)  {
+converge_id_list[[1]] <- (ofv.equalvec)
+converge_id_list[[2]] <- (ofv.fixedvec)
+converge_id_list[[3]] <- (ofv.equilibvec)
+converge_id_list[[4]] <- (ofv.NPFMCvec)
+converge_id_list[[5]] <- (ofv.ExpSurvWtvec)
+converge_id_list[[6]] <- (ofv.ExpFishWtvec)
+converge_id_list[[7]] <- (ofv.NonExpNPFMCvec)
+converge_id_list[[8]] <- (ofv.partfixedvec)
+converge_id_list[[9]] <- (ofv.agebasedvec)
+converge_id_list[[10]] <- (ofv.termLLsurvvec)
+converge_id_list[[11]] <- (ofv.alltoonevec)
+} 
+if(sort_criteria == 2) {
+converge_id_list[[1]] <- (mgc.equalvec)
+converge_id_list[[2]] <- (mgc.fixedvec)
+converge_id_list[[3]] <- (mgc.equilibvec)
+converge_id_list[[4]] <- (mgc.NPFMCvec)
+converge_id_list[[5]] <- (mgc.ExpSurvWtvec)
+converge_id_list[[6]] <- (mgc.ExpFishWtvec)
+converge_id_list[[7]] <- (mgc.NonExpNPFMCvec)
+converge_id_list[[8]] <- (mgc.partfixedvec)
+converge_id_list[[9]] <- (mgc.agebasedvec)
+converge_id_list[[10]] <- (mgc.termLLsurvvec)
+converge_id_list[[11]] <- (mgc.alltoonevec)
+}
 ```
 
 # Introduction and methods overview
@@ -394,18 +493,18 @@ Because we have a single area stock assessment, we do not currently have estimat
 for(f in 1:n.fish){
   for(m in 1:n.area){
     for(b in 1:n.apports){
-     AM_EM_abc[44:n.year, f, m,ofv.equalvec,b] <- NA 
+     AM_EM_abc[44:n.year, f, m,converge_id_list[[b]],b] <- NA 
     }
   }
 }
 
+AM_EM_abc[44:n.year,2,,,1]
 
-
-AM_EM_abc[44:n.year, 2, 1,,1] %>% 
-  data.frame %>% 
-  gather(sim,value) %>% 
-  ggplot(aes(value,fill=sim)) +
-  geom_density()
+#AM_EM_abc[44:n.year, 2, 1,,1] %>% 
+#  data.frame %>% 
+#  gather(sim,value) %>% 
+#  ggplot(aes(value,fill=sim)) +
+#  geom_density()
 
 
 #calc abc proportion by area by year and by sim and by apportionment type
@@ -460,42 +559,61 @@ round(apply(variable.blable,2,mean),digits=1)
 ### Variability in ABC from year to year  
 Total ABC and the proportion of ABC apportioned to management areas can change each year, and individual management area ABC may not move in the same direction or proportion as overall ABC. In 2013, the year-to-year change in ABC apportioned to each management area was higher than desired and prompted the recommendation to freeze ABC proportions to management regions for the next several years. CHECK THESE CALCS.  
 ``` {r, echo=FALSE}
-AM_EM_abc_sum3 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum,na.rm=TRUE)
-diff_apport <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,1:n.area,1:n.sims,apportion.names))
+#percent relative change from year to year for each area, sim, apportionment type:
+AM_EM_abc_sum3 <- apply(AM_EM_abc[(forproj.styr+1):n.year,,,,],c(1,3,4,5),sum,na.rm=TRUE)
+diff_apport <- array(data=NA,dim=c(length((forproj.styr+1):n.year),n.area,n.sims,n.apports),dimnames=list((forproj.styr+1):n.year,1:n.area,1:n.sims,apportion.names))
+abs_diff_apport <- array(data=NA,dim=c(length((forproj.styr+1):n.year),n.area,n.sims,n.apports),dimnames=list((forproj.styr+1):n.year,1:n.area,1:n.sims,apportion.names))
 for(b in 1:n.apports){
   for(i in 1:n.sims){
     for(m in 1:n.area){
-      for(y in 1:length(forproj.styr:(n.year-1))){
-    diff_apport[y,m,i,b] <- ((AM_EM_abc_sum3[y,m,i,b]-AM_EM_abc_sum3[y+1,m,i,b])/((AM_EM_abc_sum3[y,m,i,b]+AM_EM_abc_sum3[y+1,m,i,b])/2))*100
-      }}}}
-
-AM_EM_abc_sum3 <- apply(AM_EM_abc[forproj.styr:n.year,,,,],c(1,3,4,5),sum,na.rm=TRUE)
-diff_apport2 <- array(data=NA,dim=c(length(forproj.styr:n.year),n.area,n.sims,n.apports),dimnames=list(forproj.styr:n.year,1:n.area,1:n.sims,apportion.names))
-for(b in 1:n.apports){
-  for(i in 1:n.sims){
-    for(m in 1:n.area){
-      for(y in 1:length(forproj.styr:(n.year-1))){
-    diff_apport2[y,m,i,b] <- (AM_EM_abc_sum3[y,m,i,b]-AM_EM_abc_sum3[y+1,m,i,b])
+      for(y in 1:length((forproj.styr+1):(n.year-1))){
+    diff_apport[y,m,i,b] <- ((AM_EM_abc_sum3[y,m,i,b]-AM_EM_abc_sum3[y+1,m,i,b])/AM_EM_abc_sum3[y+1,m,i,b])*100
+    abs_diff_apport[y,m,i,b] <- abs(diff_apport[y,m,i,b])
       }}}}
 #diff_apport
-pct_chg1 <- apply(diff_apport,c(1,2,4),mean,na.rm=TRUE) #mean across sims
-pct_chg2 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],c(2,4),mean,na.rm=TRUE) #mean across sims and years
-rownames(pct_chg2) <- area.names
-pct_chg3 <- apply(diff_apport[1:length(forproj.styr:(n.year-1)),,,],4,mean,na.rm=TRUE)#mean across sims, areas, years
+pct_chg1 <- apply(abs_diff_apport,c(1,2,4),mean,na.rm=TRUE) #mean across sims
+pct_chg2 <- apply(abs_diff_apport[1:length((forproj.styr+1):(n.year-1)),,,],c(2,4),mean,na.rm=TRUE) #mean across sims and years
+#rownames(pct_chg2) <- area.names
+pct_chg3 <- apply(abs_diff_apport[1:length((forproj.styr+1):(n.year-1)),,,],4,mean,na.rm=TRUE)#mean across sims, areas, years
+pct_chg3[11] <- pct_chg2[6,11] #manually add the value here because otherwise it's Inf
+#calc the % diff for each area and apport type
+spat_diff_abc <- matrix(data=NA,nrow=n.area,ncol=n.apports)
+for(m in 1:n.area){
+  for(b in 1:n.apports){
+spat_diff_abc[m,b]<- ((pct_chg2[m,b]/pct_chg3[b])*100)-100   
+  }}
 
-#using raw differences
-pc2 <- apply(diff_apport2[1:length(forproj.styr:(n.year-1)),,,],c(2,4),mean,na.rm=TRUE)
-pc3 <- apply(diff_apport2[1:length(forproj.styr:(n.year-1)),,,],4,mean,na.rm=TRUE)
+spat_diff_abc2 <- abs(spat_diff_abc)
+#then the mean %diff for each type
+varbyarea<-round(apply(spat_diff_abc2,2,mean),digits=1)
+names(varbyarea)<-c(apportion.names)
+mean_varbyarea<-round(spat_diff_abc2,digits=1)
+rownames(mean_varbyarea)<-c(area.names)
+colnames(mean_varbyarea)<-c(apportion.names)
+#now try it summing ABC first, to get at total variability in ABC overall, from the non-crashed/non-converged runs (because they differ between apport.types)
+AM_EM_abc_sum4 <-apply(AM_EM_abc[(forproj.styr+1):n.year,,,,],c(1,4,5),sum,na.rm=TRUE)
+diff_sum4apport <- array(data=NA,dim=c(length((forproj.styr+1):n.year),n.sims,n.apports),dimnames=list((forproj.styr+1):n.year,1:n.sims,apportion.names))
+abs_diff_sumapport <- array(data=NA,dim=c(length((forproj.styr+1):n.year),n.sims,n.apports),dimnames=list((forproj.styr+1):n.year,1:n.sims,apportion.names))
+for(b in 1:n.apports){
+  for(i in 1:n.sims){
+      for(y in 1:length((forproj.styr+1):(n.year-1))){
+    diff_sum4apport[y,i,b] <- ((AM_EM_abc_sum4[y,i,b]-AM_EM_abc_sum4[y+1,i,b])/AM_EM_abc_sum4[y+1,i,b])*100
+    abs_diff_sumapport[y,i,b] <- abs(diff_sum4apport[y,i,b])
+      }}}
+pctchg_sum1 <- apply(abs_diff_sumapport,3,mean,na.rm=TRUE) #this is the overall variabitlity in ABC from year to year for each apportionment type  (they are different because a diff set of sims converges for each)
+
+
 ```
-The mean absolute percent change in ABC for each apportionment method, reflects the inherent variability in ABC from year to year.  
+The mean percent change in ABC (summed over areas) reflects the inherent variability in ABC from year to year for each apportionment type. They are not all the same due to a different set of simulations converging/not crashing for each apportionment type.  It isn't really relevant to compare these values to each other.
 ```{r, echo=FALSE}
-round(pct_chg3,digits=2)
+round(pctchg_sum1,digits=2)
 ```
 
   
-Drilling down further, the mean absolute percent change in ABC for each area and apportionment method is  
+Drilling down further, the mean absolute percent change in ABC for each area and apportionment method and the overall abs change in abc from year to year across areas is: 
 ```{r, echo=FALSE}
-round(pct_chg2,digits=2)
+varbyarea
+mean_varbyarea
 ```
 This reflects what an individual management area may experience in terms of average change in ABC from year to year for each apportionment method. Higher values mean more change in ABC from year to year.
 
