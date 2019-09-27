@@ -28,6 +28,7 @@ create_sim_objects <- function() {
   OM_trawl_catch <<- matrix(nrow=n.year, ncol=n.sims, dimnames=list(years,sims)) #matrix to hold all of the OM trawl gear catch for initial population and simulated years, summed across areas
   apportioned_C <<- array(dim=c(n.year, n.fish, n.area, n.sims), dimnames=list(years, fish, areas, sims))
   OM_Surv.RPN <<- matrix(nrow=n.year, ncol=n.sims, dimnames=list(years,sims)) #matrix to hold all of the OM survey RPN data, summed across areas
+  OM_Surv.RPW <<- matrix(nrow=n.year, ncol=n.sims, dimnames=list(years,sims)) #matrix to hold all of the OM survey RPW data, summed across areas
   OM_Fish.RPW <<- matrix(nrow=n.year, ncol=n.sims, dimnames=list(years,sims)) #matrix to hold all of the OM fishery RPW data, sumed across areas
   OM_Fish.RPW.age <<- array(dim=c(n.year, n.age, n.sims),dimnames=list(years, ages, sims)) #array to hold the OM fishery age comps, summed across areas
   OM_Surv.RPN.age <<- array(dim=c(n.year, n.age, n.sims),dimnames=list(years, ages, sims)) #array to hold the OM survey age comps, summed across areas
@@ -51,7 +52,10 @@ create_sim_objects <- function() {
   
   #Assessment data inputs
   # longline survey RPN, 'current' year
-  Surv.RPN <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #longline survey RPN
+  Surv.RPN <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #longline survey RPN, NOT corrected for alternating years
+  Surv.RPN2 <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #longline survey RPN, IS corrected for alternating years
+  #Surv.RPW <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #tracking RPW, uncorrected for alt years of survey, for apportionment
+  Surv.RPW2 <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #tracking RPW, corrected for alt years of survey
   # longline/fixed gear fishery CPUE/RPW
   Fish.RPW <<- array(dim=c(n.sex, n.year, n.age, n.area, n.sims), dimnames=list(sexes,years,ages,areas,sims)) #fixed gear fishery RPW
   # longline/fixed gear fishery age comps

@@ -52,12 +52,12 @@ create_sim_recruitments <- function(mu_rec, sigma_rec, rho_rec=NULL, n.year, n.s
     }
   } # next i 
   # return(rec) - no return necessary as we save to global env <<-:
- # for(i in 1:n.sims) {
- #   for(y in 1:n.year){
- # if(rec[i,y] > 50000000) {
- #   rec[i,y] <<- 50000000
- # }
- # }}
+  #for(i in 1:n.sims) {
+  #  for(y in 1:n.year){
+  #if(rec[i,y] > 50000000) {
+  #  rec[i,y] <<- 50000000
+  #}
+  #}}
 }
 
 
