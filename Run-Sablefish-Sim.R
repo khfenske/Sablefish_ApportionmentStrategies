@@ -1,3 +1,5 @@
+
+
 #==================================================================================================
 #Project Name: SABLEFISH APPORTIONMENT - Run Simple Simulation
 #Creator: Curry James Cunningham, NOAA/NMFS, ABL, Modified and expanded by K. Fenske NMFS ABL
@@ -41,6 +43,7 @@ require(gtools)
 #for .dat file building
 require(PBSmodelling)
 require(R2admb)
+require(beepr)
 
 # Source Necessary Files =========================================
 source(file.path(dir.R,'extract-pars.R'))
@@ -137,7 +140,7 @@ N_hold <- array(dim=c(n.sex, n.year, n.area, n.age, n.sims), dimnames=list(sexes
 
 # Simulate Annual Recruitments ====================================
 #setup_years <- 39 #number of years to run the loop setting up the initial population and building initial dat file
-create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=0.3, 
+create_sim_recruitments(mu_rec=mu_rec, sigma_rec=sigma_rec, rho_rec=0.2, 
                         n.year=n.year, n.sims=n.sims, seed=111) #Creates rec object 
 
 # divide annual recruitments into areas - the values for area.props are from the proportions of age-2 fish by area 
@@ -196,7 +199,7 @@ temp.catchnumbiom <- apply(cond_catch_at_age,1:3,sum)
 
 ### set up N samples and sigmas for sampling
 LLsurvRPNsigma <- 0.15 #0.2
-LLfishRPWsigma <- 0.15 #0.4
+LLfishRPWsigma <- c(0.3,0.3,0.15,0.15,0.15,0.15) #0.4
 LLsurvAC_sampsize <- 200
 LLfishAC_sampsize <- 200
 
@@ -355,9 +358,7 @@ for(i in 1:n.sims) {
     m <- 1
     for(m in 1:n.area) {
       #write a function that makes it easy to specify (by area) the yield ratio
-      # sample longline survey RPN, 'current' year  -- check units
-      # is the *selectivity needed here? Or is it already incorporated into the N calcs via F?
-      #Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*selex$surv$USLongline[h,]*q_surv[1,m],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i)) 
+      # sample longline survey RPN, 'current' year  
       Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*q_surv[1,m]*selex$surv$USLongline,sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i+222)) #*selex$surv$USLongline[h,]*q_surv[1,m]
     } #next area m
   } #close year 
@@ -367,7 +368,7 @@ for(i in 1:n.sims) {
     for(m in 1:n.area) {
       # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
       #specify another comp sample size here
-      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[1,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[1,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma[m], type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
     } #next area m
   } #close year 
   for(y in 20:42) { #post IFQ years
@@ -375,7 +376,7 @@ for(i in 1:n.sims) {
     for(m in 1:n.area) {
       # longline/fixed gear fishery CPUE/RPW , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
       #specify another comp sample size here
-      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[2,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+      Fish.RPW[,y,,m,i] <- sample_biom_abund(B[,y,,m,i]*q_fish[2,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma[m], type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
     } #next area m
   } #close year   
   ###then sample age comps for a different set of years for each set of comps
@@ -409,6 +410,40 @@ for(i in 1:n.sims) {
       OM_Surv.RPN.age[y,,i] <- aggr_agecomp(Surv.AC[,y,,,i], Surv.RPN[,y,,,i],2)
     } #next area m
   } #close year 
+  
+  ######before aggregating survery RPN, need to 'fix' the off-year survey values and also calculate an RPW
+  SurvRPN_temp <- array(dim=c(n.sex, n.year, n.age, n.area), dimnames=list(sexes,years,ages,areas))
+  Surv.GOA <- vector()
+  #calculate GOA RPN summing over GOA areas
+  Surv.GOA <- apply(Surv.RPN[,,,3:6,i],2,sum)
+  #for Bs and AI individually, adjust RPN by proportion change in GOA for the non-sampled years odd y is an even year in these sims    
+  SurvRPN_temp <- Surv.RPN[,,,,i]
+  for(h in 1:n.sex){ 
+    for(a in 1:n.age){  
+      SurvRPN_temp[h,15,a,2] <- Surv.RPN[h,15,a,2,i]#AI 
+      for(y in 16:43){ #year y=15 is 1990 which was a AI year, year 16 is 1991 which is a BS year
+        if(y %%2 == 0){ 
+          SurvRPN_temp[h,y,a,1] <- Surv.RPN[h,y,a,1,i]#BS   
+          SurvRPN_temp[h,y,a,2] <- (Surv.GOA[y]/Surv.GOA[y-1])*Surv.RPN[h,y-1,a,2,i]#AI
+        } else {
+          SurvRPN_temp[h,y,a,1] <- (Surv.GOA[y]/Surv.GOA[y-1])*Surv.RPN[h,y-1,a,1,i]#BS
+          SurvRPN_temp[h,y,a,2] <- Surv.RPN[h,y,a,2,i]#AI 
+        }
+      }
+    }
+  }
+  
+  #calculate RPW from RPN
+  for(y in 15:n.year){
+    for(h in 1:n.sex){
+      for(a in 1:n.age){
+        for(m in 1:n.area){
+          Surv.RPN2[h,y,a,m,i] <- SurvRPN_temp[h,y,a,m]  
+          Surv.RPW2[h,y,a,m,i] <- Surv.RPN2[h,y,a,m,i]*wa[h,a]
+        }
+      }
+    }
+  }
   
   ######### aggregate OM data across age, sex and/or areas for EM and track over time
   #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
@@ -448,7 +483,8 @@ for(i in 1:n.sims) {
     m <- 1
     for(m in 1:n.area) {
       #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
-      OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i]) 
+      OM_Surv.RPN[y,i] <- sum(Surv.RPN2[,y,,,i]) #these are the 'corrected' RPN/RPW where off-survey years are 'corrected'
+      #OM_Surv.RPW[y,i] <- sum(Surv.RPW[,y,,,i]) 
     } #next area m
   } #close year    
   
@@ -459,12 +495,13 @@ for(i in 1:n.sims) {
 #only building a single conditioning dat file instead of 1 for each sim since they should all be the same for this project (for now)
 build_conditioning_datfile()  
 #write conditioning period only objects to rds for plotting in RMD
-
-
+#OM_Surv.RPN[,1]
+#apply(Surv.RPN[,,,,1],2,sum)
+#apply(SurvRPN_temp,2,sum)
+#apply(Surv.RPN2[,,,,1],2,sum)
 
 #=====================================================================================
 # Forward Simulation =============================================================
-
 
 #Loop order: sim, year, area, age, sex.
 # Order - read in output from last assessment, calculate F associated with catch permitted from previous year's assessment and apportionment, 
@@ -506,16 +543,16 @@ run.model <- function() {
 
 #Prime the pump (of apportionment): 2019/year 44 fixed gear catch levels from the apportioned 2018 projection, order is BS-AI-WG-CG-WY-EY/SEO
 #for(y in 43:44) {  #43 is 2018, 44 is 2019
-  for(i in 1:n.sims){
-    apportioned_C[43,1,,i] <- c(0,0,0,0,0,0) 
-    apportioned_C[43,2,,i] <- c(0.53,0.48,1.18,3.64,1.62,3.01) #2018 actual catch
-    apportioned_C[43,3,,i] <- c(1.1,0.2,0.2,2.1,0,0) #2018 catch, 0 for wy is replacement for conf data
-    apportioned_C[43,4,,i] <- c(0,0,0,0,0,0)
-    apportioned_C[44,1,,i] <- c(0,0,0,0,0,0) 
-    apportioned_C[44,2,,i] <- c(1.12575,1.5225,1.4931,4.7214,1.5885,2.8611) #these are 2018 EM estimates of 2019 ABC, before whale depred
-    apportioned_C[44,3,,i] <- c(0.37525,0.5075,0.1659,0.5246,0.1765,0.3179) 
-    apportioned_C[44,4,,i] <- c(0,0,0,0,0,0)
-  }#}
+for(i in 1:n.sims){
+  apportioned_C[43,1,,i] <- c(0,0,0,0,0,0) 
+  apportioned_C[43,2,,i] <- c(0.53,0.48,1.18,3.64,1.62,3.01) #2018 actual catch
+  apportioned_C[43,3,,i] <- c(1.1,0.2,0.2,2.1,0,0) #2018 catch, 0 for wy is replacement for conf data
+  apportioned_C[43,4,,i] <- c(0,0,0,0,0,0)
+  apportioned_C[44,1,,i] <- c(0,0,0,0,0,0) 
+  apportioned_C[44,2,,i] <- c(1.12575,1.5225,1.4931,4.7214,1.5885,2.8611) #these are 2018 EM estimates of 2019 ABC, before whale depred
+  apportioned_C[44,3,,i] <- c(0.37525,0.5075,0.1659,0.5246,0.1765,0.3179) 
+  apportioned_C[44,4,,i] <- c(0,0,0,0,0,0)
+}#}
 
 #temp place for the apportionment functions (maybe get them into a separate function for simpler code)
 #apport.opt = 1: equal to all areas
@@ -762,13 +799,13 @@ termLL_apportionment <- function(ABC.total,n.areas,biom.data) { #note this uses 
   
   biom.data2 <- apply(biom.data,3,sum)
   #for (t in (length(biom.data2[,1])-4):length(biom.data2[,1])) {
-    for (r in 1:n.areas) {
-      biom.data.prop[r] <- biom.data2[r]/sum(biom.data2) #calc proportion by year across areas for survey data
-    }#}
+  for (r in 1:n.areas) {
+    biom.data.prop[r] <- biom.data2[r]/sum(biom.data2) #calc proportion by year across areas for survey data
+  }#}
   #for (t in 1:length(biom.data.prop[,1])) {
-    #for (r in 1:n.areas) {    
-      #biom.data.prop.wt[t,r] <- biom.data.prop[t,r]*wts[t]    
-    #}}  
+  #for (r in 1:n.areas) {    
+  #biom.data.prop.wt[t,r] <- biom.data.prop[t,r]*wts[t]    
+  #}}  
   #biom.prop.sum <- biom.data.prop
   for (r in 1:n.areas) {
     ABC.EM[r] <- ABC.total * biom.data.prop[r] 
@@ -796,7 +833,7 @@ all2one_apportionment <- function(ABC.total,n.areas,luckyarea) {
 #apport.opt = 14: non exponential (5-year average) length-based
 #skip for now    
 
-#try(    
+
 area <- 1
 i <- 1
 for(i in 1:n.sims) {
@@ -926,7 +963,7 @@ for(i in 1:n.sims) {
       #Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*selex$surv$USLongline[h,],sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i))         #(we'd talked about concatonating 'sim # + year' for seed)
       Surv.RPN[,y,,m,i] <- sample_biom_abund(N[,y,,m,i]*q_surv[1,m]*selex$surv$USLongline,sigma=LLsurvRPNsigma, type='lognorm', seed=c(y+i+546))         #(we'd talked about concatonating 'sim # + year' for seed)
       # longline/fixed gear fishery CPUE/RPW  -- check units
-      Fish.RPW[,y-1,,m,i] <- sample_biom_abund(B[,y-1,,m,i]*q_fish[1,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma, type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
+      Fish.RPW[,y-1,,m,i] <- sample_biom_abund(B[,y-1,,m,i]*q_fish[1,m]*selex$fish$USfixed_postIFQ[m,,], sigma=LLfishRPWsigma[m], type='lognorm', seed=c(y+i+14)) #14 is just a randomly chosen # to make seed diff from above
       
       for(h in 1:n.sex){
         # longline/fixed gear post-IFQ fishery age comps in numbers , can use LLfishAC_sampsize (specified above) if you want to match the comp draws here with the dat file maker comp sizes, or 
@@ -941,6 +978,33 @@ for(i in 1:n.sims) {
       } #close sex
     } #next area m
     
+    #need to correct Surv.RPN for alternating survey years in BS and AI, then convert to RPW
+    Surv.GOA <- apply(Surv.RPN[,,,3:6,i],2,sum)
+    SurvRPN_temp[,y,,] <- Surv.RPN[,y,,,i]
+    for(h in 1:n.sex){ 
+      for(a in 1:n.age){  
+        if(y %%2 == 0){ 
+          SurvRPN_temp[h,y,a,1] <- Surv.RPN[h,y,a,1,i]#BS   
+          SurvRPN_temp[h,y,a,2] <- (Surv.GOA[y]/Surv.GOA[y-1])*Surv.RPN[h,y-1,a,1,i]#AI
+        } else {
+          SurvRPN_temp[h,y,a,1] <- (Surv.GOA[y]/Surv.GOA[y-1])*Surv.RPN[h,y-1,a,1,i]#BS
+          SurvRPN_temp[h,y,a,2] <- Surv.RPN[h,y,a,2,i]#AI 
+        }
+      }
+    }
+    
+    #calculate RPW from RPN
+    for(h in 1:n.sex){
+      for(a in 1:n.age){
+        for(m in 1:n.area){
+          Surv.RPN2[h,y,a,m,i] <- SurvRPN_temp[h,y,a,m]  
+          Surv.RPW2[h,y,a,m,i] <- Surv.RPN2[h,y,a,m,i]*wa[h,a]
+        }
+      }
+    }
+    
+    
+    
     ######### aggregate OM data across age, sex and/or areas for EM and track over time (these could be moved into the data file builder function)
     #sum catch at age to a single catch (actually, probably harvest) for year y, summed over areas and sexes, for each gear
     #fish 1 - US fixed gear pre-IFQ, 2 - US fixed post-IFQ, 3 - US trawl, 4 - foreign fixed gear
@@ -948,9 +1012,10 @@ for(i in 1:n.sims) {
     OM_trawl_catch[y-1,i] <- sum(harvest.b[,y-1,,3,,i]) #3 - US trawl
     #sum RPN to one value for the year and sim (sum over age, sex area) - do these need to be weighted in some way?
     OM_Surv.RPN[y,i] <- sum(Surv.RPN[,y,,,i])
+    #OM_Surv.RPW[y,i] <- sum(Surv.RPW[,y,,,i])
     OM_Fish.RPW[y-1,i] <- sum(Fish.RPW[,y-1,,,i])
     #age comps have a year lag
-    OM_Surv.RPN.age[y-1,,i] <- aggr_agecomp(Surv.AC[,y-1,,,i], Surv.RPN[,y-1,,,i],2) #aggregate comps by sex and area, weight by survey catch in area
+    OM_Surv.RPN.age[y-1,,i] <- aggr_agecomp(Surv.AC[,y-1,,,i], Surv.RPN2[,y-1,,,i],2) #aggregate comps by sex and area, weight by survey catch in area
     OM_Fish.RPW.age[y-1,,i] <- aggr_agecomp(Fish.AC[,y-1,,,i], C.n[,y-1,,,i],2) #aggregate comps by sex and area, weight by catch in area
     
     
@@ -1018,7 +1083,7 @@ for(i in 1:n.sims) {
       } 
       
       if (apport.opt==10) { 
-      ABC_TS[y+1,,i] <- termLL_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,y,,,i]) 
+        ABC_TS[y+1,,i] <- termLL_apportionment(get_ABC$ABC_proj[1],n.area,Surv.RPN[,y,,,i]) 
       } 
       
       if (apport.opt==11) {
@@ -1110,8 +1175,8 @@ for(i in 1:n.sims) {
     EM_totbiomass[y,2:y,i] <- get_ABC$tot_biom
     EM_F_full[y,2:y,i] <- get_ABC$Fully_selected_F
     if(y==n.year){
-    EM_natage[1,,,i] <- get_Natage$natage_f 
-    EM_natage[2,,,i] <- get_Natage$natage_m    
+      EM_natage[1,,,i] <- get_Natage$natage_f 
+      EM_natage[2,,,i] <- get_Natage$natage_m    
     }
     ### side notes:
     # No Recruitment relationship  Can we change this so it reads in a rec value from a separate file which draws N simulations * N years worth of rec values all 
@@ -1122,10 +1187,11 @@ for(i in 1:n.sims) {
     # rec[,y-1] <- 0.5 * ricker_recruit(ssb[y-1], steep, bo)
     #Beverton-Holt
     # rec[,y-1,i] <-  0.5 * beverton_holt_recruit(sum(ssb[,,y-1,i]), steep, bo=ro) * exp(rnorm(1,0,sigma_rec) - ((sigma_rec^2)/2))
-    
+    #beep(5)
   }#next y
+  #beep(6)
 }#next i
-
+beep(9)
 #call a function to save all the objects created here as .RDS in an apportionment-specific file
 dir.create(paste0(dir.output,"/Apport.Option_",apport.opt))
 saveFerris() #call the function to save all the objects we want to keep as RDS files (load and use them elsewhere for analyses and plotting)
